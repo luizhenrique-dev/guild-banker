@@ -17,6 +17,7 @@ api/*.out
 api/vendor/
 api/coverage.out
 api/coverage.html
+api/config.env
 
 # Air (live reload)
 api/tmp/
