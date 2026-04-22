@@ -36,6 +36,7 @@ project/
 │   └── validator/            // Validation utilities
 ├── api/                      // API documentation
 ├── config/                   // Configuration files
+├── migrations/               // SQL migration files 
 └── go.mod                    // Go module definition
 ```
 
@@ -271,35 +272,79 @@ func (h *Handler) CreateUser(c *gin.Context) {
 * Use prepared statements to prevent SQL injection
 * Implement context-aware database calls
 * Apply proper database connection management
+* Use sqlx to reduce boilerplate while keeping full control over SQL
+* Prefer explicit SQL queries over abstractions
+* Use Get and Select for automatic struct mapping
+* Keep SQL close to the repository layer (never leak to services)
+* Separate domain models from database models when necessary
+* Use context-aware methods for cancellation and timeouts
 
 **Explanation:**
 
 * Prepared statements protect against SQL injection attacks
 * Context-aware calls allow for proper timeout and cancellation
 * Proper connection management prevents resource leaks
+* sqlx is a lightweight extension over database/sql that removes repetitive scanning code without becoming an ORM
+* It preserves explicit SQL, which improves observability, performance tuning, and debugging
+* Keeping SQL inside repositories aligns with Clean Architecture and prevents infrastructure leakage
+* Struct mapping via tags (db:"field") reduces boilerplate and improves readability
 
 ```go
+// user/entity.go (DB model)
+type userEntity struct {
+    ID        string    `db:"id"`
+    Username  string    `db:"username"`
+    Email     string    `db:"email"`
+    CreatedAt time.Time `db:"created_at"`
+}
+
+// user/model.go (domain model)
+type User struct {
+    ID       string
+    Username string
+    Email    string
+    CreatedAt time.Time
+}
+
 // user/repository.go
-func (r *postgresRepository) FindByID(ctx context.Context, id string) (*User, error) {
-    // Use prepared statement with placeholder
-    query := "SELECT id, username, email, created_at FROM users WHERE id = $1"
-    
-    var user User
-    err := r.db.QueryRowContext(ctx, query, id).Scan(
-        &user.ID,
-        &user.Username,
-        &user.Email,
-        &user.CreatedAt,
-    )
-    
-    if err != nil {
-        if err == sql.ErrNoRows {
-            return nil, errors.ErrNotFound("User not found")
+type Repository interface {
+    FindByID(ctx context.Context, id string) (*User, error)
+}
+
+type repository struct {
+    db *sqlx.DB
+}
+
+func NewRepository(db *sqlx.DB) Repository {
+    return &repository{db: db}
+}
+
+func (r *repository) FindByID(ctx context.Context, id string) (*User, error) {
+    const query = `
+        SELECT id, username, email, created_at
+        FROM users
+        WHERE id = $1
+    `
+
+    var entity userEntity
+    if err := r.db.GetContext(ctx, &entity, query, id); err != nil {
+        if errors.Is(err, sql.ErrNoRows) {
+            return nil, errors.ErrNotFound("user not found")
         }
-        return nil, fmt.Errorf("database error: %w", err)
+        return nil, fmt.Errorf("query user by id: %w", err)
     }
-    
-    return &user, nil
+
+    return toDomain(entity), nil
+}
+
+// mapper.go
+func toDomain(e userEntity) *User {
+    return &User{
+        ID:        e.ID,
+        Username:  e.Username,
+        Email:     e.Email,
+        CreatedAt: e.CreatedAt,
+    }
 }
 
 // main.go
