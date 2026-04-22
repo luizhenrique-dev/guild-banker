@@ -7,7 +7,7 @@ APP_NAME        := guildbanker
 API_DIR         := api
 WEB_DIR         := web
 INFRA_DIR       := infra
-MIGRATIONS_DIR  := $(API_DIR)/migrations
+MIGRATIONS_DIR  := migrations
 BINARY          := $(API_DIR)/bin/$(APP_NAME)
 DOCKER_COMPOSE  := docker compose
 
