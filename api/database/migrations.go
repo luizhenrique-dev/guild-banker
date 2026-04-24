@@ -3,6 +3,7 @@ package database
 import (
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
@@ -10,7 +11,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-const migrationsPath = "file://migrations"
+const (
+	localMigrationsPath     = "migrations"
+	workspaceMigrationsPath = "api/migrations"
+)
 
 // Migrate executes all pending migrations (Up).
 func Migrate(db *sqlx.DB, dbName string) error {
@@ -19,6 +23,11 @@ func Migrate(db *sqlx.DB, dbName string) error {
 	})
 	if err != nil {
 		return fmt.Errorf("migrations: failed to create driver: %w", err)
+	}
+
+	migrationsPath, err := resolveMigrationsPath()
+	if err != nil {
+		return err
 	}
 
 	m, err := migrate.NewWithDatabaseInstance(migrationsPath, dbName, driver)
@@ -37,4 +46,20 @@ func Migrate(db *sqlx.DB, dbName string) error {
 	}
 
 	return nil
+}
+
+func resolveMigrationsPath() (string, error) {
+	if _, err := os.Stat(localMigrationsPath); err == nil {
+		return "file://" + localMigrationsPath, nil
+	}
+
+	if _, err := os.Stat(workspaceMigrationsPath); err == nil {
+		return "file://" + workspaceMigrationsPath, nil
+	}
+
+	return "", fmt.Errorf(
+		"migrations: directory not found (expected %q or %q)",
+		localMigrationsPath,
+		workspaceMigrationsPath,
+	)
 }
