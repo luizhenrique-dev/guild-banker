@@ -11,8 +11,9 @@ import (
 const envFile = "config.env"
 
 type Config struct {
-	DB       DBConfig
-	Keycloak KeycloakConfig
+	DB            DBConfig
+	Keycloak      KeycloakConfig
+	WebServerPort string
 }
 
 type DBConfig struct {
@@ -32,6 +33,7 @@ type KeycloakConfig struct {
 	BaseURL string
 	Realm   string
 	Timeout int
+	JWKSURI string
 }
 
 func (d DBConfig) DSN() string {
@@ -63,7 +65,9 @@ func Load() (*Config, error) {
 			BaseURL: requireEnv("KEYCLOAK_BASE_URL"),
 			Realm:   requireEnv("KEYCLOAK_REALM"),
 			Timeout: mustInt("KEYCLOAK_TIMEOUT_SECONDS", 5),
+			JWKSURI: getEnv("KEYCLOAK_JWKS_URI", ""),
 		},
+		WebServerPort: getEnv("WEBSERVER_PORT", "8080"),
 	}
 
 	return cfg, nil
