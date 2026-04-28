@@ -1,10 +1,10 @@
 # AGENTS.md
 
-Guidance for AI Coding Agents when working with code in this repository.
+Purpose: This file defines how AI agents must behave when working in this repository.
 
 ## About the project
 
-### 1. Overview
+### Overview
 
 **GuildBanker** is a multi-user personal finance management platform designed to give users full visibility and control over their financial life. It allows users to register fixed recurring expenses, import credit card statements and bank extracts, and categorize transactions — either manually, rule-based, or with AI assistance.
 
@@ -12,88 +12,57 @@ The platform is built as a **monorepo** containing a **Go REST API** (backend) a
 
 ---
 
-### 2. Purpose
+## 1) Mandatory Reading
 
-Provide a centralized, intelligent tool for individuals to:
+Before making ANY change, the agent MUST read and follow:
 
-- Track and manage **fixed monthly expenses** (rent, car payments, utilities, etc.)
-- **Import and parse** credit card statements (CSV and PDF formats)
-- **Import bank extracts** to track PIX and other transactions (future phase)
-- **Categorize transactions** using bank-provided categories, custom user-defined categories, or AI-powered suggestions
-- Gain **financial insights** through dashboards and reports
+- [go/architecture.md](../docs/go/architecture.md)
+- [go/coding.md](../docs/go/coding.md)
+- [go/naming.md](../docs/go/naming.md)
 
----
+These documents are the **source of truth** for:
+- architecture decisions
+- coding practices
+- naming conventions
 
-### 3. Goals
-
-| Goal | Description |
-|------|-------------|
-| **Financial Visibility** | Consolidate all expenses in a single platform |
-| **Smart Categorization** | Leverage bank categories, custom rules, and AI to auto-categorize transactions |
-| **Ease of Import** | Support CSV parsing (algorithm-based) and PDF parsing (LLM-powered) |
-| **Multi-User Support** | Each user has isolated data, managed via Keycloak |
-| **Extensibility** | Architecture prepared for future features (bank extract import, PIX tracking, multi-currency) |
-| **Code Quality** | Clean Architecture, SOLID principles, and Go community best practices |
+If there is any conflict:
+1. `architecture.md` takes precedence
+2. then `coding.md`
+3. then `naming.md`
 
 ---
 
-### 4. Tech Stack
+## 2) Non-Negotiable Rules
 
-| Layer | Technology                                               |
-|-------|----------------------------------------------------------|
-| **Backend** | Go 1.26+                                                 |
-| **Frontend** | React + TypeScript                                       |
-| **Database** | PostgreSQL 17+                                           |
-| **IAM** | Keycloak 26+                                             |
-| **AI / LLM** | LLM integration for PDF parsing and smart categorization |
-| **Containerization** | Docker + Docker Compose                                  |
-| **Monorepo Structure** | Single repository with `api/` and `web/` directories     |
+The agent MUST:
+
+- respect architectural boundaries (no layer violations)
+- follow dependency direction (inward toward domain)
+- avoid introducing global state
+- use context propagation correctly
+- keep domain free of infrastructure concerns
+- keep transport logic free of business rules
+
+The agent MUST NOT:
+
+- create `utils`, `helpers`, or `common` packages
+- introduce cyclic dependencies
+- leak DTOs or database models into domain
+- create unnecessary abstractions or interfaces
+- export identifiers without clear need
 
 ---
 
-### 5. Monorepo Structure
+## 3) Code Generation Rules
 
-```
-guildbanker/
-├── api/                          # Go backend
-│   ├── cmd/
-│   │   └── server/
-│   │       └── main.go
-│   ├── internal/
-│   │   └── infra/                # Database, Keycloak client, LLM client, config
-│   ├── pkg/                      # Shared utilities (logger, errors, pagination)
-│   ├── migrations/               # SQL migration files
-│   ├── docs/                     # API documentation (Swagger/Guidelines)
-│   ├── go.mod
-│   └── go.sum
-├── web/                          # React frontend
-│   ├── src/
-│   ├── public/
-│   ├── package.json
-│   └── tsconfig.json
-├── infra/                        # Infrastructure configs
-│   ├── docker-compose.yml
-│   ├── keycloak/
-│   │   └── realm-config.json
-│   └── postgres/
-│       └── init.sql
-├── docs/                         # Project-level documentation
-│   └── SCOPE.md
-├── .gitignore
-├── Makefile
-└── README.md
-```
+When generating code, the agent MUST:
 
-# Coding Guidelines
-
-Behavioral guidelines to reduce common LLM coding mistakes. These principles bias toward caution over speed—for trivial tasks, use judgment.
-
-## Core Principles
+### Core Principles
 * Simplicity First: Make every change as simple as possible. Minimal code impact.
 * No Laziness: Find root causes. No temporary workarounds. Senior developer standards.
 * Minimal Impact: Changes should only touch what's necessary. Avoid introducing bugs.
 
-### 1. Think Before Coding
+### Think Before Coding
 
 **Don't assume. Don't hide confusion. Surface tradeoffs.**
 
@@ -105,7 +74,7 @@ Before implementing:
 - If something is unclear, stop. Name what's confusing. Ask.
 - Disagree honestly. If the user's approach seems wrong, say so—don't be sycophantic.
 
-### 2. Simplicity First
+### Simplicity First
 
 **Minimum code that solves the problem. Nothing speculative.**
 
@@ -117,7 +86,7 @@ Before implementing:
 
 Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
 
-### 3. Surgical Changes
+### Surgical Changes
 
 **Touch only what you must. Clean up only your own mess.**
 
@@ -133,36 +102,100 @@ When your changes create orphans:
 - Remove imports/variables/functions that YOUR changes made unused.
 - Don't remove pre-existing dead code unless asked.
 
-**The test:** Every changed line should trace directly to the user's request.
+### Structure
+- follow feature/domain-based organization under `internal/`
+- keep related files grouped (handler, service, repository, domain)
 
-### 4. Goal-Driven Execution
+### Interfaces
+- define interfaces at the **consumer side**
+- avoid creating interfaces prematurely
 
-**Define success criteria. Loop until verified.**
+### Errors
+- wrap errors using `fmt.Errorf("context: %w", err)`
+- use domain-level errors for business rules
+- never compare errors by string
 
-Transform tasks into verifiable goals:
+### Logging
+- use structured logging (`slog`)
+- do not log sensitive data
 
-- "Add validation" → "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" → "Write a test that reproduces it, then make it pass"
-- "Refactor X" → "Ensure tests pass before and after"
+### Concurrency
+- do not start goroutines without lifecycle control
+- always propagate context
 
-For multi-step tasks, state a brief plan:
+---
 
-```
-1. [Step] → verify: [check]
-2. [Step] → verify: [check]
-3. [Step] → verify: [check]
-```
+## 4) Naming Enforcement
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+All identifiers MUST follow:
 
-## Go Codebase Guidelines
+- `.standards/go/naming.md`
 
-- **IMPORTANT:** Before making any changes to Go files, strictly read and follow the instructions bellow:
+Critical rules:
+- correct use of exported vs unexported names
+- consistent initialisms (`ID`, `HTTP`, `URL`)
+- no type encoding in names
+- plural naming for collections
+- `ctx` as context variable name
+- `err` as error variable name
 
-### Naming and Architecture Conventions
-Always follow the naming and architecture standards defined in [GO_NAMING_CONVENTIONS.md](../api/docs/GO_NAMING_CONVENTIONS.md).
+---
 
-### Coding
-Always follow the coding guidelines defined in [GO_GUIDELINES.md](../api/docs/GO_GUIDELINES.md).
+## 5) Architecture Enforcement
 
+All changes MUST comply with:
 
+- `.standards/go/architecture.md`
+
+Critical checks:
+- handlers → services → domain → repositories
+- repositories implement interfaces (never the reverse)
+- domain has zero external dependencies
+
+---
+
+## 6) When Modifying Existing Code
+
+The agent MUST:
+
+- preserve public API stability unless explicitly instructed
+- avoid large refactors without justification
+- prefer incremental improvements
+- suggest refactors separately when needed
+
+---
+
+## 7) Pull Request Expectations
+
+Any generated change MUST:
+
+- compile successfully
+- pass tests (if present)
+- maintain or improve readability
+- not increase architectural coupling
+- follow all standards referenced above
+
+---
+
+## 8) If Uncertain
+
+If any rule is unclear, the agent MUST:
+
+- default to simplicity
+- prefer idiomatic Go solutions
+- avoid adding abstractions
+- follow existing patterns in the codebase (if consistent)
+
+---
+
+## 9) Summary
+
+This repository enforces:
+
+- Clean Architecture (Ports & Adapters)
+- SOLID principles
+- Idiomatic Go
+- Explicit dependencies
+- Low coupling, high cohesion
+
+The agent’s goal is to **produce maintainable, predictable, and scalable code**, not just working code.

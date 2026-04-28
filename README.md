@@ -58,8 +58,20 @@ The project use case and roadmap are defined in [PROJECT.md](./PROJECT.md) (work
 
 ## API – Golang
 
-### Naming and Architecture Conventions
-Always follow the naming and architecture standards defined in [GO_NAMING_CONVENTIONS.md](./api/docs/GO_NAMING_CONVENTIONS.md).
+### Architecture
+See [go/architecture.md](./docs/go/architecture.md) for more details.
+
+### Naming Conventions
+Always follow the naming defined in [go/naming.md](./docs/go/naming.md).
 
 ### Codebase Guidelines
-Always follow the coding guidelines defined in [GO_GUIDELINES.md](./api/docs/GO_GUIDELINES.md).
+Always follow the coding guidelines defined in [go/coding.md](./docs/go/coding.md).
+
+
+## 🤖 AI Agents
+
+This repository uses strict engineering standards.
+
+See:
+- [Junie](.junie/AGENTS.md)
+- [Codex](.codex/AGENTS.md)
