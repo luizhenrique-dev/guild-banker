@@ -1,7 +1,10 @@
 package user
 
 import (
+	"errors"
 	"time"
+
+	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
 
 type User struct {
@@ -9,40 +12,48 @@ type User struct {
 	ExternalID string
 	Name       string
 	Email      string
-	CreatedAt  time.Time
-	CreatedBy  string
-	Enabled    bool
-	UpdatedAt  *time.Time
-	DisabledAt *time.Time
-	DisabledBy *string
+	audit.DisableEntry
 }
 
-func New(name, email, externalID, createdBy string) *User {
-	return &User{
+func New(name, email, externalID, createdBy string) (*User, error) {
+	u := &User{
 		ExternalID: externalID,
 		Name:       name,
 		Email:      email,
-		CreatedAt:  time.Now(),
-		CreatedBy:  createdBy,
-		Enabled:    true,
+		DisableEntry: audit.DisableEntry{
+			Enabled: true,
+			Entry: audit.Entry{
+				CreatedAt: time.Now(),
+				CreatedBy: createdBy,
+			},
+		},
 	}
+
+	if err := u.validate(); err != nil {
+		return nil, err
+	}
+
+	return u, nil
 }
 
-func (u *User) Enable() {
-	u.Enabled = true
-	u.DisabledAt = nil
-	u.DisabledBy = nil
-	u.UpdatedAt = new(time.Now())
-}
-
-func (u *User) Disable(disabledBy string) {
-	u.Enabled = false
-	u.DisabledAt = new(time.Now())
-	u.DisabledBy = new(disabledBy)
-}
-
-func (u *User) Sync(name, email string) {
+func (u *User) Sync(name, email, by string) {
 	u.Name = name
 	u.Email = email
-	u.UpdatedAt = new(time.Now())
+	u.Update(by)
+}
+
+func (u *User) validate() error {
+	if u.Name == "" {
+		return errors.New("name is required")
+	}
+	if u.Email == "" {
+		return errors.New("email is required")
+	}
+	if u.ExternalID == "" {
+		return errors.New("externalID is required")
+	}
+	if u.CreatedBy == "" {
+		return errors.New("createdBy is required")
+	}
+	return nil
 }
