@@ -1,6 +1,9 @@
 package audit
 
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 type Entry struct {
 	CreatedAt time.Time
@@ -33,4 +36,19 @@ func (d *DisableEntry) Disable(by string) {
 	d.DisabledAt = new(time.Now())
 	d.DisabledBy = new(by)
 	d.Update(by)
+}
+
+type Actor struct {
+	UserID int64
+	Email  string
+}
+
+func (a Actor) Validate() error {
+	if a.UserID == 0 {
+		return errors.New("actor: userID is required")
+	}
+	if a.Email == "" {
+		return errors.New("actor: e-mail is required")
+	}
+	return nil
 }
