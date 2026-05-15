@@ -69,7 +69,7 @@ func main() {
 	}
 	slog.Info("migrations applied successfully")
 
-	server := webserver.NewServer(cfg)
+	server := webserver.NewServer(cfg, db)
 
 	go func() {
 		if startErr := server.Start(); startErr != nil && !errors.Is(startErr, http.ErrServerClosed) {

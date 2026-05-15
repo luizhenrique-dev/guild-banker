@@ -9,17 +9,20 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/luizhenrique-dev/guild-banker/api/config"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/guild"
 )
 
 type Server struct {
 	router     *gin.Engine
 	httpServer *http.Server
 	cfg        *config.Config
+	guild      *guild.Handler
 }
 
-func NewServer(cfg *config.Config) *Server {
+func NewServer(cfg *config.Config, db *sqlx.DB) *Server {
 	router := gin.Default()
 
 	router.Use(cors.New(cors.Config{
@@ -31,9 +34,14 @@ func NewServer(cfg *config.Config) *Server {
 		MaxAge:           12 * time.Hour,
 	}))
 
+	guildStorage := guild.NewStorage(db)
+	guildService := guild.NewService(guildStorage)
+	guildHandler := guild.NewHandler(guildService)
+
 	server := &Server{
 		router: router,
 		cfg:    cfg,
+		guild:  guildHandler,
 	}
 
 	server.httpServer = &http.Server{
