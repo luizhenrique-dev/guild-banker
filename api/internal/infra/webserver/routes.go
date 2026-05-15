@@ -13,7 +13,13 @@ func (s *Server) registerRoutes() {
 
 	api := s.router.Group("/api/v1", middleware.Auth(s.cfg))
 	{
-		// api.GET("/users", listUsers)
+		api.POST("/guilds", s.guild.Create)
+		api.PUT("/guilds/:id", s.guild.UpdateName)
+		api.PATCH("/guilds/:id/enable", s.guild.Enable)
+		api.PATCH("/guilds/:id/disable", s.guild.Disable)
+		api.GET("/guilds", s.guild.ListByMember)
+		api.POST("/guilds/:id/invites", s.guild.InviteUser)
+		api.DELETE("/guilds/:id/members/:userID", s.guild.RemoveUser)
 	}
 	_ = api
 }
