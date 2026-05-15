@@ -125,9 +125,9 @@ func (s *postgresStorage) NameExists(ctx context.Context, name string, excludeID
 func (s *postgresStorage) UpdateName(ctx context.Context, g *Guild) error {
 	const query = `
 		UPDATE guild
-		SET name = :name,
-		    updated_at = :updated_at,
-		    updated_by = :updated_by
+		SET display_name = :display_name,
+		    updated_at   = :updated_at,
+		    updated_by   = :updated_by
 		WHERE id = :id
 	`
 	result, err := s.db.NamedExecContext(ctx, query, toEntity(g))

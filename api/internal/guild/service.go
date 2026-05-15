@@ -47,7 +47,7 @@ func (s *Service) Create(
 	return g, nil
 }
 
-func (s *Service) UpdateName(ctx context.Context, guildID int64, name string, actor audit.Actor) (*Guild, error) {
+func (s *Service) UpdateName(ctx context.Context, guildID int64, displayName string, actor audit.Actor) (*Guild, error) {
 	if err := actor.Validate(); err != nil {
 		return nil, fmt.Errorf("update guild name: %w", err)
 	}
@@ -63,7 +63,7 @@ func (s *Service) UpdateName(ctx context.Context, guildID int64, name string, ac
 		return nil, ErrRequesterIsNotMember
 	}
 
-	exists, err := s.storage.NameExists(ctx, name, guildID)
+	exists, err := s.storage.NameExists(ctx, displayName, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("check guild name in update: %w", err)
 	}
@@ -76,7 +76,7 @@ func (s *Service) UpdateName(ctx context.Context, guildID int64, name string, ac
 		return nil, fmt.Errorf("get guild by id in update guild name: %w", err)
 	}
 
-	if err := g.Rename(name, actor.Email); err != nil {
+	if err := g.Rename(displayName, actor.Email); err != nil {
 		return nil, fmt.Errorf("rename guild: %w", err)
 	}
 
