@@ -12,9 +12,9 @@ type Entry struct {
 	UpdatedBy *string
 }
 
-func (e *Entry) Update(by string) {
+func (e *Entry) Update(changedBy string) {
 	e.UpdatedAt = new(time.Now())
-	e.UpdatedBy = new(by)
+	e.UpdatedBy = new(changedBy)
 }
 
 type DisableEntry struct {
@@ -24,18 +24,18 @@ type DisableEntry struct {
 	DisabledBy *string
 }
 
-func (d *DisableEntry) Enable(by string) {
+func (d *DisableEntry) Enable(changedBy string) {
 	d.Enabled = true
 	d.DisabledAt = nil
 	d.DisabledBy = nil
-	d.Update(by)
+	d.Update(changedBy)
 }
 
-func (d *DisableEntry) Disable(by string) {
+func (d *DisableEntry) Disable(changedBy string) {
 	d.Enabled = false
 	d.DisabledAt = new(time.Now())
-	d.DisabledBy = new(by)
-	d.Update(by)
+	d.DisabledBy = new(changedBy)
+	d.Update(changedBy)
 }
 
 type Actor struct {
