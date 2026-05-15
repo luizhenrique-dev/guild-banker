@@ -1,1 +1,3 @@
-DROP TABLE users;
+DROP TABLE IF EXISTS guild_member;
+DROP TABLE IF EXISTS guild;
+DROP TABLE IF EXISTS user_account;

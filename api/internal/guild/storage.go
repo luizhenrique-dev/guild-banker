@@ -56,7 +56,7 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 	defer tx.Rollback()
 
 	const createGuildQuery = `
-		INSERT INTO guilds (name, display_name, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
+		INSERT INTO guild (name, display_name, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
 		VALUES (:name, :display_name, :created_at, :created_by, :enabled, :updated_at, :updated_by, :disabled_at, :disabled_by)
 		RETURNING id
 	`
@@ -76,7 +76,7 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 	}
 
 	const addCreatorAsMemberQuery = `
-		INSERT INTO guilds_members (guild_id, user_id, invited_at, invited_by)
+		INSERT INTO guild_member (guild_id, user_id, invited_at, invited_by)
 		VALUES ($1, $2, NOW(), $3)
 	`
 	if _, err := tx.ExecContext(ctx, addCreatorAsMemberQuery, g.ID, creatorUserID, creatorUserID); err != nil {
@@ -93,7 +93,7 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 func (s *postgresStorage) GetByID(ctx context.Context, id int64) (*Guild, error) {
 	const query = `
 		SELECT id, name, display_name, enabled, created_at, created_by, updated_at, updated_by, disabled_at, disabled_by
-		FROM guilds
+		FROM guild
 		WHERE id = $1
 	`
 	var entity guildEntity
@@ -110,7 +110,7 @@ func (s *postgresStorage) NameExists(ctx context.Context, name string, excludeID
 	const query = `
 		SELECT EXISTS(
 			SELECT 1
-			FROM guilds
+			FROM guild
 			WHERE LOWER(name) = LOWER($1)
 			  AND ($2 = 0 OR id <> $2)
 		)
@@ -124,7 +124,7 @@ func (s *postgresStorage) NameExists(ctx context.Context, name string, excludeID
 
 func (s *postgresStorage) UpdateName(ctx context.Context, g *Guild) error {
 	const query = `
-		UPDATE guilds
+		UPDATE guild
 		SET name = :name,
 		    updated_at = :updated_at,
 		    updated_by = :updated_by
@@ -149,7 +149,7 @@ func (s *postgresStorage) UpdateName(ctx context.Context, g *Guild) error {
 
 func (s *postgresStorage) Enable(ctx context.Context, id int64, by string, now time.Time) error {
 	const query = `
-		UPDATE guilds
+		UPDATE guild
 		SET enabled = TRUE, disabled_at = NULL, disabled_by = NULL, updated_at = $3, updated_by = $2
 		WHERE id = $1
 	`
@@ -169,7 +169,7 @@ func (s *postgresStorage) Enable(ctx context.Context, id int64, by string, now t
 
 func (s *postgresStorage) Disable(ctx context.Context, id int64, by string, now time.Time) error {
 	const query = `
-		UPDATE guilds
+		UPDATE guild
         SET enabled = FALSE, disabled_at = $3, disabled_by = $2, updated_at = $3, updated_by = $2
         WHERE id = $1
 	`
@@ -190,8 +190,8 @@ func (s *postgresStorage) Disable(ctx context.Context, id int64, by string, now 
 func (s *postgresStorage) ListByMember(ctx context.Context, userID int64) ([]*Guild, error) {
 	const query = `
 		SELECT g.id, g.name, g.display_name, g.enabled, g.created_at, g.created_by, g.updated_at, g.updated_by, g.disabled_at, g.disabled_by
-		FROM guilds g
-		INNER JOIN guilds_members gm ON gm.guild_id = g.id
+		FROM guild g
+		INNER JOIN guild_member gm ON gm.guild_id = g.id
 		WHERE gm.user_id = $1
 		ORDER BY g.id ASC
 	`
@@ -211,7 +211,7 @@ func (s *postgresStorage) IsMember(ctx context.Context, guildID, userID int64) (
 	const query = `
 		SELECT EXISTS(
 			SELECT 1
-			FROM guilds_members
+			FROM guild_member
 			WHERE guild_id = $1
 			  AND user_id = $2
 		)
@@ -225,7 +225,7 @@ func (s *postgresStorage) IsMember(ctx context.Context, guildID, userID int64) (
 
 func (s *postgresStorage) InviteByEmail(ctx context.Context, guildID int64, email string, invitedByUserID int64) error {
 	const query = `
-		INSERT INTO guilds_members (guild_id, user_id, invited_at, invited_by)
+		INSERT INTO guild_member (guild_id, user_id, invited_at, invited_by)
 		SELECT $1, u.id, NOW(), $3
 		FROM users u
 		WHERE LOWER(u.email) = LOWER($2)
@@ -250,7 +250,7 @@ func (s *postgresStorage) InviteByEmail(ctx context.Context, guildID int64, emai
 
 func (s *postgresStorage) RemoveMember(ctx context.Context, guildID, userID int64) error {
 	const query = `
-		DELETE FROM guilds_members
+		DELETE FROM guild_member
 		WHERE guild_id = $1
 		  AND user_id = $2
 	`
