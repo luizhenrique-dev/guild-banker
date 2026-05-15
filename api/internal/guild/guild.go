@@ -34,15 +34,15 @@ func New(name, displayName, createdBy string) (*Guild, error) {
 	return g, nil
 }
 
-func (g *Guild) Rename(name, by string) error {
-	if name == "" {
+func (g *Guild) Rename(displayName, changedBy string) error {
+	if displayName == "" {
 		return errors.New("name is required")
 	}
-	if by == "" {
+	if changedBy == "" {
 		return errors.New("by is required")
 	}
-	g.Name = name
-	g.Update(by)
+	g.DisplayName = displayName
+	g.Update(changedBy)
 	return nil
 }
 
