@@ -35,9 +35,9 @@ func Migrate(db *sqlx.DB, dbName string) error {
 		return fmt.Errorf("migrations: failed to initialize: %w", err)
 	}
 	defer func(m *migrate.Migrate) {
-		err, _ := m.Close()
-		if err != nil {
-
+		closeErr, _ := m.Close()
+		if closeErr != nil && err == nil {
+			err = fmt.Errorf("migrations: failed to close: %w", closeErr)
 		}
 	}(m)
 
