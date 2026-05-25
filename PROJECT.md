@@ -129,7 +129,25 @@ guildbanker/
 | UC-02 | **Token Validation** | API validates JWT tokens issued by Keycloak on every request |
 | UC-03 | **User Profile Sync** | On first login, user profile is synced from Keycloak to local DB |
 
-### 7.2 Fixed Expenses Management
+### 7.2 User Profile Sync
+
+| ID    | Use Case                  | Description                                            |
+|-------|---------------------------|--------------------------------------------------------|
+| UC-06 | **Sync User Profile**     | Sync user profile from Keycloak to local DB on login   |
+| UC-07 | **Enable/Disable User**   | Enable/disable user account (soft delete)              |
+
+### 7.3 Guild Management
+
+| ID   | Use Case                 | Description                                            |
+|------|--------------------------|--------------------------------------------------------|
+| UC-1 | **Create Guild**         | Create a new guild with a unique name and display name |
+| UC-2 | **Update Guild**         | Update guild's name                                    |
+| UC-3 | **Enable/Disable Guild** | Enable/Disable a guild you are member                  |
+| UC-4 | **List Guilds**          | View all guilds the user is a member of                |
+| UC-5 | **Invite User**          | Invite a user to a guild by email                      |
+| UC-6 | **Remove User**          | Remove a user from a guild                             |
+
+### 7.4 Fixed Expenses Management
 
 | ID | Use Case | Description |
 |----|----------|-------------|
@@ -139,7 +157,7 @@ guildbanker/
 | UC-13 | **Deactivate Fixed Expense** | Mark a fixed expense as paused or cancelled |
 | UC-14 | **Generate Monthly Entries** | Auto-generate transaction entries from active fixed expenses each month |
 
-### 7.3 Transaction Management
+### 7.5 Transaction Management
 
 | ID | Use Case | Description |
 |----|----------|-------------|
@@ -149,7 +167,7 @@ guildbanker/
 | UC-23 | **Delete Transaction** | Remove a transaction |
 | UC-24 | **Bulk Categorize** | Assign a category to multiple transactions at once |
 
-### 7.4 Credit Card Statement Import
+### 7.6 Credit Card Statement Import
 
 | ID | Use Case | Description |
 |----|----------|-------------|
@@ -158,7 +176,7 @@ guildbanker/
 | UC-32 | **Review Imported Transactions** | After import, user reviews and confirms/edits transactions before saving |
 | UC-33 | **Map CSV Columns** | Allow user to map CSV columns to transaction fields (flexible parsing) |
 
-### 7.5 Categorization
+### 7.7 Categorization
 
 | ID | Use Case | Description |
 |----|----------|-------------|
@@ -170,7 +188,7 @@ guildbanker/
 | UC-45 | **AI-Powered Categorization** | Send uncategorized transactions to LLM for category suggestions |
 | UC-46 | **Accept / Reject AI Suggestion** | User reviews and confirms AI-suggested categories |
 
-### 7.6 Bank Extract Import (Future Phase)
+### 7.8 Bank Extract Import (Future Phase)
 
 | ID | Use Case | Description |
 |----|----------|-------------|
@@ -178,7 +196,7 @@ guildbanker/
 | UC-51 | **Identify PIX Transactions** | Flag and categorize PIX-specific transactions |
 | UC-52 | **Reconcile Transactions** | Match bank extract entries with existing credit card transactions |
 
-### 7.7 Dashboard & Reports (Future Phase)
+### 7.9 Dashboard & Reports (Future Phase)
 
 | ID | Use Case | Description |
 |----|----------|-------------|
