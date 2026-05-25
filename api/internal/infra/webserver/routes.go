@@ -20,6 +20,11 @@ func (s *Server) registerRoutes() {
 		api.GET("/guilds", s.guild.ListByMember)
 		api.POST("/guilds/:id/invites", s.guild.InviteUser)
 		api.DELETE("/guilds/:id/members/:userID", s.guild.RemoveUser)
+
+		api.POST("/fixed-expenses", s.fixedExpense.Create)
+		api.GET("/fixed-expenses", s.fixedExpense.ListActiveByUser)
+		api.PATCH("/fixed-expenses/:id", s.fixedExpense.Update)
+		api.PATCH("/fixed-expenses/:id/deactivate", s.fixedExpense.Deactivate)
 	}
 	_ = api
 }
