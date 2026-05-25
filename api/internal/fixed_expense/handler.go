@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/shopspring/decimal"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
@@ -17,33 +16,6 @@ type Handler struct {
 
 func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
-}
-
-type createFixedExpenseRequest struct {
-	Name     string          `json:"name"`
-	Amount   decimal.Decimal `json:"amount"`
-	DueDay   int             `json:"due_day"`
-	Category Category        `json:"category"`
-}
-
-type updateFixedExpenseRequest struct {
-	Amount   *decimal.Decimal `json:"amount"`
-	DueDay   *int             `json:"due_day"`
-	Category *Category        `json:"category"`
-	Status   *Status          `json:"status"`
-}
-
-type deactivateFixedExpenseRequest struct {
-	Status Status `json:"status"`
-}
-
-type fixedExpenseResponse struct {
-	ID       int64           `json:"id"`
-	Name     string          `json:"name"`
-	Amount   decimal.Decimal `json:"amount"`
-	DueDay   int             `json:"due_day"`
-	Category Category        `json:"category"`
-	Status   Status          `json:"status"`
 }
 
 func (h *Handler) Create(c *gin.Context) {
@@ -157,17 +129,6 @@ func (h *Handler) handleError(c *gin.Context, err error) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid fixed expense status"})
 	default:
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-	}
-}
-
-func toResponse(fixedExpense *FixedExpense) fixedExpenseResponse {
-	return fixedExpenseResponse{
-		ID:       fixedExpense.ID,
-		Name:     fixedExpense.Name,
-		Amount:   fixedExpense.Amount,
-		DueDay:   fixedExpense.DueDay,
-		Category: fixedExpense.Category,
-		Status:   fixedExpense.Status,
 	}
 }
 
