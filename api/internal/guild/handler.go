@@ -18,26 +18,6 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-type createGuildRequest struct {
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name"`
-}
-
-type updateGuildRequest struct {
-	Name string `json:"name"`
-}
-
-type inviteUserRequest struct {
-	Email string `json:"email"`
-}
-
-type guildResponse struct {
-	ID          int64  `json:"id"`
-	Name        string `json:"name"`
-	DisplayName string `json:"display_name"`
-	Enabled     bool   `json:"enabled"`
-}
-
 func (h *Handler) Create(c *gin.Context) {
 	var req createGuildRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
