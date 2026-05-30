@@ -32,7 +32,50 @@ If there is any conflict:
 
 ---
 
-## 2) Non-Negotiable Rules
+## 2) Agent Skills
+
+This repository provides specialized **skills** — scoped instruction sets that guide the agent through specific tasks, workflows, or domains. Skills are located in:
+
+- `.claude/skills/` — skills consumed by Claude-based agents
+- `.junie/skills/` — skills consumed by Junie (JetBrains AI agent)
+
+### Purpose
+
+Skills extend the base rules defined in this file with **task-specific context**. They typically cover:
+
+- recurring workflows (e.g., adding a new feature, creating a migration, wiring a new endpoint)
+- domain-specific guidance (e.g., transaction categorization, statement import)
+- integration playbooks (e.g., Keycloak setup, PostgreSQL operations)
+- review and validation checklists
+
+### Rules for Using Skills
+
+The agent MUST:
+
+- check both `.claude/skills/` and `.junie/skills/` before starting a task to identify any applicable skill
+- prefer the skill matching the active agent runtime (Claude → `.claude/skills`, Junie → `.junie/skills`)
+- treat skills as **complementary** to the mandatory reading — never as a replacement
+- follow the skill instructions exactly within their declared scope
+
+The agent MUST NOT:
+
+- duplicate skill content into generated code or comments
+- override architectural or naming rules using a skill (skills are subordinate to sections 1, 4 and 5)
+- invent or assume the existence of a skill that is not present on disk
+
+### Precedence
+
+When instructions conflict, the resolution order is:
+
+1. `architecture.md`
+2. `coding.md`
+3. `naming.md`
+4. Applicable skill in `.claude/skills` or `.junie/skills`
+5. General rules in this `AGENTS.md`
+
+---
+
+## 3) Non-Negotiable Rules
 
 The agent MUST:
 
@@ -53,7 +96,7 @@ The agent MUST NOT:
 
 ---
 
-## 3) Code Generation Rules
+## 4) Code Generation Rules
 
 When generating code, the agent MUST:
 
@@ -125,7 +168,7 @@ When your changes create orphans:
 
 ---
 
-## 4) Naming Enforcement
+## 5) Naming Enforcement
 
 All identifiers MUST follow:
 
@@ -141,7 +184,7 @@ Critical rules:
 
 ---
 
-## 5) Architecture Enforcement
+## 6) Architecture Enforcement
 
 All changes MUST comply with:
 
@@ -154,7 +197,7 @@ Critical checks:
 
 ---
 
-## 6) When Modifying Existing Code
+## 7) When Modifying Existing Code
 
 The agent MUST:
 
@@ -165,7 +208,7 @@ The agent MUST:
 
 ---
 
-## 7) Pull Request Expectations
+## 8) Pull Request Expectations
 
 Any generated change MUST:
 
@@ -177,7 +220,7 @@ Any generated change MUST:
 
 ---
 
-## 8) If Uncertain
+## 9) If Uncertain
 
 If any rule is unclear, the agent MUST:
 
@@ -188,7 +231,7 @@ If any rule is unclear, the agent MUST:
 
 ---
 
-## 9) Summary
+## 10) Summary
 
 This repository enforces:
 
