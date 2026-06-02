@@ -1,3 +1,9 @@
+DROP TABLE IF EXISTS transaction;
+DROP TABLE IF EXISTS transaction_category;
+DROP TYPE IF EXISTS transaction_visibility;
+DROP TYPE IF EXISTS transaction_source;
+DROP TYPE IF EXISTS transaction_status;
+DROP TYPE IF EXISTS transaction_type;
 DROP TABLE IF EXISTS fixed_expense;
 DROP TABLE IF EXISTS guild_member;
 DROP TABLE IF EXISTS guild;
