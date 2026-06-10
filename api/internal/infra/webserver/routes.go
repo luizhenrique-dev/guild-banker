@@ -25,6 +25,13 @@ func (s *Server) registerRoutes() {
 		api.GET("/fixed-expenses", s.fixedExpense.ListActiveByUser)
 		api.PATCH("/fixed-expenses/:id", s.fixedExpense.Update)
 		api.PATCH("/fixed-expenses/:id/deactivate", s.fixedExpense.Deactivate)
+
+		api.POST("/guilds/:guildID/transactions", s.transaction.Create)
+		api.GET("/guilds/:guildID/transactions", s.transaction.List)
+		api.PATCH("/guilds/:guildID/transactions/:id", s.transaction.Update)
+		api.DELETE("/guilds/:guildID/transactions/:id", s.transaction.Delete)
+		api.POST("/guilds/:guildID/transactions:bulk-categorize", s.transaction.BulkCategorize)
+		api.PATCH("/guilds/:guildID/transactions/:id/visibility", s.transaction.SetVisibility)
 	}
 	_ = api
 }
