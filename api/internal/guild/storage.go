@@ -53,7 +53,7 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 	if err != nil {
 		return fmt.Errorf("begin guild create tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 
 	const createGuildQuery = `
 		INSERT INTO guild (name, display_name, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
@@ -67,7 +67,7 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 		}
 		return fmt.Errorf("create guild: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		if err := rows.Scan(&g.ID); err != nil {

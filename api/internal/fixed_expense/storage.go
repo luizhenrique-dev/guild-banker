@@ -58,7 +58,7 @@ func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense
 	if err != nil {
 		return fmt.Errorf("create fixed expense: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		if err := rows.Scan(&fixedExpense.ID); err != nil {

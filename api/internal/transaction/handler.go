@@ -112,13 +112,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	transaction, err := h.service.Update(c.Request.Context(), guildID, transactionID, UpdateInput{
-		Type:        req.Type,
-		Description: req.Description,
-		Amount:      req.Amount,
-		Category:    req.Category,
-		OccurredAt:  req.OccurredAt,
-	}, actor)
+	transaction, err := h.service.Update(c.Request.Context(), guildID, transactionID, UpdateInput(req), actor)
 	if err != nil {
 		h.handleError(c, err)
 		return

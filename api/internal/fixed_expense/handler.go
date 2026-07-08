@@ -80,12 +80,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	fixedExpense, err := h.service.Update(c.Request.Context(), id, UpdateInput{
-		Amount:   req.Amount,
-		DueDay:   req.DueDay,
-		Category: req.Category,
-		Status:   req.Status,
-	}, actor)
+	fixedExpense, err := h.service.Update(c.Request.Context(), id, UpdateInput(req), actor)
 	if err != nil {
 		h.handleError(c, err)
 		return

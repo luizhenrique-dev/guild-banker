@@ -173,7 +173,7 @@ func (t *Transaction) ApplyUpdate(
 		return err
 	}
 
-	t.Entry.Update(updatedBy)
+	t.Update(updatedBy)
 
 	return nil
 }
@@ -207,7 +207,7 @@ func (t *Transaction) Cancel(updatedBy string) error {
 	}
 
 	t.Status = StatusCancelled
-	t.Entry.Update(updatedBy)
+	t.Update(updatedBy)
 
 	return nil
 }
@@ -221,7 +221,7 @@ func (t *Transaction) SetVisibility(visibility Visibility, updatedBy string) err
 	}
 
 	t.Visibility = visibility
-	t.Entry.Update(updatedBy)
+	t.Update(updatedBy)
 
 	return nil
 }

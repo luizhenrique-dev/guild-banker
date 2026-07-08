@@ -54,7 +54,7 @@ func (s *postgresStorage) Create(ctx context.Context, u *User) error {
 	if err != nil {
 		return fmt.Errorf("create user: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		if err := rows.Scan(&u.ID); err != nil {

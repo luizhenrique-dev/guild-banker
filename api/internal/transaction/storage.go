@@ -85,7 +85,7 @@ func (s *postgresStorage) Create(ctx context.Context, transaction *Transaction) 
 	if err != nil {
 		return fmt.Errorf("create transaction: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	if rows.Next() {
 		if err := rows.Scan(&transaction.ID); err != nil {
@@ -111,42 +111,42 @@ func (s *postgresStorage) List(ctx context.Context, filter ListFilter) ([]*Trans
 	argPos := 4
 
 	if filter.Visibility != nil {
-		query.WriteString(fmt.Sprintf(" AND visibility = $%d", argPos))
+		fmt.Fprintf(&query, " AND visibility = $%d", argPos)
 		args = append(args, *filter.Visibility)
 		argPos++
 	}
 	if filter.DateFrom != nil {
-		query.WriteString(fmt.Sprintf(" AND occurred_at >= $%d", argPos))
+		fmt.Fprintf(&query, " AND occurred_at >= $%d", argPos)
 		args = append(args, *filter.DateFrom)
 		argPos++
 	}
 	if filter.DateTo != nil {
-		query.WriteString(fmt.Sprintf(" AND occurred_at <= $%d", argPos))
+		fmt.Fprintf(&query, " AND occurred_at <= $%d", argPos)
 		args = append(args, *filter.DateTo)
 		argPos++
 	}
 	if filter.Category != nil {
-		query.WriteString(fmt.Sprintf(" AND category = $%d", argPos))
+		fmt.Fprintf(&query, " AND category = $%d", argPos)
 		args = append(args, *filter.Category)
 		argPos++
 	}
 	if filter.Type != nil {
-		query.WriteString(fmt.Sprintf(" AND type = $%d", argPos))
+		fmt.Fprintf(&query, " AND type = $%d", argPos)
 		args = append(args, *filter.Type)
 		argPos++
 	}
 	if filter.Source != nil {
-		query.WriteString(fmt.Sprintf(" AND source = $%d", argPos))
+		fmt.Fprintf(&query, " AND source = $%d", argPos)
 		args = append(args, *filter.Source)
 		argPos++
 	}
 	if filter.CursorOccurredAt != nil && filter.CursorID != nil {
-		query.WriteString(fmt.Sprintf(" AND (occurred_at, id) < ($%d, $%d)", argPos, argPos+1))
+		fmt.Fprintf(&query, " AND (occurred_at, id) < ($%d, $%d)", argPos, argPos+1)
 		args = append(args, *filter.CursorOccurredAt, *filter.CursorID)
 		argPos += 2
 	}
 
-	query.WriteString(fmt.Sprintf(" ORDER BY occurred_at DESC, id DESC LIMIT $%d", argPos))
+	fmt.Fprintf(&query, " ORDER BY occurred_at DESC, id DESC LIMIT $%d", argPos)
 	args = append(args, filter.Limit)
 
 	entities := make([]transactionEntity, 0)
