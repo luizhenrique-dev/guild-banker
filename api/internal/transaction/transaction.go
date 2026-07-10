@@ -19,24 +19,23 @@ const (
 type Category string
 
 const (
+	CategoryGrocery        Category = "GROCERY"
 	CategoryHousing        Category = "HOUSING"
+	CategoryUtilities      Category = "UTILITIES"
 	CategorySubscriptions  Category = "SUBSCRIPTIONS"
 	CategoryInsurance      Category = "INSURANCE"
 	CategoryEducation      Category = "EDUCATION"
 	CategoryTransportation Category = "TRANSPORTATION"
 	CategoryHealth         Category = "HEALTH"
-	CategoryPersonal       Category = "PERSONAL"
+	CategoryPersonalCare   Category = "PERSONAL_CARE"
 	CategoryTaxes          Category = "TAXES"
 	CategoryOther          Category = "OTHER"
 	CategoryFoodAndDining  Category = "FOOD_AND_DINING"
 	CategoryEntertainment  Category = "ENTERTAINMENT"
 	CategoryShopping       Category = "SHOPPING"
 	CategoryPets           Category = "PETS"
-	CategoryGames          Category = "GAMES"
 	CategoryTravel         Category = "TRAVEL"
 	CategoryInvestments    Category = "INVESTMENTS"
-	CategoryDebtRepayment  Category = "DEBT_REPAYMENT"
-	CategoryDonations      Category = "DONATIONS"
 )
 
 type Status string
@@ -233,9 +232,9 @@ func (t Type) IsValid() bool {
 func (c Category) IsValid() bool {
 	switch c {
 	case CategoryHousing, CategorySubscriptions, CategoryInsurance, CategoryEducation, CategoryTransportation,
-		CategoryHealth, CategoryPersonal, CategoryTaxes, CategoryOther, CategoryFoodAndDining,
-		CategoryEntertainment, CategoryShopping, CategoryPets, CategoryGames, CategoryTravel,
-		CategoryInvestments, CategoryDebtRepayment, CategoryDonations:
+		CategoryHealth, CategoryPersonalCare, CategoryTaxes, CategoryOther, CategoryFoodAndDining,
+		CategoryEntertainment, CategoryShopping, CategoryPets, CategoryTravel, CategoryGrocery,
+		CategoryInvestments, CategoryUtilities:
 		return true
 	default:
 		return false
