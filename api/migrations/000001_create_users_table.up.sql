@@ -69,24 +69,23 @@ CREATE TABLE transaction_category
 );
 
 INSERT INTO transaction_category (name)
-VALUES ('HOUSING'),
+VALUES ('GROCERY'),
+	   ('HOUSING'),
+	   ('UTILITIES'),
 	   ('SUBSCRIPTIONS'),
 	   ('INSURANCE'),
 	   ('EDUCATION'),
 	   ('TRANSPORTATION'),
 	   ('HEALTH'),
-	   ('PERSONAL'),
+	   ('PERSONAL_CARE'),
 	   ('TAXES'),
 	   ('OTHER'),
 	   ('FOOD_AND_DINING'),
 	   ('ENTERTAINMENT'),
 	   ('SHOPPING'),
 	   ('PETS'),
-	   ('GAMES'),
 	   ('TRAVEL'),
-	   ('INVESTMENTS'),
-	   ('DEBT_REPAYMENT'),
-	   ('DONATIONS');
+	   ('INVESTMENTS');
 
 CREATE TABLE transaction
 (
@@ -115,3 +114,54 @@ CREATE INDEX idx_transactions_guild_type ON transaction (guild_id, type);
 CREATE INDEX idx_transactions_guild_status ON transaction (guild_id, status);
 CREATE INDEX idx_transactions_user_occurred ON transaction (user_account_id, occurred_at DESC);
 CREATE INDEX idx_transactions_guild_visibility_user ON transaction (guild_id, visibility, user_account_id);
+
+CREATE TYPE import_batch_status AS ENUM ('PENDING_REVIEW', 'COMPLETED', 'CANCELLED');
+CREATE TYPE import_item_status AS ENUM ('READY', 'DUPLICATE', 'DISCARDED');
+
+CREATE TABLE import_batch
+(
+	id              BIGSERIAL PRIMARY KEY,
+	guild_id        BIGINT              NOT NULL REFERENCES guild (id),
+	user_account_id BIGINT              NOT NULL REFERENCES user_account (id),
+	file_name       TEXT                NOT NULL,
+	source_bank     TEXT                NOT NULL,
+	status          import_batch_status NOT NULL DEFAULT 'PENDING_REVIEW',
+	created_at      TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+	created_by      TEXT                NOT NULL,
+	updated_at      TIMESTAMPTZ,
+	updated_by      TEXT
+);
+
+CREATE INDEX idx_import_batch_guild_user ON import_batch (guild_id, user_account_id);
+
+CREATE TABLE import_item
+(
+	id                  BIGSERIAL PRIMARY KEY,
+	import_batch_id     BIGINT           NOT NULL REFERENCES import_batch (id) ON DELETE CASCADE,
+	user_account_id     BIGINT           NOT NULL REFERENCES user_account (id),
+	occurred_at         TIMESTAMPTZ      NOT NULL,
+	description         TEXT             NOT NULL,
+	amount              NUMERIC(19, 2)   NOT NULL,
+	type                transaction_type NOT NULL,
+	category            TEXT             NOT NULL REFERENCES transaction_category (name),
+	bank_category       TEXT             NOT NULL,
+	card_last4          TEXT             NOT NULL,
+	installment_current INTEGER,
+	installment_total   INTEGER,
+	status              import_item_status NOT NULL DEFAULT 'READY',
+	transaction_id      BIGINT REFERENCES transaction (id),
+	created_at          TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+	created_by          TEXT             NOT NULL,
+	updated_at          TIMESTAMPTZ,
+	updated_by          TEXT,
+	CONSTRAINT chk_import_item_amount_positive CHECK (amount > 0),
+	CONSTRAINT chk_import_item_card_last4 CHECK (char_length(card_last4) = 4),
+	CONSTRAINT chk_import_item_installment CHECK (
+		(installment_current IS NULL AND installment_total IS NULL)
+			OR (installment_current > 0 AND installment_total > 0 AND installment_current <= installment_total)
+		)
+);
+
+CREATE INDEX idx_import_item_import_batch ON import_item (import_batch_id);
+CREATE INDEX idx_import_item_dedup_support ON import_item (user_account_id, occurred_at, amount, card_last4);
+

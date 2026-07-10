@@ -8,3 +8,7 @@ DROP TABLE IF EXISTS fixed_expense;
 DROP TABLE IF EXISTS guild_member;
 DROP TABLE IF EXISTS guild;
 DROP TABLE IF EXISTS user_account;
+DROP TABLE IF EXISTS import_item;
+DROP TABLE IF EXISTS import_batch;
+DROP TYPE IF EXISTS import_item_status;
+DROP TYPE IF EXISTS import_batch_status;
