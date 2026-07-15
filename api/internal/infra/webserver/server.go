@@ -14,6 +14,7 @@ import (
 	"github.com/luizhenrique-dev/guild-banker/api/config"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/fixed_expense"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/guild"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/importer"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/transaction"
 )
 
@@ -24,6 +25,7 @@ type Server struct {
 	guild        *guild.Handler
 	fixedExpense *fixedexpense.Handler
 	transaction  *transaction.Handler
+	importer     *importer.Handler
 }
 
 func NewServer(cfg *config.Config, db *sqlx.DB) *Server {
@@ -47,6 +49,9 @@ func NewServer(cfg *config.Config, db *sqlx.DB) *Server {
 	transactionStorage := transaction.NewStorage(db)
 	transactionService := transaction.NewService(transactionStorage)
 	transactionHandler := transaction.NewHandler(transactionService)
+	importerStorage := importer.NewStorage(db)
+	importerService := importer.NewService(importerStorage, importer.NewC6CSVParser())
+	importerHandler := importer.NewHandler(importerService)
 
 	server := &Server{
 		router:       router,
@@ -54,6 +59,7 @@ func NewServer(cfg *config.Config, db *sqlx.DB) *Server {
 		guild:        guildHandler,
 		fixedExpense: fixedExpenseHandler,
 		transaction:  transactionHandler,
+		importer:     importerHandler,
 	}
 
 	server.httpServer = &http.Server{

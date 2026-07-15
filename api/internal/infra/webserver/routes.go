@@ -32,6 +32,12 @@ func (s *Server) registerRoutes() {
 		api.DELETE("/guilds/:guildID/transactions/:id", s.transaction.Delete)
 		api.POST("/guilds/:guildID/transactions:bulk-categorize", s.transaction.BulkCategorize)
 		api.PATCH("/guilds/:guildID/transactions/:id/visibility", s.transaction.SetVisibility)
+
+		api.POST("/guilds/:guildID/imports", s.importer.Upload)
+		api.GET("/guilds/:guildID/imports/:importID", s.importer.GetByID)
+		api.PATCH("/guilds/:guildID/imports/:importID/items/:itemID", s.importer.UpdateItem)
+		api.DELETE("/guilds/:guildID/imports/:importID/items/:itemID", s.importer.DeleteItem)
+		api.POST("/guilds/:guildID/imports/:importID:confirm", s.importer.Confirm)
 	}
 	_ = api
 }
