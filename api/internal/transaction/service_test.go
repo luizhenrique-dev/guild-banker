@@ -57,7 +57,7 @@ func TestService_Create(t *testing.T) {
 		Type:        TypeExpense,
 		Description: "Mercado",
 		Amount:      decimal.NewFromInt(100),
-		Category:    CategoryPersonal,
+		Category:    CategoryPersonalCare,
 		OccurredAt:  time.Now(),
 		GuildID:     1,
 	}, audit.Actor{UserID: 10, Email: "test@example.com"})
