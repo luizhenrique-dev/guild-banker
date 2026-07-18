@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .tracking-display{letter-spacing:-0.8px;}
+</style>
+</head>
+<body class="w-[1440px] bg-[#f7f7f7] text-[#0a0b0d]">
+  <header data-design-id="topbar-a1b2c3" class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#dee1e6] bg-white px-6">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-white"><i class="fa-solid fa-shield-halved text-xs"></i></span><span class="text-[17px] font-semibold">GuildBanker</span></div>
+      <button type="button" data-design-id="guild-switcher-btn-d4e5f6" class="flex items-center gap-2 rounded-[100px] bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold"><i class="fa-solid fa-users text-[#0052ff]"></i> Família Silva <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></button>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1 rounded-[100px] bg-[#f7f7f7] p-1"><button type="button" data-design-id="lang-pt-g7h8i9" class="rounded-[100px] bg-white px-3 py-1 text-[12px] font-semibold shadow-sm">PT</button><button type="button" data-design-id="lang-en-j1k2l3" class="rounded-[100px] px-3 py-1 text-[12px] font-medium text-[#7c828a]">EN</button></div>
+      <span class="h-6 w-px bg-[#dee1e6]"></span>
+      <div class="flex items-center gap-2"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">AS</span><div class="leading-tight"><div class="text-[13px] font-semibold">Ana Silva</div><div class="text-[11px] text-[#7c828a]">ana@familia.com</div></div></div>
+      <a href="login.html" data-design-id="logout-link-m4n5o6" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] hover:bg-[#f7f7f7]" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+    </div>
+  </header>
+
+  <div class="flex">
+    <aside data-design-id="sidebar-p7q8r9" class="sticky top-16 h-[calc(900px-64px)] w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
+      <nav data-design-id="sidebar-nav-s1t2u3" class="space-y-1">
+        <a href="dashboard.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-house w-5 text-center"></i> Início</a>
+        <a href="transactions.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i> Transações</a>
+        <a href="fixed-expenses.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-repeat w-5 text-center"></i> Despesas fixas</a>
+        <a href="import-upload.html" class="flex items-center gap-3 rounded-[12px] bg-[#eef0f3] px-3 py-2.5 text-[14px] font-semibold text-[#0a0b0d]"><i class="fa-solid fa-file-arrow-up w-5 text-center text-[#0052ff]"></i> Importar</a>
+        <a href="guild-members.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-user-group w-5 text-center"></i> Guild / Membros</a>
+      </nav>
+    </aside>
+
+    <main data-design-id="imp-main-v4w5x6" class="flex-1 px-8 py-8 pb-28">
+      <div class="mb-8 flex items-center gap-2 text-[13px]">
+        <span class="flex items-center gap-2 text-[#05b169]"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#05b169] text-[12px] text-white"><i class="fa-solid fa-check text-[10px]"></i></span> Upload</span>
+        <span class="h-px w-10 bg-[#05b169]"></span>
+        <span class="flex items-center gap-2 text-[#05b169]"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#05b169] text-[12px] text-white"><i class="fa-solid fa-check text-[10px]"></i></span> Processando</span>
+        <span class="h-px w-10 bg-[#0052ff]"></span>
+        <span class="flex items-center gap-2 font-semibold text-[#0052ff]"><span class="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[#0052ff] text-[12px] text-white">3</span> Revisão</span>
+      </div>
+
+      <h1 class="tracking-display text-[28px] font-normal">Revisar itens importados</h1>
+      <p class="mt-1 text-[14px] text-[#5b616e]">12 transações encontradas · Edite ou remova antes de confirmar</p>
+
+      <section data-design-id="imp-review-table-b1c2d3" class="mt-6 overflow-hidden rounded-[24px] border border-[#dee1e6] bg-white">
+        <table class="w-full text-left text-[14px]">
+          <thead class="border-b border-[#dee1e6] bg-[#f7f7f7] text-[12px] uppercase tracking-wide text-[#7c828a]">
+            <tr>
+              <th class="w-10 py-3 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></th>
+              <th class="py-3 font-semibold">Data</th>
+              <th class="py-3 font-semibold">Descrição</th>
+              <th class="py-3 text-right font-semibold">Valor</th>
+              <th class="py-3 pl-6 font-semibold">Categoria</th>
+              <th class="py-3 font-semibold">Visibilidade</th>
+              <th class="py-3 pr-5 text-right font-semibold">Remover</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#eef0f3]">
+            <tr>
+              <td class="py-3 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-3 text-[13px] text-[#5b616e]">02/07</td>
+              <td class="py-3 font-medium">iFood *Restaurante</td>
+              <td class="mono py-3 text-right font-medium text-[#cf202f]">- R$ 68,90</td>
+              <td class="py-3 pl-6"><div class="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[#dee1e6] bg-white px-2.5 text-[13px] font-medium">Alimentação <i class="fa-solid fa-chevron-down text-[9px] text-[#7c828a]"></i></div></td>
+              <td class="py-3"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]"><i class="fa-solid fa-lock text-[10px]"></i> Só eu</span></td>
+              <td class="py-3 pr-5 text-right"><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-3 text-[13px] text-[#5b616e]">04/07</td>
+              <td class="py-3 font-medium">Posto Shell Combustível</td>
+              <td class="mono py-3 text-right font-medium text-[#cf202f]">- R$ 210,00</td>
+              <td class="py-3 pl-6"><div class="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[#dee1e6] bg-white px-2.5 text-[13px] font-medium">Transporte <i class="fa-solid fa-chevron-down text-[9px] text-[#7c828a]"></i></div></td>
+              <td class="py-3"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#0052ff]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0052ff]"><i class="fa-solid fa-users text-[10px]"></i> Guild</span></td>
+              <td class="py-3 pr-5 text-right"><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-3 text-[13px] text-[#5b616e]">07/07</td>
+              <td class="py-3 font-medium">Drogaria São Paulo</td>
+              <td class="mono py-3 text-right font-medium text-[#cf202f]">- R$ 54,30</td>
+              <td class="py-3 pl-6"><div class="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[#dee1e6] bg-white px-2.5 text-[13px] font-medium">Saúde <i class="fa-solid fa-chevron-down text-[9px] text-[#7c828a]"></i></div></td>
+              <td class="py-3"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]"><i class="fa-solid fa-lock text-[10px]"></i> Só eu</span></td>
+              <td class="py-3 pr-5 text-right"><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-3 text-[13px] text-[#5b616e]">09/07</td>
+              <td class="py-3 font-medium">Amazon Compras</td>
+              <td class="mono py-3 text-right font-medium text-[#cf202f]">- R$ 139,90</td>
+              <td class="py-3 pl-6"><div class="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[#dee1e6] bg-white px-2.5 text-[13px] font-medium">Compras <i class="fa-solid fa-chevron-down text-[9px] text-[#7c828a]"></i></div></td>
+              <td class="py-3"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#0052ff]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0052ff]"><i class="fa-solid fa-users text-[10px]"></i> Guild</span></td>
+              <td class="py-3 pr-5 text-right"><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-3 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-3 text-[13px] text-[#5b616e]">13/07</td>
+              <td class="py-3 font-medium">Spotify Premium</td>
+              <td class="mono py-3 text-right font-medium text-[#cf202f]">- R$ 21,90</td>
+              <td class="py-3 pl-6"><div class="inline-flex h-8 items-center gap-2 rounded-[8px] border border-[#dee1e6] bg-white px-2.5 text-[13px] font-medium">Assinaturas <i class="fa-solid fa-chevron-down text-[9px] text-[#7c828a]"></i></div></td>
+              <td class="py-3"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]"><i class="fa-solid fa-lock text-[10px]"></i> Só eu</span></td>
+              <td class="py-3 pr-5 text-right"><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+
+  <!-- fixed footer bar -->
+  <footer data-design-id="imp-footer-e4f5g6" class="fixed bottom-0 left-60 right-0 flex items-center justify-between border-t border-[#dee1e6] bg-white px-8 py-4">
+    <a href="import-upload.html" class="rounded-[100px] border border-[#cf202f] px-6 py-2.5 text-[14px] font-semibold text-[#cf202f] hover:bg-[#cf202f]/5">Cancelar importação</a>
+    <a href="transactions.html" data-design-id="imp-confirm-link-h7i8j9"><button type="button" data-design-id="imp-confirm-btn-k1l2m3" class="rounded-[100px] bg-[#0052ff] px-8 py-2.5 text-[14px] font-semibold text-white hover:bg-[#003ecc]"><i class="fa-solid fa-check mr-1.5"></i> Confirmar 12 transações</button></a>
+  </footer>
+</body>
+</html>

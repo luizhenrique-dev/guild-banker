@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .tracking-display{letter-spacing:-0.8px;}
+</style>
+</head>
+<body class="w-[1440px] bg-[#f7f7f7] text-[#0a0b0d]">
+  <header data-design-id="topbar-a1b2c3" class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#dee1e6] bg-white px-6">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-white"><i class="fa-solid fa-shield-halved text-xs"></i></span><span class="text-[17px] font-semibold">GuildBanker</span></div>
+      <button type="button" data-design-id="guild-switcher-btn-d4e5f6" class="flex items-center gap-2 rounded-[100px] bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold"><i class="fa-solid fa-users text-[#0052ff]"></i> Família Silva <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></button>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1 rounded-[100px] bg-[#f7f7f7] p-1"><button type="button" data-design-id="lang-pt-g7h8i9" class="rounded-[100px] bg-white px-3 py-1 text-[12px] font-semibold shadow-sm">PT</button><button type="button" data-design-id="lang-en-j1k2l3" class="rounded-[100px] px-3 py-1 text-[12px] font-medium text-[#7c828a]">EN</button></div>
+      <span class="h-6 w-px bg-[#dee1e6]"></span>
+      <div class="flex items-center gap-2"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">AS</span><div class="leading-tight"><div class="text-[13px] font-semibold">Ana Silva</div><div class="text-[11px] text-[#7c828a]">ana@familia.com</div></div></div>
+      <a href="login.html" data-design-id="logout-link-m4n5o6" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] hover:bg-[#f7f7f7]" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+    </div>
+  </header>
+
+  <div class="flex">
+    <aside data-design-id="sidebar-p7q8r9" class="sticky top-16 h-[calc(900px-64px)] w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
+      <nav data-design-id="sidebar-nav-s1t2u3" class="space-y-1">
+        <a href="dashboard.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-house w-5 text-center"></i> Início</a>
+        <a href="transactions.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i> Transações</a>
+        <a href="fixed-expenses.html" class="flex items-center gap-3 rounded-[12px] bg-[#eef0f3] px-3 py-2.5 text-[14px] font-semibold text-[#0a0b0d]"><i class="fa-solid fa-repeat w-5 text-center text-[#0052ff]"></i> Despesas fixas</a>
+        <a href="import-upload.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-file-arrow-up w-5 text-center"></i> Importar</a>
+        <a href="guild-members.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-user-group w-5 text-center"></i> Guild / Membros</a>
+      </nav>
+    </aside>
+
+    <main data-design-id="fx-main-v4w5x6" class="flex-1 px-8 py-8">
+      <div class="mb-2 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <h1 class="tracking-display text-[32px] font-normal">Minhas despesas fixas</h1>
+          <span class="rounded-[100px] bg-[#eef0f3] px-3 py-1 text-[12px] font-semibold text-[#5b616e]">pessoais</span>
+        </div>
+        <a href="modal-fixed-expense.html" data-design-id="fx-new-btn-y7z8a9" class="flex items-center gap-2 rounded-[100px] bg-[#0052ff] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[#003ecc]"><i class="fa-solid fa-plus"></i> Nova despesa fixa</a>
+      </div>
+      <div class="mb-6 flex items-center gap-2 rounded-[12px] bg-[#eef0f3] px-4 py-3 text-[13px] text-[#5b616e]"><i class="fa-solid fa-circle-info text-[#7c828a]"></i> Despesas fixas são pessoais — não aparecem no total da guild.</div>
+
+      <section data-design-id="fx-table-b1c2d3" class="overflow-hidden rounded-[24px] border border-[#dee1e6] bg-white">
+        <table class="w-full text-left text-[14px]">
+          <thead class="border-b border-[#dee1e6] bg-[#f7f7f7] text-[12px] uppercase tracking-wide text-[#7c828a]">
+            <tr>
+              <th class="py-3 pl-6 font-semibold">Nome</th>
+              <th class="py-3 font-semibold">Categoria</th>
+              <th class="py-3 text-right font-semibold">Valor</th>
+              <th class="py-3 pl-6 font-semibold">Vencimento</th>
+              <th class="py-3 font-semibold">Status</th>
+              <th class="py-3 pr-6 text-right font-semibold">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#eef0f3]">
+            <tr>
+              <td class="py-4 pl-6"><div class="flex items-center gap-3"><span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#eef0f3]"><i class="fa-solid fa-house text-[#5b616e]"></i></span><span class="font-semibold">Aluguel</span></div></td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Moradia</span></td>
+              <td class="mono py-4 text-right font-medium">R$ 2.500,00</td>
+              <td class="mono py-4 pl-6 text-[#5b616e]">dia 10</td>
+              <td class="py-4"><span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#05b169]"><span class="h-2 w-2 rounded-full bg-[#05b169]"></span> ACTIVE</span></td>
+              <td class="py-4 pr-6 text-right"><a href="modal-fixed-expense.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]" title="Desativar"><i class="fa-solid fa-power-off"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-4 pl-6"><div class="flex items-center gap-3"><span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#eef0f3]"><i class="fa-solid fa-tv text-[#5b616e]"></i></span><span class="font-semibold">Netflix</span></div></td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Assinaturas</span></td>
+              <td class="mono py-4 text-right font-medium">R$ 55,90</td>
+              <td class="mono py-4 pl-6 text-[#5b616e]">dia 15</td>
+              <td class="py-4"><span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#05b169]"><span class="h-2 w-2 rounded-full bg-[#05b169]"></span> ACTIVE</span></td>
+              <td class="py-4 pr-6 text-right"><a href="modal-fixed-expense.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]" title="Desativar"><i class="fa-solid fa-power-off"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-4 pl-6"><div class="flex items-center gap-3"><span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#eef0f3]"><i class="fa-solid fa-heart-pulse text-[#5b616e]"></i></span><span class="font-semibold">Plano de saúde</span></div></td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Seguros</span></td>
+              <td class="mono py-4 text-right font-medium">R$ 320,00</td>
+              <td class="mono py-4 pl-6 text-[#5b616e]">dia 5</td>
+              <td class="py-4"><span class="inline-flex items-center gap-1.5 text-[12px] font-semibold text-[#05b169]"><span class="h-2 w-2 rounded-full bg-[#05b169]"></span> ACTIVE</span></td>
+              <td class="py-4 pr-6 text-right"><a href="modal-fixed-expense.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]" title="Desativar"><i class="fa-solid fa-power-off"></i></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

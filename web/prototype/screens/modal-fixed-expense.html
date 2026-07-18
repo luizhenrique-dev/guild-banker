@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body class="w-[1440px] bg-[#0a0b0d]/50 text-[#0a0b0d]">
+  <div class="flex min-h-[900px] items-center justify-center px-6 py-12">
+    <section data-design-id="fx-modal-a1b2c3" class="w-[520px] rounded-[24px] bg-white p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-[24px] font-semibold">Nova despesa fixa</h1>
+        <a href="fixed-expenses.html" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] hover:bg-[#f7f7f7]"><i class="fa-solid fa-xmark text-lg"></i></a>
+      </div>
+
+      <form action="#" data-design-id="fx-form-d4e5f6" class="space-y-5">
+        <div>
+          <label class="mb-1.5 block text-[13px] font-semibold">Nome</label>
+          <input type="text" placeholder="Ex: Aluguel" class="h-12 w-full rounded-[12px] border border-[#dee1e6] px-4 text-[15px] outline-none focus:border-[#0052ff] focus:ring-2 focus:ring-[#0052ff]/20">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold">Valor</label>
+            <div class="flex h-12 items-center rounded-[12px] border border-[#dee1e6] px-4 focus-within:border-[#0052ff] focus-within:ring-2 focus-within:ring-[#0052ff]/20">
+              <span class="mono mr-2 text-[15px] text-[#7c828a]">R$</span>
+              <input type="text" placeholder="0,00" class="mono w-full bg-transparent text-[15px] outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold">Dia do vencimento</label>
+            <select class="h-12 w-full rounded-[12px] border border-[#dee1e6] bg-white px-4 text-[15px] outline-none focus:border-[#0052ff] focus:ring-2 focus:ring-[#0052ff]/20">
+              <option>Dia 1</option><option>Dia 5</option><option selected>Dia 10</option><option>Dia 15</option><option>Dia 20</option><option>Dia 25</option><option>Dia 28</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-[13px] font-semibold">Categoria</label>
+          <select class="h-12 w-full rounded-[12px] border border-[#dee1e6] bg-white px-4 text-[15px] outline-none focus:border-[#0052ff] focus:ring-2 focus:ring-[#0052ff]/20">
+            <option>Mercado / supermercado</option>
+            <option selected>Moradia</option>
+            <option>Contas (água, luz, gás)</option>
+            <option>Assinaturas</option>
+            <option>Seguros</option>
+            <option>Educação</option>
+            <option>Transporte</option>
+            <option>Saúde</option>
+            <option>Cuidados pessoais</option>
+            <option>Impostos</option>
+            <option>Outros</option>
+            <option>Alimentação e restaurantes</option>
+            <option>Lazer</option>
+            <option>Compras</option>
+            <option>Pets</option>
+            <option>Viagens</option>
+            <option>Investimentos</option>
+          </select>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <a href="fixed-expenses.html" data-design-id="fx-cancel-g7h8i9" class="rounded-[100px] bg-[#eef0f3] px-6 py-3 text-[14px] font-semibold text-[#0a0b0d] hover:bg-[#dee1e6]">Cancelar</a>
+          <a href="fixed-expenses.html" data-design-id="fx-save-link-j1k2l3"><button type="button" data-design-id="fx-save-btn-m4n5o6" class="rounded-[100px] bg-[#0052ff] px-8 py-3 text-[14px] font-semibold text-white hover:bg-[#003ecc]">Salvar</button></a>
+        </div>
+      </form>
+    </section>
+  </div>
+</body>
+</html>

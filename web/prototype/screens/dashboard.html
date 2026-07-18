@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .tracking-display{letter-spacing:-0.8px;}
+</style>
+</head>
+<body class="w-[1440px] bg-[#f7f7f7] text-[#0a0b0d]">
+  <!-- Topbar -->
+  <header data-design-id="topbar-a1b2c3" class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#dee1e6] bg-white px-6">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-white"><i class="fa-solid fa-shield-halved text-xs"></i></span>
+        <span class="text-[17px] font-semibold">GuildBanker</span>
+      </div>
+      <button type="button" data-design-id="guild-switcher-btn-d4e5f6" class="flex items-center gap-2 rounded-[100px] bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold">
+        <i class="fa-solid fa-users text-[#0052ff]"></i> Família Silva <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i>
+      </button>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1 rounded-[100px] bg-[#f7f7f7] p-1">
+        <button type="button" data-design-id="lang-pt-g7h8i9" class="rounded-[100px] bg-white px-3 py-1 text-[12px] font-semibold shadow-sm">PT</button>
+        <button type="button" data-design-id="lang-en-j1k2l3" class="rounded-[100px] px-3 py-1 text-[12px] font-medium text-[#7c828a]">EN</button>
+      </div>
+      <span class="h-6 w-px bg-[#dee1e6]"></span>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">AS</span>
+        <div class="leading-tight">
+          <div class="text-[13px] font-semibold">Ana Silva</div>
+          <div class="text-[11px] text-[#7c828a]">ana@familia.com</div>
+        </div>
+      </div>
+      <a href="login.html" data-design-id="logout-link-m4n5o6" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] hover:bg-[#f7f7f7]" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+    </div>
+  </header>
+
+  <div class="flex">
+    <!-- Sidebar -->
+    <aside data-design-id="sidebar-p7q8r9" class="sticky top-16 h-[calc(900px-64px)] w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
+      <nav data-design-id="sidebar-nav-s1t2u3" class="space-y-1">
+        <a href="dashboard.html" class="flex items-center gap-3 rounded-[12px] bg-[#eef0f3] px-3 py-2.5 text-[14px] font-semibold text-[#0a0b0d]"><i class="fa-solid fa-house w-5 text-center text-[#0052ff]"></i> Início</a>
+        <a href="transactions.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-arrow-right-arrow-left w-5 text-center"></i> Transações</a>
+        <a href="fixed-expenses.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-repeat w-5 text-center"></i> Despesas fixas</a>
+        <a href="import-upload.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-file-arrow-up w-5 text-center"></i> Importar</a>
+        <a href="guild-members.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-user-group w-5 text-center"></i> Guild / Membros</a>
+      </nav>
+    </aside>
+
+    <!-- Main -->
+    <main data-design-id="dash-main-v4w5x6" class="flex-1 px-8 py-8">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="tracking-display text-[32px] font-normal">Início</h1>
+          <p class="mt-1 text-[14px] text-[#5b616e]">Resumo financeiro da Família Silva</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <!-- month selector -->
+          <div class="flex items-center gap-1 rounded-[100px] border border-[#dee1e6] bg-white px-2 py-1">
+            <button type="button" data-design-id="month-prev-y7z8a9" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+            <span class="px-2 text-[14px] font-semibold">Julho 2026</span>
+            <button type="button" data-design-id="month-next-b1c2d3" class="inline-flex h-8 w-8 items-center justify-center rounded-full text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- view toggle -->
+      <div class="mb-6 inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] p-1">
+        <button type="button" data-design-id="view-guild-e4f5g6" class="rounded-[100px] bg-white px-4 py-1.5 text-[13px] font-semibold shadow-sm"><i class="fa-solid fa-users mr-1.5 text-[#0052ff]"></i> Visão da guild (família)</button>
+        <button type="button" data-design-id="view-me-h7i8j9" class="rounded-[100px] px-4 py-1.5 text-[13px] font-medium text-[#5b616e]"><i class="fa-solid fa-user mr-1.5"></i> Só eu</button>
+      </div>
+
+      <!-- summary cards -->
+      <section data-design-id="summary-cards-k1l2m3" class="grid grid-cols-4 gap-4">
+        <article data-design-id="card-total-n4o5p6" class="rounded-[24px] border border-[#dee1e6] bg-white p-6">
+          <div class="flex items-center gap-2 text-[13px] text-[#5b616e]"><i class="fa-solid fa-users text-[#0052ff]"></i> Total família (PUBLIC)</div>
+          <div class="mono mt-3 text-[28px] font-medium text-[#cf202f]">R$ 8.450,00</div>
+          <div class="mt-1 text-[12px] text-[#7c828a]">Gastos compartilhados do mês</div>
+        </article>
+        <article data-design-id="card-mine-q7r8s9" class="rounded-[24px] border border-[#dee1e6] bg-white p-6">
+          <div class="flex items-center gap-2 text-[13px] text-[#5b616e]"><i class="fa-solid fa-user"></i> Meus gastos</div>
+          <div class="mono mt-3 text-[28px] font-medium text-[#0a0b0d]">R$ 3.200,00</div>
+          <div class="mt-1 text-[12px] text-[#7c828a]">Privados + minhas públicas</div>
+        </article>
+        <article data-design-id="card-count-t1u2v3" class="rounded-[24px] border border-[#dee1e6] bg-white p-6">
+          <div class="flex items-center gap-2 text-[13px] text-[#5b616e]"><i class="fa-solid fa-list"></i> Transações</div>
+          <div class="mono mt-3 text-[28px] font-medium text-[#0a0b0d]">47</div>
+          <div class="mt-1 text-[12px] text-[#7c828a]">Lançamentos no mês</div>
+        </article>
+        <article data-design-id="card-next-w4x5y6" class="rounded-[24px] border border-[#dee1e6] bg-white p-6">
+          <div class="flex items-center gap-2 text-[13px] text-[#5b616e]"><i class="fa-solid fa-calendar-day"></i> Próx. despesa fixa</div>
+          <div class="mt-3 text-[18px] font-semibold text-[#0a0b0d]">Aluguel</div>
+          <div class="mono mt-1 text-[13px] text-[#5b616e]">10/ago · R$ 2.500,00</div>
+        </article>
+      </section>
+
+      <div class="mt-8 grid grid-cols-3 gap-6">
+        <!-- upcoming fixed expenses -->
+        <section data-design-id="upcoming-fixed-z7a8b9" class="col-span-2 rounded-[24px] border border-[#dee1e6] bg-white p-6">
+          <div class="mb-4 flex items-center justify-between">
+            <h2 class="text-[18px] font-semibold">Próximas despesas fixas</h2>
+            <a href="fixed-expenses.html" class="text-[13px] font-semibold text-[#0052ff]">Ver todas</a>
+          </div>
+          <div class="divide-y divide-[#eef0f3]">
+            <div class="flex items-center justify-between py-3">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#eef0f3]"><i class="fa-solid fa-house text-[#5b616e]"></i></span>
+                <div>
+                  <div class="text-[14px] font-semibold">Aluguel</div>
+                  <div class="text-[12px] text-[#7c828a]">Moradia · vence dia 10</div>
+                </div>
+              </div>
+              <span class="mono text-[15px] font-medium">R$ 2.500,00</span>
+            </div>
+            <div class="flex items-center justify-between py-3">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#eef0f3]"><i class="fa-solid fa-heart-pulse text-[#5b616e]"></i></span>
+                <div>
+                  <div class="text-[14px] font-semibold">Plano de saúde</div>
+                  <div class="text-[12px] text-[#7c828a]">Seguros · vence dia 5</div>
+                </div>
+              </div>
+              <span class="mono text-[15px] font-medium">R$ 320,00</span>
+            </div>
+            <div class="flex items-center justify-between py-3">
+              <div class="flex items-center gap-3">
+                <span class="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#eef0f3]"><i class="fa-solid fa-tv text-[#5b616e]"></i></span>
+                <div>
+                  <div class="text-[14px] font-semibold">Netflix</div>
+                  <div class="text-[12px] text-[#7c828a]">Assinaturas · vence dia 15</div>
+                </div>
+              </div>
+              <span class="mono text-[15px] font-medium">R$ 55,90</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- quick actions -->
+        <section data-design-id="quick-actions-c1d2e3" class="rounded-[24px] border border-[#dee1e6] bg-white p-6">
+          <h2 class="mb-4 text-[18px] font-semibold">Atalhos rápidos</h2>
+          <div class="space-y-3">
+            <a href="modal-transaction.html" data-design-id="qa-new-tx-f4g5h6" class="flex items-center justify-center gap-2 rounded-[100px] bg-[#0052ff] px-4 py-3 text-[14px] font-semibold text-white hover:bg-[#003ecc]"><i class="fa-solid fa-plus"></i> Nova transação</a>
+            <a href="import-upload.html" data-design-id="qa-import-i7j8k9" class="flex items-center justify-center gap-2 rounded-[100px] bg-[#eef0f3] px-4 py-3 text-[14px] font-semibold text-[#0a0b0d] hover:bg-[#dee1e6]"><i class="fa-solid fa-file-arrow-up"></i> Importar fatura</a>
+            <a href="fixed-expenses.html" data-design-id="qa-fixed-l1m2n3" class="flex items-center justify-center gap-2 rounded-[100px] bg-[#eef0f3] px-4 py-3 text-[14px] font-semibold text-[#0a0b0d] hover:bg-[#dee1e6]"><i class="fa-solid fa-repeat"></i> Ver despesas fixas</a>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

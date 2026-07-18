@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .tracking-display{letter-spacing:-1.5px;}
+</style>
+</head>
+<body class="w-[1440px] bg-white text-[#0a0b0d]">
+  <div class="grid grid-cols-2 min-h-[900px]">
+    <!-- Left: form -->
+    <section data-design-id="login-form-panel-a1b2c3" class="flex flex-col px-24 py-12">
+      <header data-design-id="login-header-d4e5f6" class="flex items-center gap-2">
+        <span class="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#0052ff] text-white"><i class="fa-solid fa-shield-halved text-sm"></i></span>
+        <span class="text-lg font-semibold">GuildBanker</span>
+      </header>
+
+      <div class="flex flex-1 flex-col justify-center max-w-[420px]">
+        <span class="mb-4 inline-flex w-fit items-center rounded-[100px] bg-[#eef0f3] px-3 py-1 text-[12px] font-semibold uppercase tracking-wide text-[#0a0b0d]">Controle financeiro familiar</span>
+        <h1 class="tracking-display text-[52px] font-normal leading-[1.05]">Bem-vinda de volta</h1>
+        <p class="mt-4 text-[16px] leading-relaxed text-[#5b616e]">Acesse sua guild para acompanhar os gastos da família e os seus lançamentos pessoais em um só lugar.</p>
+
+        <div class="mt-8 flex flex-col gap-3">
+          <button data-design-id="login-keycloak-btn-g7h8i9" type="button" class="flex h-[52px] items-center justify-center gap-2 rounded-[100px] bg-[#0052ff] px-6 text-[16px] font-semibold text-white transition hover:bg-[#003ecc]">
+            <i class="fa-solid fa-key"></i> Entrar com Keycloak
+          </button>
+          <a href="dashboard.html" data-design-id="login-demo-link-j1k2l3"><button type="button" data-design-id="login-demo-btn-w5x6y7" class="flex h-[52px] w-full items-center justify-center gap-2 rounded-[100px] bg-[#eef0f3] px-6 text-[16px] font-semibold text-[#0a0b0d] transition hover:bg-[#dee1e6]">
+            <i class="fa-solid fa-circle-play"></i> Entrar como demo
+          </button></a>
+        </div>
+        <p class="mt-4 text-[13px] leading-relaxed text-[#7c828a]">O modo demo usa dados fictícios (mock) e não requer Keycloak. Ideal para explorar os fluxos do protótipo.</p>
+
+        <div class="mt-10 flex items-center gap-4 text-[13px] text-[#7c828a]">
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-lock text-[#05b169]"></i> Dados criptografados</span>
+          <span class="h-1 w-1 rounded-full bg-[#dee1e6]"></span>
+          <span class="flex items-center gap-1.5"><i class="fa-solid fa-users"></i> Multi-guild</span>
+        </div>
+      </div>
+
+      <footer data-design-id="login-footer-m4n5o6" class="flex items-center justify-between text-[13px] text-[#7c828a]">
+        <span>© 2026 GuildBanker</span>
+        <div class="flex items-center gap-1 rounded-[100px] bg-[#f7f7f7] p-1">
+          <button type="button" data-design-id="login-lang-pt-p7q8r9" class="rounded-[100px] bg-white px-3 py-1 text-[12px] font-semibold text-[#0a0b0d] shadow-sm">PT</button>
+          <button type="button" data-design-id="login-lang-en-s1t2u3" class="rounded-[100px] px-3 py-1 text-[12px] font-medium text-[#7c828a]">EN</button>
+        </div>
+      </footer>
+    </section>
+
+    <!-- Right: dark hero with product-ui card -->
+    <section data-design-id="login-hero-dark-v4w5x6" class="relative flex flex-col justify-center overflow-hidden bg-[#0a0b0d] px-16 py-12 text-white">
+      <div class="max-w-[440px]">
+        <h2 class="tracking-display text-[36px] font-normal leading-[1.15]">Toda a família, um só controle.</h2>
+        <p class="mt-3 text-[15px] leading-relaxed text-[#a8acb3]">Veja o total agregado da guild e o seu recorte individual — com privacidade quando você precisar.</p>
+      </div>
+
+      <!-- floating product-ui card -->
+      <div class="mt-10 rounded-[24px] bg-[#16181c] p-8 shadow-[0_4px_24px_rgba(0,0,0,0.4)]">
+        <div class="flex items-center justify-between">
+          <span class="text-[13px] text-[#a8acb3]">Total família · Julho 2026</span>
+          <span class="inline-flex items-center gap-1 rounded-[100px] bg-[#0052ff]/20 px-2.5 py-1 text-[11px] font-semibold text-[#6f9bff]"><i class="fa-solid fa-users text-[10px]"></i> Família Silva</span>
+        </div>
+        <div class="mono mt-2 text-[40px] font-medium text-[#cf5560]">R$ 8.450,00</div>
+        <div class="mt-6 space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2 text-[14px] text-white"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0a0b0d]"><i class="fa-solid fa-cart-shopping text-[12px] text-[#a8acb3]"></i></span> Mercado</span>
+            <span class="mono text-[14px] text-white">R$ 1.240,00</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2 text-[14px] text-white"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0a0b0d]"><i class="fa-solid fa-house text-[12px] text-[#a8acb3]"></i></span> Moradia</span>
+            <span class="mono text-[14px] text-white">R$ 2.500,00</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="flex items-center gap-2 text-[14px] text-white"><span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0a0b0d]"><i class="fa-solid fa-plus text-[12px] text-[#05b169]"></i></span> Receitas</span>
+            <span class="mono text-[14px] text-[#4fd39a]">R$ 5.200,00</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

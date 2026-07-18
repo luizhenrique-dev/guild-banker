@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "screens": [
+    {"screen_id": "login", "frame_kind": "desktop", "label": "Login"},
+    {"screen_id": "onboarding-guild", "frame_kind": "desktop", "label": "Onboarding: Criar Guild"},
+    {"screen_id": "dashboard", "frame_kind": "desktop", "label": "Dashboard"},
+    {"screen_id": "transactions", "frame_kind": "desktop", "label": "Transações"},
+    {"screen_id": "modal-transaction", "frame_kind": "desktop", "label": "Modal: Nova Transação"},
+    {"screen_id": "fixed-expenses", "frame_kind": "desktop", "label": "Despesas Fixas"},
+    {"screen_id": "modal-fixed-expense", "frame_kind": "desktop", "label": "Modal: Nova Despesa Fixa"},
+    {"screen_id": "import-upload", "frame_kind": "desktop", "label": "Import: Upload"},
+    {"screen_id": "import-processing", "frame_kind": "desktop", "label": "Import: Processando"},
+    {"screen_id": "import-review", "frame_kind": "desktop", "label": "Import: Revisão"},
+    {"screen_id": "guild-members", "frame_kind": "desktop", "label": "Guild: Membros"},
+    {"screen_id": "guild-switcher", "frame_kind": "desktop", "label": "Guild Switcher"}
+  ]
+}

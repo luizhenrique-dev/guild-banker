@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body class="w-[1440px] bg-[#0a0b0d]/50 text-[#0a0b0d]">
+  <!-- dimmed backdrop suggests modal over app -->
+  <div class="flex min-h-[900px] items-center justify-center px-6 py-12">
+    <section data-design-id="tx-modal-a1b2c3" class="w-[560px] rounded-[24px] bg-white p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+      <div class="mb-6 flex items-center justify-between">
+        <h1 class="text-[24px] font-semibold">Nova transação</h1>
+        <a href="transactions.html" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] hover:bg-[#f7f7f7]"><i class="fa-solid fa-xmark text-lg"></i></a>
+      </div>
+
+      <form action="#" data-design-id="tx-form-d4e5f6" class="space-y-5">
+        <div>
+          <label class="mb-1.5 block text-[13px] font-semibold">Descrição</label>
+          <input type="text" placeholder="Ex: Supermercado Pão de Açúcar" class="h-12 w-full rounded-[12px] border border-[#dee1e6] px-4 text-[15px] outline-none focus:border-[#0052ff] focus:ring-2 focus:ring-[#0052ff]/20">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold">Valor</label>
+            <div class="flex h-12 items-center rounded-[12px] border border-[#dee1e6] px-4 focus-within:border-[#0052ff] focus-within:ring-2 focus-within:ring-[#0052ff]/20">
+              <span class="mono mr-2 text-[15px] text-[#7c828a]">R$</span>
+              <input type="text" placeholder="0,00" class="mono w-full bg-transparent text-[15px] outline-none">
+            </div>
+          </div>
+          <div>
+            <label class="mb-1.5 block text-[13px] font-semibold">Data</label>
+            <input type="date" value="2026-07-15" class="mono h-12 w-full rounded-[12px] border border-[#dee1e6] px-4 text-[15px] outline-none focus:border-[#0052ff] focus:ring-2 focus:ring-[#0052ff]/20">
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-[13px] font-semibold">Tipo</label>
+          <div class="inline-flex w-full items-center gap-1 rounded-[100px] bg-[#eef0f3] p-1">
+            <button type="button" data-design-id="tx-type-expense-g7h8i9" class="flex-1 rounded-[100px] bg-white py-2 text-[13px] font-semibold text-[#cf202f] shadow-sm"><i class="fa-solid fa-arrow-down mr-1.5"></i> Despesa</button>
+            <button type="button" data-design-id="tx-type-income-j1k2l3" class="flex-1 rounded-[100px] py-2 text-[13px] font-medium text-[#5b616e]"><i class="fa-solid fa-arrow-up mr-1.5"></i> Receita</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="mb-1.5 block text-[13px] font-semibold">Categoria</label>
+          <select class="h-12 w-full rounded-[12px] border border-[#dee1e6] bg-white px-4 text-[15px] outline-none focus:border-[#0052ff] focus:ring-2 focus:ring-[#0052ff]/20">
+            <option>Mercado / supermercado</option>
+            <option>Moradia</option>
+            <option>Contas (água, luz, gás)</option>
+            <option>Assinaturas</option>
+            <option>Seguros</option>
+            <option>Educação</option>
+            <option>Transporte</option>
+            <option>Saúde</option>
+            <option>Cuidados pessoais</option>
+            <option>Impostos</option>
+            <option>Outros</option>
+            <option>Alimentação e restaurantes</option>
+            <option>Lazer</option>
+            <option>Compras</option>
+            <option>Pets</option>
+            <option>Viagens</option>
+            <option>Investimentos</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="mb-2 block text-[13px] font-semibold">Visibilidade</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="cursor-pointer rounded-[12px] border-2 border-[#dee1e6] p-4 has-[:checked]:border-[#7c828a] has-[:checked]:bg-[#f7f7f7]">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="vis" checked class="accent-[#7c828a]">
+                <i class="fa-solid fa-lock text-[#7c828a]"></i>
+                <span class="text-[14px] font-semibold">Só eu vejo</span>
+              </div>
+              <p class="mt-1.5 text-[12px] leading-snug text-[#7c828a]">Não aparece no agregado familiar (PRIVATE).</p>
+            </label>
+            <label class="cursor-pointer rounded-[12px] border-2 border-[#dee1e6] p-4 has-[:checked]:border-[#0052ff] has-[:checked]:bg-[#0052ff]/5">
+              <div class="flex items-center gap-2">
+                <input type="radio" name="vis" class="accent-[#0052ff]">
+                <i class="fa-solid fa-users text-[#0052ff]"></i>
+                <span class="text-[14px] font-semibold">Compartilhado</span>
+              </div>
+              <p class="mt-1.5 text-[12px] leading-snug text-[#7c828a]">Entra no total da família (PUBLIC).</p>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-2">
+          <a href="transactions.html" data-design-id="tx-cancel-m4n5o6" class="rounded-[100px] bg-[#eef0f3] px-6 py-3 text-[14px] font-semibold text-[#0a0b0d] hover:bg-[#dee1e6]">Cancelar</a>
+          <a href="transactions.html" data-design-id="tx-save-link-p7q8r9"><button type="button" data-design-id="tx-save-btn-s1t2u3" class="rounded-[100px] bg-[#0052ff] px-8 py-3 text-[14px] font-semibold text-white hover:bg-[#003ecc]">Salvar</button></a>
+        </div>
+      </form>
+    </section>
+  </div>
+</body>
+</html>

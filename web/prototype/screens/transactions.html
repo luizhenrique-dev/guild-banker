@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  body{font-family:'Inter',system-ui,sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .tracking-display{letter-spacing:-0.8px;}
+</style>
+</head>
+<body class="w-[1440px] bg-[#f7f7f7] text-[#0a0b0d]">
+  <header data-design-id="topbar-a1b2c3" class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#dee1e6] bg-white px-6">
+    <div class="flex items-center gap-6">
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-white"><i class="fa-solid fa-shield-halved text-xs"></i></span>
+        <span class="text-[17px] font-semibold">GuildBanker</span>
+      </div>
+      <button type="button" data-design-id="guild-switcher-btn-d4e5f6" class="flex items-center gap-2 rounded-[100px] bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold"><i class="fa-solid fa-users text-[#0052ff]"></i> Família Silva <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></button>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1 rounded-[100px] bg-[#f7f7f7] p-1">
+        <button type="button" data-design-id="lang-pt-g7h8i9" class="rounded-[100px] bg-white px-3 py-1 text-[12px] font-semibold shadow-sm">PT</button>
+        <button type="button" data-design-id="lang-en-j1k2l3" class="rounded-[100px] px-3 py-1 text-[12px] font-medium text-[#7c828a]">EN</button>
+      </div>
+      <span class="h-6 w-px bg-[#dee1e6]"></span>
+      <div class="flex items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">AS</span>
+        <div class="leading-tight"><div class="text-[13px] font-semibold">Ana Silva</div><div class="text-[11px] text-[#7c828a]">ana@familia.com</div></div>
+      </div>
+      <a href="login.html" data-design-id="logout-link-m4n5o6" class="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] hover:bg-[#f7f7f7]" title="Sair"><i class="fa-solid fa-arrow-right-from-bracket"></i></a>
+    </div>
+  </header>
+
+  <div class="flex">
+    <aside data-design-id="sidebar-p7q8r9" class="sticky top-16 h-[calc(900px-64px)] w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
+      <nav data-design-id="sidebar-nav-s1t2u3" class="space-y-1">
+        <a href="dashboard.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-house w-5 text-center"></i> Início</a>
+        <a href="transactions.html" class="flex items-center gap-3 rounded-[12px] bg-[#eef0f3] px-3 py-2.5 text-[14px] font-semibold text-[#0a0b0d]"><i class="fa-solid fa-arrow-right-arrow-left w-5 text-center text-[#0052ff]"></i> Transações</a>
+        <a href="fixed-expenses.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-repeat w-5 text-center"></i> Despesas fixas</a>
+        <a href="import-upload.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-file-arrow-up w-5 text-center"></i> Importar</a>
+        <a href="guild-members.html" class="flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium text-[#5b616e] hover:bg-[#f7f7f7]"><i class="fa-solid fa-user-group w-5 text-center"></i> Guild / Membros</a>
+      </nav>
+    </aside>
+
+    <main data-design-id="tx-main-v4w5x6" class="flex-1 px-8 py-8">
+      <div class="mb-6 flex items-center justify-between">
+        <div>
+          <h1 class="tracking-display text-[32px] font-normal">Transações</h1>
+          <p class="mt-1 text-[14px] text-[#5b616e]">Julho 2026 · Família Silva</p>
+        </div>
+        <a href="modal-transaction.html" data-design-id="tx-new-btn-y7z8a9" class="flex items-center gap-2 rounded-[100px] bg-[#0052ff] px-5 py-3 text-[14px] font-semibold text-white hover:bg-[#003ecc]"><i class="fa-solid fa-plus"></i> Nova transação</a>
+      </div>
+
+      <!-- view toggle -->
+      <div class="mb-4 inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] p-1">
+        <button type="button" data-design-id="view-guild-b1c2d3" class="rounded-[100px] bg-white px-4 py-1.5 text-[13px] font-semibold shadow-sm"><i class="fa-solid fa-users mr-1.5 text-[#0052ff]"></i> Guild (família)</button>
+        <button type="button" data-design-id="view-me-e4f5g6" class="rounded-[100px] px-4 py-1.5 text-[13px] font-medium text-[#5b616e]"><i class="fa-solid fa-user mr-1.5"></i> Só eu</button>
+      </div>
+
+      <!-- filters -->
+      <div class="mb-4 flex flex-wrap items-center gap-3">
+        <div class="flex h-10 items-center gap-2 rounded-[100px] border border-[#dee1e6] bg-white px-4 text-[13px] font-medium"><i class="fa-solid fa-calendar text-[#7c828a]"></i> Julho 2026 <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></div>
+        <div class="flex h-10 items-center gap-2 rounded-[100px] border border-[#dee1e6] bg-white px-4 text-[13px] font-medium text-[#5b616e]">Categoria <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></div>
+        <div class="flex h-10 items-center gap-2 rounded-[100px] border border-[#dee1e6] bg-white px-4 text-[13px] font-medium text-[#5b616e]">Tipo <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></div>
+        <div class="ml-auto flex h-10 flex-1 max-w-[280px] items-center gap-2 rounded-[100px] bg-[#eef0f3] px-4"><i class="fa-solid fa-magnifying-glass text-[#7c828a]"></i><input type="text" placeholder="Buscar transação" class="w-full bg-transparent text-[13px] outline-none"></div>
+      </div>
+
+      <!-- bulk action bar -->
+      <div data-design-id="bulk-bar-h7i8j9" class="mb-3 flex items-center justify-between rounded-[16px] border border-[#0052ff]/30 bg-[#0052ff]/5 px-4 py-3">
+        <span class="text-[13px] font-semibold text-[#0a0b0d]">2 selecionadas</span>
+        <div class="flex items-center gap-3">
+          <span class="text-[13px] text-[#5b616e]">Categorizar como:</span>
+          <div class="flex h-9 items-center gap-2 rounded-[12px] border border-[#dee1e6] bg-white px-3 text-[13px] font-medium">Mercado <i class="fa-solid fa-chevron-down text-[10px] text-[#7c828a]"></i></div>
+          <button type="button" data-design-id="bulk-apply-k1l2m3" class="rounded-[100px] bg-[#0052ff] px-4 py-2 text-[13px] font-semibold text-white hover:bg-[#003ecc]">Aplicar</button>
+        </div>
+      </div>
+
+      <!-- table -->
+      <section data-design-id="tx-table-n4o5p6" class="overflow-hidden rounded-[24px] border border-[#dee1e6] bg-white">
+        <table class="w-full text-left text-[14px]">
+          <thead class="border-b border-[#dee1e6] bg-[#f7f7f7] text-[12px] uppercase tracking-wide text-[#7c828a]">
+            <tr>
+              <th class="w-10 py-3 pl-5"><input type="checkbox" class="h-4 w-4 accent-[#0052ff]"></th>
+              <th class="py-3 font-semibold">Data</th>
+              <th class="py-3 font-semibold">Descrição</th>
+              <th class="py-3 font-semibold">Categoria</th>
+              <th class="py-3 text-right font-semibold">Valor</th>
+              <th class="py-3 pl-6 font-semibold">Visibilidade</th>
+              <th class="py-3 pr-5 text-right font-semibold">Ações</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#eef0f3]">
+            <tr class="bg-[#0052ff]/[0.03]">
+              <td class="py-4 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-4 text-[13px] text-[#5b616e]">03/07</td>
+              <td class="py-4 font-medium">Supermercado Pão de Açúcar</td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Mercado</span></td>
+              <td class="mono py-4 text-right font-medium text-[#cf202f]">- R$ 420,00</td>
+              <td class="py-4 pl-6"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#0052ff]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0052ff]"><i class="fa-solid fa-users text-[10px]"></i> Guild</span></td>
+              <td class="py-4 pr-5 text-right"><a href="modal-transaction.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr class="bg-[#0052ff]/[0.03]">
+              <td class="py-4 pl-5"><input type="checkbox" checked class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-4 text-[13px] text-[#5b616e]">05/07</td>
+              <td class="py-4 font-medium">Conta de luz - Enel</td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Contas</span></td>
+              <td class="mono py-4 text-right font-medium text-[#cf202f]">- R$ 189,90</td>
+              <td class="py-4 pl-6"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#0052ff]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0052ff]"><i class="fa-solid fa-users text-[10px]"></i> Guild</span></td>
+              <td class="py-4 pr-5 text-right"><a href="modal-transaction.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-4 pl-5"><input type="checkbox" class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-4 text-[13px] text-[#5b616e]">08/07</td>
+              <td class="py-4 font-medium">Salário</td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Outros</span></td>
+              <td class="mono py-4 text-right font-medium text-[#05b169]">+ R$ 5.200,00</td>
+              <td class="py-4 pl-6"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]"><i class="fa-solid fa-lock text-[10px]"></i> Só eu</span></td>
+              <td class="py-4 pr-5 text-right"><a href="modal-transaction.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-4 pl-5"><input type="checkbox" class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-4 text-[13px] text-[#5b616e]">11/07</td>
+              <td class="py-4 font-medium">Farmácia - remédios</td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Saúde</span></td>
+              <td class="mono py-4 text-right font-medium text-[#cf202f]">- R$ 87,50</td>
+              <td class="py-4 pl-6"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]"><i class="fa-solid fa-lock text-[10px]"></i> Só eu</span></td>
+              <td class="py-4 pr-5 text-right"><a href="modal-transaction.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-4 pl-5"><input type="checkbox" class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-4 text-[13px] text-[#5b616e]">12/07</td>
+              <td class="py-4 font-medium">Restaurante - almoço família</td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Alimentação</span></td>
+              <td class="mono py-4 text-right font-medium text-[#cf202f]">- R$ 245,00</td>
+              <td class="py-4 pl-6"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#0052ff]/10 px-2.5 py-1 text-[12px] font-semibold text-[#0052ff]"><i class="fa-solid fa-users text-[10px]"></i> Guild</span></td>
+              <td class="py-4 pr-5 text-right"><a href="modal-transaction.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+            <tr>
+              <td class="py-4 pl-5"><input type="checkbox" class="h-4 w-4 accent-[#0052ff]"></td>
+              <td class="mono py-4 text-[13px] text-[#5b616e]">14/07</td>
+              <td class="py-4 font-medium">Uber - trabalho</td>
+              <td class="py-4"><span class="rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">Transporte</span></td>
+              <td class="mono py-4 text-right font-medium text-[#cf202f]">- R$ 32,40</td>
+              <td class="py-4 pl-6"><span class="inline-flex items-center gap-1 rounded-[100px] bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]"><i class="fa-solid fa-lock text-[10px]"></i> Só eu</span></td>
+              <td class="py-4 pr-5 text-right"><a href="modal-transaction.html" class="mr-2 text-[#7c828a] hover:text-[#0052ff]"><i class="fa-solid fa-pen"></i></a><a href="#" class="text-[#7c828a] hover:text-[#cf202f]"><i class="fa-solid fa-trash"></i></a></td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
