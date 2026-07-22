@@ -8,7 +8,7 @@ import (
 	"github.com/joho/godotenv"
 )
 
-const envFile = "config.env"
+const envFile = "api/config.env"
 
 type Config struct {
 	DB            DBConfig
@@ -67,7 +67,7 @@ func Load() (*Config, error) {
 			Timeout: mustInt("KEYCLOAK_TIMEOUT_SECONDS", 5),
 			JWKSURI: getEnv("KEYCLOAK_JWKS_URI", ""),
 		},
-		WebServerPort: getEnv("WEBSERVER_PORT", "8080"),
+		WebServerPort: getEnv("WEBSERVER_PORT", "8081"),
 	}
 
 	return cfg, nil

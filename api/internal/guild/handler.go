@@ -41,7 +41,7 @@ func (h *Handler) Create(c *gin.Context) {
 }
 
 func (h *Handler) UpdateName(c *gin.Context) {
-	guildID, err := parseIDParam(c, "id")
+	guildID, err := parseIDParam(c, "guildID")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -98,7 +98,7 @@ func (h *Handler) ListByMember(c *gin.Context) {
 }
 
 func (h *Handler) InviteUser(c *gin.Context) {
-	guildID, err := parseIDParam(c, "id")
+	guildID, err := parseIDParam(c, "guildID")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -125,7 +125,7 @@ func (h *Handler) InviteUser(c *gin.Context) {
 }
 
 func (h *Handler) RemoveUser(c *gin.Context) {
-	guildID, err := parseIDParam(c, "id")
+	guildID, err := parseIDParam(c, "guildID")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -152,7 +152,7 @@ func (h *Handler) RemoveUser(c *gin.Context) {
 }
 
 func (h *Handler) updateEnabledStatus(c *gin.Context, enable bool) {
-	guildID, err := parseIDParam(c, "id")
+	guildID, err := parseIDParam(c, "guildID")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
