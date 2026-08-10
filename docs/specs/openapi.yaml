@@ -1,0 +1,1360 @@
+openapi: 3.1.1
+info:
+  title: GuildBanker API
+  version: 0.1.0
+  description: |
+    API REST do GuildBanker, uma plataforma multiusuário de gestão financeira
+    pessoal. Gerada a partir da análise do código-fonte em `api/`.
+
+    A versão de `info.version` não pôde ser confirmada em código ou release
+    notes; ver `OPENAPI_GAPS.md`.
+servers:
+  - url: http://localhost:8080
+    description: Ambiente local (porta padrão via WEBSERVER_PORT, config.go)
+security:
+  - bearerAuth: []
+tags:
+  - name: Health
+    description: Verificação de disponibilidade do serviço.
+  - name: Guilds
+    description: Gestão de guilds (grupos financeiros multiusuário) e seus membros.
+  - name: FixedExpenses
+    description: Despesas fixas recorrentes do usuário.
+  - name: Transactions
+    description: Transações financeiras de um guild.
+  - name: Imports
+    description: Importação de extratos/faturas (CSV) e revisão dos itens importados.
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      tags: [Health]
+      summary: Verifica status do serviço
+      security: []
+      responses:
+        "200":
+          description: Serviço operante.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /api/v1/guilds:
+    post:
+      operationId: createGuild
+      tags: [Guilds]
+      summary: Cria um novo guild
+      description: >-
+        Cria um guild com o usuário requisitante (identificado pelo header
+        X-User-ID) como membro criador. Falha com 409 se o nome já estiver em uso.
+      parameters:
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGuildRequest"
+      responses:
+        "201":
+          description: Guild criado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Nome de guild já utilizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    get:
+      operationId: listGuildsByMember
+      tags: [Guilds]
+      summary: Lista os guilds em que o requisitante é membro
+      parameters:
+        - $ref: "#/components/parameters/UserIDHeader"
+      responses:
+        "200":
+          description: Lista de guilds do requisitante.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GuildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/guilds/{id}:
+    put:
+      operationId: updateGuildName
+      tags: [Guilds]
+      summary: Atualiza o nome de exibição de um guild
+      description: >-
+        TODO: o campo `name` do corpo é, na implementação atual, aplicado ao
+        atributo displayName do guild (ver OPENAPI_GAPS.md). Requer que o
+        requisitante seja membro do guild.
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGuildRequest"
+      responses:
+        "200":
+          description: Guild atualizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Nome de guild já utilizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{id}/enable:
+    patch:
+      operationId: enableGuild
+      tags: [Guilds]
+      summary: Habilita um guild desabilitado
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      responses:
+        "204":
+          description: Guild habilitado com sucesso.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/guilds/{id}/disable:
+    patch:
+      operationId: disableGuild
+      tags: [Guilds]
+      summary: Desabilita um guild habilitado
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      responses:
+        "204":
+          description: Guild desabilitado com sucesso.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/guilds/{id}/invites:
+    post:
+      operationId: inviteGuildMember
+      tags: [Guilds]
+      summary: Convida um usuário para o guild pelo e-mail
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InviteUserRequest"
+      responses:
+        "204":
+          description: Usuário convidado/adicionado com sucesso.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Usuário já é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{id}/members/{userID}:
+    delete:
+      operationId: removeGuildMember
+      tags: [Guilds]
+      summary: Remove um membro do guild
+      description: O requisitante não pode remover a si mesmo (regra de negócio).
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - name: userID
+          in: path
+          required: true
+          description: ID do usuário membro a ser removido.
+          schema:
+            type: integer
+            format: int64
+        - $ref: "#/components/parameters/UserIDHeader"
+      responses:
+        "204":
+          description: Membro removido com sucesso.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/fixed-expenses:
+    post:
+      operationId: createFixedExpense
+      tags: [FixedExpenses]
+      summary: Cria uma despesa fixa recorrente
+      parameters:
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFixedExpenseRequest"
+      responses:
+        "201":
+          description: Despesa fixa criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedExpenseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    get:
+      operationId: listActiveFixedExpenses
+      tags: [FixedExpenses]
+      summary: Lista as despesas fixas ativas do requisitante
+      parameters:
+        - $ref: "#/components/parameters/UserIDHeader"
+      responses:
+        "200":
+          description: Lista de despesas fixas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FixedExpenseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /api/v1/fixed-expenses/{id}:
+    patch:
+      operationId: updateFixedExpense
+      tags: [FixedExpenses]
+      summary: Atualiza uma despesa fixa
+      parameters:
+        - $ref: "#/components/parameters/FixedExpenseIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFixedExpenseRequest"
+      responses:
+        "200":
+          description: Despesa fixa atualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FixedExpenseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Despesa fixa não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/fixed-expenses/{id}/deactivate:
+    patch:
+      operationId: deactivateFixedExpense
+      tags: [FixedExpenses]
+      summary: Desativa uma despesa fixa (pausa ou cancela)
+      parameters:
+        - $ref: "#/components/parameters/FixedExpenseIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeactivateFixedExpenseRequest"
+      responses:
+        "204":
+          description: Despesa fixa desativada com sucesso.
+        "400":
+          description: Status inválido para desativação (deve ser PAUSED ou CANCELLED).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          description: Despesa fixa não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{guildID}/transactions:
+    post:
+      operationId: createTransaction
+      tags: [Transactions]
+      summary: Cria uma transação manual em um guild
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTransactionRequest"
+      responses:
+        "201":
+          description: Transação criada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    get:
+      operationId: listTransactions
+      tags: [Transactions]
+      summary: Lista transações de um guild com filtros e paginação por cursor
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+        - name: cursor
+          in: query
+          description: >-
+            Cursor opaco (base64) retornado por uma listagem anterior em
+            `nextCursor`, usado para buscar a página seguinte.
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Quantidade máxima de itens por página.
+          schema:
+            type: integer
+            minimum: 1
+        - name: dateFrom
+          in: query
+          description: Data/hora inicial (inclusive) do filtro por ocorrência, formato RFC3339.
+          schema:
+            type: string
+            format: date-time
+        - name: dateTo
+          in: query
+          description: Data/hora final (inclusive) do filtro por ocorrência, formato RFC3339.
+          schema:
+            type: string
+            format: date-time
+        - name: category
+          in: query
+          schema:
+            $ref: "#/components/schemas/TransactionCategory"
+        - name: type
+          in: query
+          schema:
+            $ref: "#/components/schemas/TransactionType"
+        - name: source
+          in: query
+          schema:
+            $ref: "#/components/schemas/TransactionSource"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/TransactionStatus"
+        - name: visibility
+          in: query
+          schema:
+            $ref: "#/components/schemas/TransactionVisibility"
+      responses:
+        "200":
+          description: Página de transações.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListTransactionsResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/guilds/{guildID}/transactions/{id}:
+    patch:
+      operationId: updateTransaction
+      tags: [Transactions]
+      summary: Atualiza os dados de uma transação
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/TransactionIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTransactionRequest"
+      responses:
+        "200":
+          description: Transação atualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Transação não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Transação está cancelada e não pode ser atualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+    delete:
+      operationId: deleteTransaction
+      tags: [Transactions]
+      summary: Cancela (remove logicamente) uma transação
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/TransactionIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      responses:
+        "204":
+          description: Transação cancelada com sucesso.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Transação não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "422":
+          description: Transação já está cancelada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/guilds/{guildID}/transactions:bulk-categorize:
+    post:
+      operationId: bulkCategorizeTransactions
+      tags: [Transactions]
+      summary: Categoriza em lote transações de um guild
+      description: >-
+        Endpoint idempotente por item: transações inexistentes ou já
+        canceladas são reportadas em `failed`, sem interromper o processamento
+        do restante do lote.
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkCategorizeRequest"
+      responses:
+        "200":
+          description: Resultado do processamento em lote.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkCategorizeResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/guilds/{guildID}/transactions/{id}/visibility:
+    patch:
+      operationId: setTransactionVisibility
+      tags: [Transactions]
+      summary: Altera a visibilidade (privada/pública) de uma transação
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/TransactionIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetVisibilityRequest"
+      responses:
+        "200":
+          description: Visibilidade atualizada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SetVisibilityResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Transação não encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/guilds/{guildID}/imports:
+    post:
+      operationId: uploadImport
+      tags: [Imports]
+      summary: Envia um arquivo de fatura/extrato para importação
+      description: >-
+        Atualmente suporta apenas CSV do banco C6 (SourceBank fixo como "C6"
+        no código; não é parâmetro exposto na requisição). Tamanho máximo do
+        arquivo: 5MB.
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Arquivo CSV da fatura/extrato (máx. 5MB).
+      responses:
+        "201":
+          description: Lote de importação criado e itens candidatos processados.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadImportResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{guildID}/imports/{importID}:
+    get:
+      operationId: getImportById
+      tags: [Imports]
+      summary: Obtém um lote de importação e seus itens
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/ImportIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      responses:
+        "200":
+          description: Lote de importação encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetImportBatchResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Lote de importação não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{guildID}/imports/{importID}/items/{itemID}:
+    patch:
+      operationId: updateImportItem
+      tags: [Imports]
+      summary: Atualiza um item de um lote de importação pendente de revisão
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/ImportIDPath"
+        - $ref: "#/components/parameters/ImportItemIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateImportItemRequest"
+      responses:
+        "200":
+          description: Item de importação atualizado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportItemResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Lote ou item de importação não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: discardImportItem
+      tags: [Imports]
+      summary: Descarta um item de um lote de importação
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/ImportIDPath"
+        - $ref: "#/components/parameters/ImportItemIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      responses:
+        "204":
+          description: Item descartado com sucesso.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Lote ou item de importação não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{guildID}/imports/{importID}:confirm:
+    post:
+      operationId: confirmImport
+      tags: [Imports]
+      summary: Confirma um lote de importação, criando as transações a partir dos itens elegíveis
+      parameters:
+        - $ref: "#/components/parameters/TransactionGuildIDPath"
+        - $ref: "#/components/parameters/ImportIDPath"
+        - $ref: "#/components/parameters/UserIDHeader"
+        - $ref: "#/components/parameters/UserEmailHeader"
+      responses:
+        "200":
+          description: Importação confirmada.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ConfirmImportResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: Requisitante não é membro do guild.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Lote de importação não encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT emitido pelo Keycloak, exigido pelo middleware Auth em
+        `/api/v1/*`. TODO: a validação do JWT ainda não está implementada no
+        código (api/internal/infra/webserver/middleware/auth.go); atualmente
+        qualquer chamada autenticada retorna 501 Not Implemented.
+  parameters:
+    UserIDHeader:
+      name: X-User-ID
+      in: header
+      required: true
+      description: >-
+        ID numérico do usuário requisitante. Usado pelos handlers para
+        identificar o ator da operação e checar membership/autorização.
+        TODO: hoje é a única fonte de identidade efetivamente utilizada pelos
+        handlers, já que a validação do JWT Bearer não está implementada.
+      schema:
+        type: integer
+        format: int64
+        minimum: 1
+    UserEmailHeader:
+      name: X-User-Email
+      in: header
+      required: true
+      description: >-
+        E-mail do usuário requisitante, usado para registro de auditoria
+        (createdBy/updatedBy). Exigido nas operações de escrita.
+      schema:
+        type: string
+        format: email
+    GuildIDPath:
+      name: id
+      in: path
+      required: true
+      description: ID do guild.
+      schema:
+        type: integer
+        format: int64
+    FixedExpenseIDPath:
+      name: id
+      in: path
+      required: true
+      description: ID da despesa fixa.
+      schema:
+        type: integer
+        format: int64
+    TransactionGuildIDPath:
+      name: guildID
+      in: path
+      required: true
+      description: ID do guild ao qual a transação/importação pertence.
+      schema:
+        type: integer
+        format: int64
+    TransactionIDPath:
+      name: id
+      in: path
+      required: true
+      description: ID da transação.
+      schema:
+        type: integer
+        format: int64
+    ImportIDPath:
+      name: importID
+      in: path
+      required: true
+      description: ID do lote de importação.
+      schema:
+        type: integer
+        format: int64
+    ImportItemIDPath:
+      name: itemID
+      in: path
+      required: true
+      description: ID do item do lote de importação.
+      schema:
+        type: integer
+        format: int64
+  responses:
+    BadRequest:
+      description: Requisição inválida (corpo malformado, parâmetro inválido ou violação de regra de validação).
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Token de autenticação ausente ou inválido.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Recurso não encontrado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalServerError:
+      description: Erro interno não esperado.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    ErrorResponse:
+      type: object
+      description: >-
+        Envelope padrão de erro utilizado por todos os handlers
+        (gin.H{"error": ...}).
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    # Guilds
+    CreateGuildRequest:
+      type: object
+      required: [name, display_name]
+      properties:
+        name:
+          type: string
+          description: Nome único do guild (chave de negócio).
+        display_name:
+          type: string
+          description: Nome de exibição do guild.
+    UpdateGuildRequest:
+      type: object
+      required: [name]
+      description: >-
+        TODO: apesar do campo se chamar `name`, o valor é aplicado ao atributo
+        displayName do guild na implementação atual (guild/service.go,
+        guild/guild.go Rename). Ver OPENAPI_GAPS.md.
+      properties:
+        name:
+          type: string
+    InviteUserRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+    GuildResponse:
+      type: object
+      required: [id, name, display_name, enabled]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        display_name:
+          type: string
+        enabled:
+          type: boolean
+
+    # FixedExpenses
+    FixedExpenseCategory:
+      type: string
+      enum:
+        - HOUSING
+        - SUBSCRIPTIONS
+        - INSURANCE
+        - EDUCATION
+        - TRANSPORTATION
+        - HEALTH
+        - PERSONAL
+        - TAXES
+        - OTHER
+    FixedExpenseStatus:
+      type: string
+      enum:
+        - ACTIVE
+        - PAUSED
+        - CANCELLED
+    CreateFixedExpenseRequest:
+      type: object
+      required: [name, amount, due_day, category]
+      properties:
+        name:
+          type: string
+        amount:
+          type: string
+          description: Valor monetário decimal (serializado como string por shopspring/decimal). Deve ser maior que zero.
+        due_day:
+          type: integer
+          minimum: 1
+          maximum: 31
+          description: Dia de vencimento no mês (1 a 31).
+        category:
+          $ref: "#/components/schemas/FixedExpenseCategory"
+    UpdateFixedExpenseRequest:
+      type: object
+      description: Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados.
+      properties:
+        amount:
+          type: string
+        due_day:
+          type: integer
+          minimum: 1
+          maximum: 31
+        category:
+          $ref: "#/components/schemas/FixedExpenseCategory"
+        status:
+          $ref: "#/components/schemas/FixedExpenseStatus"
+    DeactivateFixedExpenseRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          $ref: "#/components/schemas/FixedExpenseStatus"
+          description: Deve ser PAUSED ou CANCELLED; qualquer outro valor resulta em 400.
+    FixedExpenseResponse:
+      type: object
+      required: [id, name, amount, due_day, category, status]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+        amount:
+          type: string
+        due_day:
+          type: integer
+        category:
+          $ref: "#/components/schemas/FixedExpenseCategory"
+        status:
+          $ref: "#/components/schemas/FixedExpenseStatus"
+
+    # Transactions
+    TransactionType:
+      type: string
+      enum: [EXPENSE, INCOME]
+    TransactionCategory:
+      type: string
+      enum:
+        - GROCERY
+        - HOUSING
+        - UTILITIES
+        - SUBSCRIPTIONS
+        - INSURANCE
+        - EDUCATION
+        - TRANSPORTATION
+        - HEALTH
+        - PERSONAL_CARE
+        - TAXES
+        - OTHER
+        - FOOD_AND_DINING
+        - ENTERTAINMENT
+        - SHOPPING
+        - PETS
+        - TRAVEL
+        - INVESTMENTS
+    TransactionStatus:
+      type: string
+      enum: [ACTIVE, CANCELLED]
+    TransactionSource:
+      type: string
+      enum: [MANUAL, IMPORT]
+    TransactionVisibility:
+      type: string
+      enum: [PRIVATE, PUBLIC]
+    CreateTransactionRequest:
+      type: object
+      required: [type, description, amount, category, visibility, occurredAt]
+      properties:
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        description:
+          type: string
+          maxLength: 255
+        amount:
+          type: string
+          description: Valor monetário decimal. Deve ser maior que zero.
+        category:
+          $ref: "#/components/schemas/TransactionCategory"
+        visibility:
+          $ref: "#/components/schemas/TransactionVisibility"
+        occurredAt:
+          type: string
+          format: date-time
+    UpdateTransactionRequest:
+      type: object
+      description: >-
+        TODO: o código (UpdateInput) declara todos os campos como opcionais
+        (ponteiros), mas a validação de negócio (ValidateForUpdate) exige
+        type, description, amount, category e occurredAt não vazios/zerados
+        após a atualização — não foi possível confirmar o comportamento exato
+        quando um campo é omitido (nil) na requisição. Ver OPENAPI_GAPS.md.
+      properties:
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        description:
+          type: string
+          maxLength: 255
+        amount:
+          type: string
+        category:
+          $ref: "#/components/schemas/TransactionCategory"
+        occurredAt:
+          type: string
+          format: date-time
+    SetVisibilityRequest:
+      type: object
+      required: [visibility]
+      properties:
+        visibility:
+          $ref: "#/components/schemas/TransactionVisibility"
+    BulkCategorizeRequest:
+      type: object
+      required: [transactionIds, category]
+      properties:
+        transactionIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        category:
+          $ref: "#/components/schemas/TransactionCategory"
+    BulkFailure:
+      type: object
+      required: [transactionId, reason]
+      properties:
+        transactionId:
+          type: integer
+          format: int64
+        reason:
+          type: string
+    BulkCategorizeResult:
+      type: object
+      required: [updated, failed]
+      properties:
+        updated:
+          type: integer
+        failed:
+          type: array
+          items:
+            $ref: "#/components/schemas/BulkFailure"
+    TransactionResponse:
+      type: object
+      required:
+        - id
+        - type
+        - description
+        - amount
+        - category
+        - status
+        - source
+        - visibility
+        - occurredAt
+        - guildId
+        - userAccountId
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        description:
+          type: string
+        amount:
+          type: string
+        category:
+          $ref: "#/components/schemas/TransactionCategory"
+        status:
+          $ref: "#/components/schemas/TransactionStatus"
+        source:
+          $ref: "#/components/schemas/TransactionSource"
+        visibility:
+          $ref: "#/components/schemas/TransactionVisibility"
+        occurredAt:
+          type: string
+          format: date-time
+        guildId:
+          type: integer
+          format: int64
+        userAccountId:
+          type: integer
+          format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ListTransactionsResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TransactionResponse"
+        nextCursor:
+          type: string
+          description: Cursor opaco para buscar a próxima página; ausente quando não há mais itens.
+    SetVisibilityResponse:
+      type: object
+      required: [id, visibility]
+      properties:
+        id:
+          type: integer
+          format: int64
+        visibility:
+          $ref: "#/components/schemas/TransactionVisibility"
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Imports
+    ImportBatchStatus:
+      type: string
+      enum: [PENDING_REVIEW, COMPLETED, CANCELLED]
+    ImportItemStatus:
+      type: string
+      enum: [READY, DUPLICATE, DISCARDED]
+    ImportSummary:
+      type: object
+      required: [parsed, candidates, duplicates, skippedZero]
+      properties:
+        parsed:
+          type: integer
+        candidates:
+          type: integer
+        duplicates:
+          type: integer
+        skippedZero:
+          type: integer
+    ImportItemResponse:
+      type: object
+      required:
+        - itemId
+        - occurredAt
+        - description
+        - amount
+        - type
+        - category
+        - bankCategory
+        - cardLast4
+        - installment
+        - status
+      properties:
+        itemId:
+          type: integer
+          format: int64
+        occurredAt:
+          type: string
+          format: date-time
+        description:
+          type: string
+        amount:
+          type: string
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        category:
+          $ref: "#/components/schemas/TransactionCategory"
+        bankCategory:
+          type: string
+        cardLast4:
+          type: string
+        installment:
+          type: string
+          description: >-
+            Representação textual da parcela (ex.: 1/3) ou Única quando não
+            há parcelamento.
+        status:
+          $ref: "#/components/schemas/ImportItemStatus"
+    UpdateImportItemRequest:
+      type: object
+      description: Todos os campos são opcionais.
+      properties:
+        description:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        amount:
+          type: string
+        type:
+          $ref: "#/components/schemas/TransactionType"
+        category:
+          $ref: "#/components/schemas/TransactionCategory"
+    UploadImportResponse:
+      type: object
+      required: [importId, status, fileName, summary, items]
+      properties:
+        importId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/ImportBatchStatus"
+        fileName:
+          type: string
+        summary:
+          $ref: "#/components/schemas/ImportSummary"
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportItemResponse"
+    GetImportBatchResponse:
+      type: object
+      required: [importId, status, fileName, items]
+      properties:
+        importId:
+          type: integer
+          format: int64
+        status:
+          $ref: "#/components/schemas/ImportBatchStatus"
+        fileName:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImportItemResponse"
+    ConfirmImportResponse:
+      type: object
+      required: [importId, created, skipped, status]
+      properties:
+        importId:
+          type: integer
+          format: int64
+        created:
+          type: integer
+        skipped:
+          type: integer
+        status:
+          $ref: "#/components/schemas/ImportBatchStatus"
