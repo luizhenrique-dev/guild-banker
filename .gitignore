@@ -143,3 +143,5 @@ web/spa/.vite/
 web/spa/playwright-report/
 !web/spa/.env.demo
 !web/spa/.env.test
+
+web/spa/test-results-production/

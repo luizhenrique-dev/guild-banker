@@ -1,6 +1,6 @@
 ## Layout
 
-The root layout, `src/app/app.tsx`, is the single place for app-wide providers and global infrastructure.
+The Vite entry is `src/main.tsx`; `src/app/app.tsx` composes the router screens, providers, header and sidebar. Global CSS is `src/app/styles.css`. The UI catalog below is retained; pages do not need new layout wrappers or animations just to consume it.
 
 **Do not remove any existing entries without a reason.** Current infrastructure in the layout:
 
@@ -8,7 +8,7 @@ The root layout, `src/app/app.tsx`, is the single place for app-wide providers a
 |-------|---------|
 | `ThemeProvider` | Light/dark mode via Context local |
 | `Toaster` | Global toast notifications via Sonner |
-O handler de chunks e o script Abacus foram removidos por pertencerem à infraestrutura Next substituída.
+Next-specific chunk handling and injected hosting scripts were removed with the old runtime. Session/Query/i18n infrastructure lives in `src/shared/components/providers.tsx`; the local theme Context is in `components/theme-provider.tsx`.
 
 ---
 
@@ -144,7 +144,7 @@ Centered card on gradient background. Use for login, signup, onboarding flows.
 | `PressScale` | Press-down feedback for buttons | — |
 | `SkeletonPulse` | Loading placeholder | `className` (set width/height) |
 
-**Pattern:** Wrap page sections in `FadeIn`, list items in `Stagger`/`StaggerItem`, interactive cards in `HoverLift`.
+**Pattern:** Use catalog animation components only where a product interaction needs them; preserve the existing finance screens.
 
 ---
 

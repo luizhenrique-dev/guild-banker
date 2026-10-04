@@ -114,11 +114,11 @@ migrate/force: ## Force migration version (usage: make migrate/force version=1)
 # ==============================================================================
 # Web (React)
 # ==============================================================================
-.PHONY: web/install web/dev web/build web/lint web/test
+.PHONY: web/install web/dev web/build web/lint web/test web/demo web/types web/e2e web/e2e/prod web/preview
 
 web/install: ## Install frontend dependencies
 	@echo "$(CYAN)▶ Installing frontend dependencies...$(RESET)"
-	cd $(WEB_DIR) && npm install
+	cd $(WEB_DIR) && npm ci
 
 web/dev: ## Start frontend dev server
 	@echo "$(CYAN)▶ Starting frontend dev server...$(RESET)"
@@ -134,6 +134,21 @@ web/lint: ## Lint frontend code
 
 web/test: ## Run frontend tests
 	cd $(WEB_DIR) && npm test
+
+web/demo: ## Start frontend with explicit demonstration mocks
+	cd $(WEB_DIR) && npm run dev:demo
+
+web/types: ## Check generated frontend API types for drift
+	cd $(WEB_DIR) && npm run api:types:check
+
+web/e2e: ## Run frontend demonstration E2E tests
+	cd $(WEB_DIR) && npm run test:e2e
+
+web/e2e/prod: web/build ## Smoke-test the compiled static frontend
+	cd $(WEB_DIR) && npm run test:e2e:prod
+
+web/preview: ## Preview an existing static frontend build locally
+	cd $(WEB_DIR) && npm run preview
 
 # ==============================================================================
 # All-in-one
