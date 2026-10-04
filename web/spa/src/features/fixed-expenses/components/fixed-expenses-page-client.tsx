@@ -104,7 +104,8 @@ export function FixedExpensesPageClient() {
           <AlertDialogContent className="w-[calc(100%-2rem)] rounded-2xl" onCloseAutoFocus={(event) => {
             event.preventDefault()
             const target = returnFocus.current
-            if (target?.isConnected) target.focus()
+            if (deactivateMutation.isSuccess) newButton.current?.focus()
+            else if (target?.isConnected) target.focus()
             else newButton.current?.focus()
           }}>
             <AlertDialogTitle>{t('fx.deactivate.title')}</AlertDialogTitle>

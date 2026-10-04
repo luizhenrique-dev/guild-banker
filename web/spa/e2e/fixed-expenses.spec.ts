@@ -46,7 +46,9 @@ for (const width of [375, 1280]) {
     const pause = page.waitForRequest((request) => request.url().endsWith('/deactivate') && request.method() === 'PATCH')
     await confirmation.getByRole('button', { name: 'Desativar', exact: true }).click()
     expect((await pause).postDataJSON()).toEqual({ status: 'PAUSED' })
+    await expect(confirmation).toHaveCount(0)
     await expect(row).toHaveCount(0)
+    await expect(newButton).toBeFocused()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     if (width === 375) {
       const table = page.getByRole('table', { name: 'Minhas despesas fixas' })
