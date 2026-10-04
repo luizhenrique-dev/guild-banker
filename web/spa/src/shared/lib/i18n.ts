@@ -109,6 +109,10 @@ const resources = {
       'tx.toast.visibilityChanged': 'Visibilidade alterada.',
 
       // Guild page
+      'guild.selectValid': 'Selecione uma guild válida.',
+      'guild.select': 'Selecionar guild',
+      'guild.empty': 'Nenhuma guild disponível.',
+      'guild.demoMembers': 'Membros demonstrativos',
       'guild.title': 'Guild / Membros',
       'guild.subtitle': 'Gerencie o guild e seus membros.',
       'guild.name': 'Nome do Guild',
@@ -124,6 +128,10 @@ const resources = {
       'guild.toast.removed': 'Membro removido.',
 
       // Import page
+      'validation.email': 'Informe um email válido.',
+      'validation.csv': 'Selecione um arquivo CSV.',
+      'validation.fileSize': 'Arquivo deve ter entre 1 byte e 5 MiB.',
+      'import.selectFile': 'Selecionar arquivo',
       'import.title': 'Importar extrato',
       'import.subtitle': 'Envie um arquivo CSV para importar transações.',
       'import.dropzone': 'Arraste um arquivo CSV aqui ou clique para selecionar',
@@ -236,6 +244,10 @@ const resources = {
       'tx.toast.cancelled': 'Transaction cancelled.',
       'tx.toast.visibilityChanged': 'Visibility changed.',
 
+      'guild.selectValid': 'Select a valid guild.',
+      'guild.select': 'Select guild',
+      'guild.empty': 'No guild available.',
+      'guild.demoMembers': 'Demo members',
       'guild.title': 'Guild / Members',
       'guild.subtitle': 'Manage your guild and its members.',
       'guild.name': 'Guild Name',
@@ -250,6 +262,10 @@ const resources = {
       'guild.toast.invited': 'Invite sent!',
       'guild.toast.removed': 'Member removed.',
 
+      'validation.email': 'Enter a valid email.',
+      'validation.csv': 'Select a CSV file.',
+      'validation.fileSize': 'File must be between 1 byte and 5 MiB.',
+      'import.selectFile': 'Select file',
       'import.title': 'Import statement',
       'import.subtitle': 'Upload a CSV file to import transactions.',
       'import.dropzone': 'Drag a CSV file here or click to select',

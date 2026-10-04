@@ -10,15 +10,18 @@
 // 5. Loading/error states consistentes
 // ============================================================
 import { QueryClient } from '@tanstack/react-query'
+import { APIError } from './api-client'
 
 export function makeQueryClient(): QueryClient {
   return new QueryClient({
     defaultOptions: {
+      mutations: { retry: false },
       queries: {
         // 📌 PADRÃO: staleTime de 60s evita re-fetches agressivos
         staleTime: 60 * 1000,
         // 📌 PADRÃO: retry 1x em caso de erro de rede
-        retry: 1,
+        retry: (count, error) => count < 1 && error instanceof APIError && (error.kind === 'network' || error.status >= 500 && error.status !== 501),
+        retryDelay: 200,
         // 📌 PADRÃO: refetch quando a aba volta ao foco
         refetchOnWindowFocus: false,
       },

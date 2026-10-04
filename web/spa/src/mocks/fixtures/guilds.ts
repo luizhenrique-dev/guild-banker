@@ -1,4 +1,4 @@
-import type { Guild } from '@/src/shared/store/guild.store'
+import type { Guild } from '@/src/features/guilds/types'
 
 export const guildsFixtures: Guild[] = [
   {

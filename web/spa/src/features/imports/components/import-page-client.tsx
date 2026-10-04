@@ -2,56 +2,35 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FileUp, Upload, CheckCircle, Trash2, AlertTriangle } from 'lucide-react'
-import { getActiveGuildId } from '@/src/shared/lib/legacy-session'
-import { importsApi } from '../api/imports.api'
-import { toast } from 'sonner'
-import type { UploadImportResponse, ImportItemResponse } from '../types'
+import { useActiveGuild } from '../../guilds/use-active-guild'
+import { useImports } from '../api/use-imports'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { importSchema, type ImportInput } from '../schemas/import.schema'
+import type { ImportItemResponse } from '../types'
 
 export function ImportPageClient() {
   const { t } = useTranslation()
-  const [file, setFile] = useState<File | null>(null)
+  const { activeGuild } = useActiveGuild()
+  const { revision: importResult, upload, confirm } = useImports(activeGuild!.id)
+  const { watch, setValue, handleSubmit, reset, formState: { errors } } = useForm<ImportInput>({ resolver: zodResolver(importSchema) })
+  const file = watch('file')
   const [dragOver, setDragOver] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [importResult, setImportResult] = useState<UploadImportResponse | null>(null)
-  const [confirming, setConfirming] = useState(false)
-
+  const uploading = upload.isPending
+  const confirming = confirm.isPending
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     setDragOver(false)
     const droppedFile = e.dataTransfer.files?.[0]
-    if (droppedFile?.name?.endsWith('.csv')) {
-      setFile(droppedFile)
-    }
-  }, [])
+    if (droppedFile) setValue('file', droppedFile, { shouldValidate: true })
+  }, [setValue])
 
-  const handleUpload = async () => {
-    if (!file) return
-    setUploading(true)
-    try {
-      const data = await importsApi.upload(getActiveGuildId(), file)
-      setImportResult(data)
-      toast.success(t('import.toast.uploaded'))
-    } catch {
-      toast.error(t('fx.toast.error'))
-    } finally {
-      setUploading(false)
-    }
-  }
-
+  const handleUpload = handleSubmit(async ({ file }) => {
+    try { await upload.mutateAsync(file) } catch { /* Preserve the file on failure. */ }
+  })
   const handleConfirm = async () => {
     if (!importResult) return
-    setConfirming(true)
-    try {
-      const data = await importsApi.confirm(getActiveGuildId(), importResult.importId)
-      const created = data.created
-      toast.success(t('import.toast.confirmed', { created }))
-      setImportResult(null)
-      setFile(null)
-    } catch {
-      toast.error(t('fx.toast.error'))
-    } finally {
-      setConfirming(false)
-    }
+    try { await confirm.mutateAsync(importResult.importId); reset() } catch { /* Preserve revision on failure. */ }
   }
 
   const statusBadge = (status: string) => {
@@ -91,14 +70,16 @@ export function ImportPageClient() {
             <input
               type="file"
               accept=".csv"
-              className="hidden"
+              className="sr-only"
+              aria-label={t('import.selectFile')}
               onChange={(e) => {
                 const f = e.target.files?.[0]
-                if (f) setFile(f)
+                if (f) setValue('file', f, { shouldValidate: true })
               }}
             />
-            Selecionar arquivo
+            {t('import.selectFile')}
           </label>
+          {errors.file && <p role="alert">{t(errors.file.message ?? 'validation.csv')}</p>}
           {file && (
             <div className="flex items-center gap-3">
               <span className="text-[14px] font-medium">{file.name}</span>

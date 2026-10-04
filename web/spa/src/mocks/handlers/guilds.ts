@@ -1,14 +1,15 @@
 import { http, HttpResponse, delay } from 'msw'
+import { mockUserID, mockGuildMember } from '../request-context'
 import { guildsFixtures } from '../fixtures/guilds'
-import type { Guild } from '@/src/shared/store/guild.store'
+import type { Guild } from '@/src/features/guilds/types'
 
 let guilds = structuredClone(guildsFixtures)
 
 export const guildsHandlers = [
   // operationId: listGuildsByMember
-  http.get('*/api/v1/guilds', async () => {
+  http.get('*/api/v1/guilds', async ({ request }) => {
     await delay(500)
-    return HttpResponse.json(guilds)
+    return HttpResponse.json(guilds.filter((guild) => mockGuildMember(request, guild.id)))
   }),
 
   // operationId: createGuild
@@ -55,13 +56,15 @@ export const guildsHandlers = [
   }),
 
   // operationId: inviteGuildMember
-  http.post('*/api/v1/guilds/:id/invites', async () => {
+  http.post('*/api/v1/guilds/:id/invites', async ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['id']))) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),
 
   // operationId: removeGuildMember
-  http.delete('*/api/v1/guilds/:id/members/:userID', async () => {
+  http.delete('*/api/v1/guilds/:id/members/:userID', async ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['id'])) || Number(params['userID']) === mockUserID(request)) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),

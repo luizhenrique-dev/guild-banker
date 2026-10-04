@@ -1,44 +1,47 @@
-'use client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { transactionsApi } from './transactions.api'
+import { transactionsApi, type ListParams } from './transactions.api'
+import { useSession } from '@/src/app/session-provider'
+import { useActiveGuild } from '../../guilds/use-active-guild'
 import { toast } from 'sonner'
 import i18n from '@/src/shared/lib/i18n'
 
 export const transactionKeys = {
-  all: ['transactions'] as const,
-  lists: () => [...transactionKeys.all, 'list'] as const,
-  list: (filters?: Record<string, unknown>) => [...transactionKeys.lists(), filters] as const,
+  lists: (userID?: number, guildID?: number) => ['transactions', userID, guildID] as const,
+  list: (userID?: number, guildID?: number, filters: ListParams = {}) => ['transactions', userID, guildID, filters] as const,
 }
-
-export function useTransactions(filters: { cursor?: string; category?: string; type?: string } = {}) {
+export function useTransactions(filters: ListParams = {}) {
+  const session = useSession()
+  const { activeGuild } = useActiveGuild()
   return useQuery({
-    queryKey: transactionKeys.list(filters),
-    queryFn: () => transactionsApi.list(filters),
-    staleTime: 1000 * 60 * 2,
+    queryKey: transactionKeys.list(session.user?.id, activeGuild?.id, filters),
+    queryFn: ({ signal }) => session.request((options) => transactionsApi.list(filters, options, activeGuild!.id), signal),
+    enabled: !!session.user && !!activeGuild,
+    staleTime: 2 * 60 * 1000,
   })
 }
-
 export function useCancelTransaction() {
+  const session = useSession()
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: number) => transactionsApi.cancel(id),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: transactionKeys.lists() })
+    mutationFn: ({ id, guildId }: { id: number; guildId: number }) => session.request((options) => transactionsApi.cancel(id, options, guildId)),
+    onSuccess: (_result, { guildId }) => {
+      if (!session.active()) return
+      void qc.invalidateQueries({ queryKey: transactionKeys.lists(session.user?.id, guildId) })
       toast.success(i18n.t('tx.toast.cancelled'))
     },
-    onError: () => toast.error(i18n.t('fx.toast.error')),
+    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
   })
 }
-
 export function useToggleVisibility() {
+  const session = useSession()
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, visibility }: { id: number; visibility: 'PRIVATE' | 'PUBLIC' }) =>
-      transactionsApi.setVisibility(id, visibility),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: transactionKeys.lists() })
+    mutationFn: ({ id, guildId, visibility }: { id: number; guildId: number; visibility: 'PRIVATE' | 'PUBLIC' }) => session.request((options) => transactionsApi.setVisibility(id, visibility, options, guildId)),
+    onSuccess: (_result, { guildId }) => {
+      if (!session.active()) return
+      void qc.invalidateQueries({ queryKey: transactionKeys.lists(session.user?.id, guildId) })
       toast.success(i18n.t('tx.toast.visibilityChanged'))
     },
-    onError: () => toast.error(i18n.t('fx.toast.error')),
+    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
   })
 }

@@ -2,6 +2,11 @@ import type { TransactionResponse } from '@/src/features/transactions/types'
 
 export const transactionsFixtures: TransactionResponse[] = [
   {
+    id: 20, type: 'EXPENSE', description: 'Compras da República', amount: '80.00',
+    category: 'GROCERY', status: 'ACTIVE', source: 'MANUAL', visibility: 'PUBLIC',
+    occurredAt: '2026-07-20T10:30:00Z', guildId: 2, userAccountId: 2, createdAt: '2026-07-20T10:35:00Z',
+  },
+  {
     id: 1,
     type: 'EXPENSE',
     description: 'Supermercado Extra',

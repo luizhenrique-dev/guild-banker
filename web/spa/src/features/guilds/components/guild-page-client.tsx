@@ -1,30 +1,29 @@
 'use client'
-import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { inviteSchema, type InviteInput } from '../schemas/invite.schema'
+import { useSession } from '@/src/app/session-provider'
 import { useTranslation } from 'react-i18next'
-import { useGuildStore } from '@/src/shared/store/guild.store'
-import { useInviteMember, useRemoveMember } from '../api/use-guilds'
+import { useActiveGuild } from '../use-active-guild'
+import { useInviteMember, useRemoveMember, useDemoMembers } from '../api/use-guilds'
 import { Users, Mail, Trash2, CheckCircle, XCircle } from 'lucide-react'
-
-// Membros mock (não há endpoint GET /members na spec)
-const mockMembers = [
-  { id: 1, name: 'Ana Silva', email: 'ana@familia.com', role: 'Criadora' },
-  { id: 2, name: 'Carlos Silva', email: 'carlos@familia.com', role: 'Membro' },
-  { id: 3, name: 'Maria Silva', email: 'maria@familia.com', role: 'Membro' },
-]
 
 export function GuildPageClient() {
   const { t } = useTranslation()
-  const activeGuild = useGuildStore((s) => s.activeGuild)
+  const { activeGuild } = useActiveGuild()
+  const { user } = useSession()
+  const { data: mockMembers = [] } = useDemoMembers(activeGuild!.id)
   const inviteMutation = useInviteMember()
   const removeMutation = useRemoveMember()
-  const [inviteEmail, setInviteEmail] = useState('')
-
-  const handleInvite = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!activeGuild || !inviteEmail) return
-    inviteMutation.mutate({ guildId: activeGuild.id, email: inviteEmail })
-    setInviteEmail('')
-  }
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<InviteInput>({ resolver: zodResolver(inviteSchema), defaultValues: { email: '' } })
+  const inviteEmail = watch('email')
+  const handleInvite = handleSubmit(async ({ email }) => {
+    if (!activeGuild) return
+    try {
+      await inviteMutation.mutateAsync({ guildId: activeGuild.id, email })
+      reset()
+    } catch { /* Preserve input; the hook reports the failure once. */ }
+  })
 
   return (
     <main className="flex-1 px-8 py-8">
@@ -70,8 +69,10 @@ export function GuildPageClient() {
         <form onSubmit={handleInvite} className="flex flex-wrap gap-3">
           <input
             type="email"
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
+            aria-label={t('guild.invite')}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? 'invite-error' : undefined}
+            {...register('email')}
             placeholder={t('guild.invitePlaceholder')}
             className="min-w-0 flex-1 rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none focus:border-[#0052ff]"
           />
@@ -83,6 +84,7 @@ export function GuildPageClient() {
             {t('guild.inviteButton')}
           </button>
         </form>
+        {errors.email && <p id="invite-error" role="alert">{t(errors.email.message ?? 'validation.email')}</p>}
       </div>
 
       {/* Membros */}
@@ -90,7 +92,7 @@ export function GuildPageClient() {
         <div className="border-b border-[#dee1e6] px-6 py-4">
           <h3 className="flex items-center gap-2 text-[15px] font-semibold">
             <Users size={18} className="text-[#0052ff]" />
-            {t('guild.members')}
+            {t('guild.demoMembers')}
           </h3>
         </div>
         <div className="divide-y divide-[#eef0f3]">
@@ -109,7 +111,7 @@ export function GuildPageClient() {
                 <span className="rounded-full bg-[#eef0f3] px-2.5 py-1 text-[11px] font-semibold text-[#5b616e]">
                   {member.role}
                 </span>
-                {member.id !== 1 && (
+                {member.id !== user?.id && (
                   <button
                     type="button"
                     onClick={() =>
@@ -117,6 +119,7 @@ export function GuildPageClient() {
                       removeMutation.mutate({ guildId: activeGuild.id, userId: member.id })
                     }
                     className="text-[#7c828a] transition-colors hover:text-[#cf202f]"
+                    aria-label={t('guild.remove') + ' ' + member.name} disabled={removeMutation.isPending}
                     title={t('guild.remove')}
                   >
                     <Trash2 size={15} />

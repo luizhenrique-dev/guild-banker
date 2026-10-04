@@ -1,4 +1,6 @@
 import { http, HttpResponse, delay } from 'msw'
+import { mockUserID, mockGuildMember } from '../request-context'
+import { addImportedTransactions } from './transactions'
 import type { ImportItemResponse, UploadImportResponse, ConfirmImportResponse } from '@/src/features/imports/types'
 
 // 📌 PADRÃO: Handlers simplificados para a feature de import
@@ -41,71 +43,56 @@ const initialImportItems: ImportItemResponse[] = [
   },
 ]
 
-let mockImportItems = structuredClone(initialImportItems)
+const batches = new Map<string, UploadImportResponse>()
+let nextImportID = 1
+function batchKey(request: Request, guildID: unknown, importID: unknown) { return `${mockUserID(request)}:${guildID}:${importID}` }
+const forbidden = () => HttpResponse.json({ error: 'forbidden' }, { status: 403 })
+const missing = () => HttpResponse.json({ error: 'not found' }, { status: 404 })
 
 export const importsHandlers = [
-  // operationId: uploadImport
-  http.post('*/api/v1/guilds/:guildID/imports', async ({ request }) => {
+  http.post('*/api/v1/guilds/:guildID/imports', async ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['guildID']))) return forbidden()
     const form = await request.formData()
     const file = form.get('file')
     if (!(file instanceof File) || file.size === 0 || file.size > 5 * 1024 * 1024) return HttpResponse.json({ error: 'invalid file size' }, { status: 400 })
-    await delay(800)
-    return HttpResponse.json<UploadImportResponse>(
-      {
-        importId: 1,
-        status: 'PENDING_REVIEW',
-        fileName: file.name,
-        summary: { parsed: 3, candidates: 2, duplicates: 1, skippedZero: 0 },
-        items: mockImportItems,
-      },
-      { status: 201 }
-    )
-  }),
-
-  // operationId: getImportById
-  http.get('*/api/v1/guilds/:guildID/imports/:importID', async () => {
-    await delay(500)
-    return HttpResponse.json({
-      importId: 1,
-      status: 'PENDING_REVIEW',
-      fileName: 'fatura-c6-julho.csv',
-      items: mockImportItems,
-    })
-  }),
-
-  // operationId: updateImportItem
-  http.patch('*/api/v1/guilds/:guildID/imports/:importID/items/:itemID', async ({ params, request }) => {
     await delay(300)
-    const itemId = Number(params['itemID'])
-    const body = (await request.json()) as Record<string, unknown>
-    const item = mockImportItems.find((i) => i.itemId === itemId)
-    if (!item) return HttpResponse.json({ error: 'Não encontrado' }, { status: 404 })
-    Object.assign(item, body)
+    const batch: UploadImportResponse = {
+      importId: nextImportID++, status: 'PENDING_REVIEW', fileName: file.name,
+      summary: { parsed: 3, candidates: 2, duplicates: 1, skippedZero: 0 }, items: structuredClone(initialImportItems),
+    }
+    batches.set(batchKey(request, params['guildID'], batch.importId), batch)
+    return HttpResponse.json(batch, { status: 201 })
+  }),
+  http.get('*/api/v1/guilds/:guildID/imports/:importID', ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['guildID']))) return forbidden()
+    const batch = batches.get(batchKey(request, params['guildID'], params['importID']))
+    if (!batch) return missing()
+    return HttpResponse.json({ importId: batch.importId, status: batch.status, fileName: batch.fileName, items: batch.items })
+  }),
+  http.patch('*/api/v1/guilds/:guildID/imports/:importID/items/:itemID', async ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['guildID']))) return forbidden()
+    const batch = batches.get(batchKey(request, params['guildID'], params['importID']))
+    const item = batch?.items.find((item) => item.itemId === Number(params['itemID']))
+    if (!item) return missing()
+    Object.assign(item, await request.json(), { status: 'READY' })
     return HttpResponse.json(item)
   }),
-
-  // operationId: discardImportItem
-  http.delete('*/api/v1/guilds/:guildID/imports/:importID/items/:itemID', async ({ params }) => {
-    await delay(300)
-    const itemId = Number(params['itemID'])
-    const idx = mockImportItems.findIndex((i) => i.itemId === itemId)
-    if (idx !== -1) {
-      const item = mockImportItems[idx]
-      if (item) (item as { status: string }).status = 'DISCARDED'
-    }
+  http.delete('*/api/v1/guilds/:guildID/imports/:importID/items/:itemID', ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['guildID']))) return forbidden()
+    const item = batches.get(batchKey(request, params['guildID'], params['importID']))?.items.find((item) => item.itemId === Number(params['itemID']))
+    if (!item) return missing()
+    item.status = 'DISCARDED'
     return new HttpResponse(null, { status: 204 })
   }),
-
-  // operationId: confirmImport
-  http.post('*/api/v1/guilds/:guildID/imports/:importID/confirm', async () => {
-    await delay(600)
-    return HttpResponse.json<ConfirmImportResponse>({
-      importId: 1,
-      created: 2,
-      skipped: 1,
-      status: 'COMPLETED',
-    })
+  http.post('*/api/v1/guilds/:guildID/imports/:importID/confirm', async ({ params, request }) => {
+    if (!mockGuildMember(request, Number(params['guildID']))) return forbidden()
+    const batch = batches.get(batchKey(request, params['guildID'], params['importID']))
+    if (!batch) return missing()
+    if (batch.status !== 'PENDING_REVIEW') return HttpResponse.json({ error: 'batch is not pending review' }, { status: 400 })
+    await delay(300)
+    const created = addImportedTransactions(mockUserID(request), Number(params['guildID']), batch.items)
+    batch.status = 'COMPLETED'
+    return HttpResponse.json<ConfirmImportResponse>({ importId: batch.importId, created, skipped: batch.items.length - created, status: 'COMPLETED' })
   }),
 ]
-
-export function resetImportsMocks() { mockImportItems = structuredClone(initialImportItems) }
+export function resetImportsMocks() { batches.clear(); nextImportID = 1 }

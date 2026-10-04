@@ -1,14 +1,14 @@
 'use client'
 import { useTranslation } from 'react-i18next'
-import { useAuthStore } from '@/src/shared/store/auth.store'
-import { useGuildStore } from '@/src/shared/store/guild.store'
+import { useSession } from '@/src/app/session-provider'
+import { useActiveGuild } from '@/src/features/guilds/use-active-guild'
 import { LogOut, ChevronDown, Shield, Users } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
 export function Header() {
   const { t, i18n } = useTranslation()
-  const user = useAuthStore((s) => s.user)
-  const { activeGuild, guilds, setActiveGuild } = useGuildStore()
+  const { user, logout } = useSession()
+  const { activeGuild, guilds, setActiveGuild } = useActiveGuild()
   const [guildOpen, setGuildOpen] = useState(false)
   const guildRef = useRef<HTMLDivElement>(null)
 
@@ -52,7 +52,7 @@ export function Header() {
             className="flex items-center gap-2 rounded-full bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#dee1e6]"
           >
             <Users size={14} className="text-[#0052ff]" />
-            {activeGuild?.display_name ?? 'Selecionar guild'}
+            {activeGuild?.display_name ?? t('guild.select')}
             <ChevronDown size={12} className="text-[#7c828a]" />
           </button>
 
@@ -125,10 +125,7 @@ export function Header() {
         {/* Logout */}
         <button
           type="button"
-          onClick={() => {
-            // 💡 REAL API: Redirecionar para logout do Keycloak
-            useAuthStore.getState().clearUser()
-          }}
+          onClick={logout}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] transition-colors hover:bg-[#f7f7f7] hover:text-[#0a0b0d]"
           aria-label={t('header.logout')} title={t('header.logout')}
         >

@@ -1,5 +1,6 @@
 'use client'
-import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useActiveGuild } from '../../guilds/use-active-guild'
 import { useTranslation } from 'react-i18next'
 import { useTransactions, useCancelTransaction, useToggleVisibility } from '../api/use-transactions'
 import { TRANSACTION_CATEGORIES, type TransactionResponse } from '../types'
@@ -29,13 +30,18 @@ function formatDate(iso: string): string {
 
 export function TransactionsPageClient() {
   const { t } = useTranslation()
-  const [category, setCategory] = useState<string>('')
-  const [type, setType] = useState<string>('')
-
-  const filters: Record<string, string> = {}
-  if (category) filters['category'] = category
-  if (type) filters['type'] = type
-
+  const { activeGuild } = useActiveGuild()
+  const [params, setParams] = useSearchParams()
+  const categoryParam = params.get('category') ?? ''
+  const category = TRANSACTION_CATEGORIES.includes(categoryParam as typeof TRANSACTION_CATEGORIES[number]) ? categoryParam : ''
+  const typeParam = params.get('type') ?? ''
+  const type = ['EXPENSE', 'INCOME'].includes(typeParam) ? typeParam : ''
+  const setFilter = (key: string, value: string) => {
+    const next = new URLSearchParams(params)
+    if (value) next.set(key, value); else next.delete(key)
+    setParams(next)
+  }
+  const filters = { category: category || undefined, type: type || undefined }
   const { data, isLoading, error } = useTransactions(filters)
   const cancelMutation = useCancelTransaction()
   const visibilityMutation = useToggleVisibility()
@@ -55,7 +61,8 @@ export function TransactionsPageClient() {
       <div className="mb-6 flex items-center gap-3">
         <select
           value={type}
-          onChange={(e) => setType(e.target.value)}
+          aria-label={t('tx.filterType')}
+          onChange={(e) => setFilter('type', e.target.value)}
           className="rounded-xl border border-[#dee1e6] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0052ff]"
         >
           <option value="">{t('tx.filterAll')} — {t('tx.filterType')}</option>
@@ -64,7 +71,8 @@ export function TransactionsPageClient() {
         </select>
         <select
           value={category}
-          onChange={(e) => setCategory(e.target.value)}
+          aria-label={t('tx.filterCategory')}
+          onChange={(e) => setFilter('category', e.target.value)}
           className="rounded-xl border border-[#dee1e6] bg-white px-3 py-2 text-[13px] outline-none focus:border-[#0052ff]"
         >
           <option value="">{t('tx.filterAll')} — {t('tx.filterCategory')}</option>
@@ -136,9 +144,11 @@ export function TransactionsPageClient() {
                   <td className="py-4 pr-6 text-right">
                     <button
                       type="button"
+                      disabled={visibilityMutation.isPending}
                       onClick={() =>
                         visibilityMutation.mutate({
                           id: tx.id,
+                          guildId: activeGuild!.id,
                           visibility: tx.visibility === 'PUBLIC' ? 'PRIVATE' : 'PUBLIC',
                         })
                       }
@@ -149,9 +159,10 @@ export function TransactionsPageClient() {
                     </button>
                     <button
                       type="button"
+                      disabled={cancelMutation.isPending}
                       onClick={() => {
                         if (window.confirm(t('tx.cancel') + '?')) {
-                          cancelMutation.mutate(tx.id)
+                          cancelMutation.mutate({ id: tx.id, guildId: activeGuild!.id })
                         }
                       }}
                       className="text-[#7c828a] transition-colors hover:text-[#cf202f]"

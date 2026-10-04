@@ -1,24 +1,12 @@
-'use client'
-// ============================================================
-// 📌 PADRÃO: Client-side Providers
-// Centraliza todos os providers que precisam de "use client".
-// O layout raiz (server component) importa este wrapper.
-// ============================================================
 import { useState, type ReactNode } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
-import { makeQueryClient } from '@/src/shared/lib/query-client'
+import { makeQueryClient } from '../lib/query-client'
 import { I18nProvider } from './i18n-provider'
+import { SessionProvider, type SessionUser } from '../../app/session-provider'
 
-export function Providers({ children }: { children: ReactNode }) {
-  // 📌 PADRÃO: QueryClient em useState garante que cada sessão
-  // tem sua própria instância (evita compartilhamento entre requests SSR).
+export function Providers({ children, initialUser, demo }: { children: ReactNode; initialUser?: SessionUser | null; demo?: boolean }) {
   const [queryClient] = useState(() => makeQueryClient())
-
-  return (
-    <I18nProvider>
-        <QueryClientProvider client={queryClient}>
-          {children}
-        </QueryClientProvider>
-    </I18nProvider>
-  )
+  return <I18nProvider><QueryClientProvider client={queryClient}>
+    <SessionProvider initialUser={initialUser} demo={demo}>{children}</SessionProvider>
+  </QueryClientProvider></I18nProvider>
 }

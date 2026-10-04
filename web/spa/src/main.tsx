@@ -7,20 +7,18 @@ import '@fontsource/jetbrains-mono/latin-400.css'
 import './app/styles.css'
 import { App } from './app/app'
 import { startMocks } from './app/start-mocks'
-import { useAuthStore } from './shared/store/auth.store'
-import { useGuildStore } from './shared/store/guild.store'
+import type { SessionUser } from './app/session-provider'
 
 async function bootstrap() {
   const root = createRoot(document.getElementById('root')!)
   try {
     const demo = await startMocks(import.meta.env.DEV, import.meta.env.VITE_USE_MOCKS)
+    let user: SessionUser | null = null
     if (import.meta.env.DEV && demo) {
-      useAuthStore.getState().setUser({ id: 1, name: 'Ana Silva', email: 'ana@familia.com' })
-      const { guildsFixtures } = await import('./mocks/fixtures/guilds')
-      useGuildStore.getState().setGuilds(guildsFixtures)
-      useGuildStore.getState().setActiveGuild(guildsFixtures[0]!)
+      const { demoUser } = await import('./mocks/fixtures/session')
+      user = demoUser
     }
-    root.render(<BrowserRouter><App /></BrowserRouter>)
+    root.render(<BrowserRouter><App initialUser={user} demo={import.meta.env.DEV && demo} /></BrowserRouter>)
   } catch {
     root.render(<main role="alert">Falha ao iniciar a demonstração. Recarregue para tentar novamente.</main>)
   }

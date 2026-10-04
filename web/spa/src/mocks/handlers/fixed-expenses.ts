@@ -3,12 +3,18 @@
 // Espelham os endpoints da OpenAPI spec (tags: FixedExpenses)
 // ============================================================
 import { http, HttpResponse, delay } from 'msw'
+import { mockUserID } from '../request-context'
 import { fixedExpensesFixtures } from '../fixtures/fixed-expenses'
 import type { FixedExpenseResponse } from '@/src/features/fixed-expenses/types'
 
 // 📌 PADRÃO: Estado in-memory para que mutations persistam durante a sessão.
 // Em produção, isso é o banco de dados.
-let expenses = structuredClone(fixedExpensesFixtures)
+const expensesByUser = new Map<number, FixedExpenseResponse[]>()
+function userExpenses(request: Request) {
+  const userID = mockUserID(request)
+  if (!expensesByUser.has(userID)) expensesByUser.set(userID, userID === 1 ? structuredClone(fixedExpensesFixtures) : [])
+  return expensesByUser.get(userID)!
+}
 let nextId = 100
 
 export const fixedExpensesHandlers = [
@@ -18,7 +24,9 @@ export const fixedExpensesHandlers = [
   // Produção: requer header X-User-ID para filtrar despesas do usuário logado
   // Retorna apenas despesas com status ACTIVE
   // --------------------------------------------------------
-  http.get('*/api/v1/fixed-expenses', async () => {
+  http.get('*/api/v1/fixed-expenses', async ({ request }) => {
+    const expenses = userExpenses(request)
+    if (!mockUserID(request)) return HttpResponse.json({ error: 'x-user-id header is required' }, { status: 400 })
     await delay(600)
     const active = expenses.filter((e) => e.status === 'ACTIVE')
     return HttpResponse.json(active)
@@ -31,6 +39,8 @@ export const fixedExpensesHandlers = [
   // Body: { name, amount, due_day, category }
   // --------------------------------------------------------
   http.post('*/api/v1/fixed-expenses', async ({ request }) => {
+    const expenses = userExpenses(request)
+    if (!mockUserID(request) || !request.headers.get('X-User-Email')) return HttpResponse.json({ error: 'identity headers required' }, { status: 400 })
     await delay(500)
     const body = (await request.json()) as {
       name: string
@@ -58,6 +68,8 @@ export const fixedExpensesHandlers = [
   // Produção: campos opcionais — só os enviados são atualizados
   // --------------------------------------------------------
   http.patch('*/api/v1/fixed-expenses/:id', async ({ params, request }) => {
+    const expenses = userExpenses(request)
+    if (!mockUserID(request) || !request.headers.get('X-User-Email')) return HttpResponse.json({ error: 'identity headers required' }, { status: 400 })
     await delay(400)
     const id = Number(params['id'])
     const body = (await request.json()) as Partial<FixedExpenseResponse>
@@ -84,6 +96,8 @@ export const fixedExpensesHandlers = [
   // Produção: só aceita PAUSED ou CANCELLED; outros retornam 400
   // --------------------------------------------------------
   http.patch('*/api/v1/fixed-expenses/:id/deactivate', async ({ params, request }) => {
+    const expenses = userExpenses(request)
+    if (!mockUserID(request) || !request.headers.get('X-User-Email')) return HttpResponse.json({ error: 'identity headers required' }, { status: 400 })
     await delay(400)
     const id = Number(params['id'])
     const body = (await request.json()) as { status: string }
@@ -110,6 +124,6 @@ export const fixedExpensesHandlers = [
 ]
 
 export function resetFixedExpensesMocks() {
-  expenses = structuredClone(fixedExpensesFixtures)
+  expensesByUser.clear()
   nextId = 100
 }
