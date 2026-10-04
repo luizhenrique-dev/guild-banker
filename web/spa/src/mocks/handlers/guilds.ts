@@ -6,13 +6,13 @@ let guilds = structuredClone(guildsFixtures)
 
 export const guildsHandlers = [
   // operationId: listGuildsByMember
-  http.get('/api/v1/guilds', async () => {
+  http.get('*/api/v1/guilds', async () => {
     await delay(500)
     return HttpResponse.json(guilds)
   }),
 
   // operationId: createGuild
-  http.post('/api/v1/guilds', async ({ request }) => {
+  http.post('*/api/v1/guilds', async ({ request }) => {
     await delay(500)
     const body = (await request.json()) as { name: string; display_name: string }
     const newGuild: Guild = {
@@ -26,7 +26,7 @@ export const guildsHandlers = [
   }),
 
   // operationId: updateGuildName
-  http.put('/api/v1/guilds/:id', async ({ params, request }) => {
+  http.put('*/api/v1/guilds/:id', async ({ params, request }) => {
     await delay(400)
     const id = Number(params['id'])
     const body = (await request.json()) as { name: string }
@@ -37,7 +37,7 @@ export const guildsHandlers = [
   }),
 
   // operationId: enableGuild
-  http.patch('/api/v1/guilds/:id/enable', async ({ params }) => {
+  http.patch('*/api/v1/guilds/:id/enable', async ({ params }) => {
     await delay(300)
     const id = Number(params['id'])
     const guild = guilds.find((g) => g.id === id)
@@ -46,7 +46,7 @@ export const guildsHandlers = [
   }),
 
   // operationId: disableGuild
-  http.patch('/api/v1/guilds/:id/disable', async ({ params }) => {
+  http.patch('*/api/v1/guilds/:id/disable', async ({ params }) => {
     await delay(300)
     const id = Number(params['id'])
     const guild = guilds.find((g) => g.id === id)
@@ -55,13 +55,13 @@ export const guildsHandlers = [
   }),
 
   // operationId: inviteGuildMember
-  http.post('/api/v1/guilds/:id/invites', async () => {
+  http.post('*/api/v1/guilds/:id/invites', async () => {
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),
 
   // operationId: removeGuildMember
-  http.delete('/api/v1/guilds/:id/members/:userID', async () => {
+  http.delete('*/api/v1/guilds/:id/members/:userID', async () => {
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),

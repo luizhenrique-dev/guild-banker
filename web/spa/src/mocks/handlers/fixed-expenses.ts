@@ -18,7 +18,7 @@ export const fixedExpensesHandlers = [
   // Produção: requer header X-User-ID para filtrar despesas do usuário logado
   // Retorna apenas despesas com status ACTIVE
   // --------------------------------------------------------
-  http.get('/api/v1/fixed-expenses', async () => {
+  http.get('*/api/v1/fixed-expenses', async () => {
     await delay(600)
     const active = expenses.filter((e) => e.status === 'ACTIVE')
     return HttpResponse.json(active)
@@ -30,7 +30,7 @@ export const fixedExpensesHandlers = [
   // Produção: requer X-User-ID e X-User-Email
   // Body: { name, amount, due_day, category }
   // --------------------------------------------------------
-  http.post('/api/v1/fixed-expenses', async ({ request }) => {
+  http.post('*/api/v1/fixed-expenses', async ({ request }) => {
     await delay(500)
     const body = (await request.json()) as {
       name: string
@@ -57,7 +57,7 @@ export const fixedExpensesHandlers = [
   // PATCH /api/v1/fixed-expenses/:id
   // Produção: campos opcionais — só os enviados são atualizados
   // --------------------------------------------------------
-  http.patch('/api/v1/fixed-expenses/:id', async ({ params, request }) => {
+  http.patch('*/api/v1/fixed-expenses/:id', async ({ params, request }) => {
     await delay(400)
     const id = Number(params['id'])
     const body = (await request.json()) as Partial<FixedExpenseResponse>
@@ -72,7 +72,7 @@ export const fixedExpensesHandlers = [
       return HttpResponse.json({ error: 'Despesa fixa não encontrada' }, { status: 404 })
     }
 
-    const updated: FixedExpenseResponse = { ...existing, ...body, id }
+    const updated: FixedExpenseResponse = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category, status: body.status ?? existing.status }
     expenses[index] = updated
     return HttpResponse.json(updated)
   }),
@@ -83,7 +83,7 @@ export const fixedExpensesHandlers = [
   // Body: { status: 'PAUSED' | 'CANCELLED' }
   // Produção: só aceita PAUSED ou CANCELLED; outros retornam 400
   // --------------------------------------------------------
-  http.patch('/api/v1/fixed-expenses/:id/deactivate', async ({ params, request }) => {
+  http.patch('*/api/v1/fixed-expenses/:id/deactivate', async ({ params, request }) => {
     await delay(400)
     const id = Number(params['id'])
     const body = (await request.json()) as { status: string }

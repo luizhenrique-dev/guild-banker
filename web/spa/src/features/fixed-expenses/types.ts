@@ -4,29 +4,11 @@
 
 // 📌 PADRÃO: Enums como union types garantem type-safety
 // e IntelliSense no VS Code.
-export type FixedExpenseCategory =
-  | 'HOUSING'
-  | 'SUBSCRIPTIONS'
-  | 'INSURANCE'
-  | 'EDUCATION'
-  | 'TRANSPORTATION'
-  | 'HEALTH'
-  | 'PERSONAL'
-  | 'TAXES'
-  | 'OTHER'
+import type { components } from '@/src/shared/api/schema'
 
-export type FixedExpenseStatus = 'ACTIVE' | 'PAUSED' | 'CANCELLED'
-
-// 📌 PADRÃO: Interface alinhada 1:1 com o schema FixedExpenseResponse da spec.
-// O campo `amount` é string decimal (shopspring/decimal no Go).
-export interface FixedExpenseResponse {
-  id: number
-  name: string
-  amount: string // decimal string, ex: "2500.00"
-  due_day: number
-  category: FixedExpenseCategory
-  status: FixedExpenseStatus
-}
+export type FixedExpenseCategory = components['schemas']['FixedExpenseCategory']
+export type FixedExpenseStatus = components['schemas']['FixedExpenseStatus']
+export type FixedExpenseResponse = components['schemas']['FixedExpenseResponse']
 
 // Constante com todas as categorias para iteração
 export const FIXED_EXPENSE_CATEGORIES: FixedExpenseCategory[] = [

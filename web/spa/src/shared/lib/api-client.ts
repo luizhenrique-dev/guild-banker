@@ -1,110 +1,59 @@
-// ============================================================
-// API CLIENT — GuildBanker
-// ============================================================
-// MODO DESENVOLVIMENTO: MSW intercepta todas as chamadas abaixo.
-// Para conectar na API REAL, siga os passos:
-//
-// 1. Defina no .env.local:
-//    NEXT_PUBLIC_API_URL=http://localhost:8080
-//    NEXT_PUBLIC_USE_MOCK=false
-//
-// 2. Autenticação:
-//    A API usa JWT Bearer via Keycloak. Após login, armazene
-//    o access_token no Zustand/localStorage e injete no header:
-//    Authorization: Bearer <token>
-//
-//    ATENÇÃO: A validação JWT ainda não está implementada no
-//    backend (retorna 501). Enquanto isso, passe obrigatoriamente:
-//    X-User-ID: <id numérico do usuário>
-//    X-User-Email: <email do usuário>
-//    Esses headers são a única forma de autenticação funcional no momento.
-//
-// 3. Remova ou desabilite o MSW (NEXT_PUBLIC_USE_MOCK=false)
-//    e todos os endpoints funcionarão contra a API real.
-// ============================================================
-import axios from 'axios'
-import type { AxiosError, InternalAxiosRequestConfig } from 'axios'
-import { useAuthStore } from '@/src/shared/store/auth.store'
-import { useGuildStore } from '@/src/shared/store/guild.store'
-import { toast } from 'sonner'
+export class APIError extends Error {
+  constructor(message: string, public readonly status: number, public readonly kind: 'http' | 'network' | 'timeout' | 'invalid-response', options?: ErrorOptions) {
+    super(message, options)
+    this.name = 'APIError'
+  }
+}
 
-// 💡 REAL API: Em produção, troque para a URL do seu backend.
-const baseURL = import.meta.env.VITE_API_URL ?? ''
+export interface RequestOptions {
+  method?: string
+  body?: unknown
+  params?: Record<string, string | number | undefined>
+  headers?: HeadersInit
+  signal?: AbortSignal
+}
 
-export const apiClient = axios.create({
-  baseURL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  timeout: 15_000,
-})
-
-// ============================================================
-// REQUEST INTERCEPTOR
-// Injeta automaticamente os headers de autenticação em toda request.
-// ============================================================
-apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
-  const { user } = useAuthStore.getState()
-
-  if (user) {
-    // ⚠️ ATENÇÃO: X-User-ID e X-User-Email são a forma temporária de auth.
-    // Quando o JWT estiver funcional no backend, remova esses headers
-    // e use apenas o Authorization: Bearer <token>.
-    config.headers.set('X-User-ID', String(user.id))
-    config.headers.set('X-User-Email', user.email)
-
-    if (user.token) {
-      config.headers.set('Authorization', `Bearer ${user.token}`)
+export async function apiClient<T = void>(path: string, options: RequestOptions = {}): Promise<T> {
+  const url = new URL((import.meta.env.VITE_API_URL || '').replace(/\/+$/, '') + path, window.location.origin)
+  for (const [key, value] of Object.entries(options.params ?? {})) {
+    if (value !== undefined) url.searchParams.set(key, String(value))
+  }
+  const headers = new Headers(options.headers)
+  const multipart = options.body instanceof FormData
+  if (options.body !== undefined && !multipart) headers.set('Content-Type', 'application/json')
+  if (multipart) headers.delete('Content-Type')
+  const controller = new AbortController()
+  const cancel = () => controller.abort(options.signal?.reason)
+  if (options.signal?.aborted) cancel()
+  else options.signal?.addEventListener('abort', cancel, { once: true })
+  let timedOut = false
+  const timeout = setTimeout(() => {
+    timedOut = true
+    controller.abort(new DOMException('Request timeout', 'TimeoutError'))
+  }, 15000)
+  try {
+    const response = await fetch(url, {
+      method: options.method ?? 'GET', headers, signal: controller.signal,
+      body: options.body === undefined ? undefined : multipart ? options.body as FormData : JSON.stringify(options.body),
+    })
+    if (!response.ok) {
+      let message = `HTTP ${response.status}`
+      try {
+        const payload: unknown = await response.json()
+        if (payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string') message = payload.error
+      } catch { /* HTTP status remains useful without a JSON envelope. */ }
+      throw new APIError(message, response.status, 'http')
     }
+    if (response.status === 204) return undefined as T
+    try { return await response.json() as T }
+    catch (cause) { throw new APIError('Invalid JSON response', response.status, 'invalid-response', { cause }) }
+  } catch (cause) {
+    if (options.signal?.aborted) throw options.signal.reason ?? new DOMException('Request cancelled', 'AbortError')
+    if (timedOut) throw new APIError('Request timeout', 0, 'timeout', { cause })
+    if (cause instanceof APIError) throw cause
+    throw new APIError('Network request failed', 0, 'network', { cause })
+  } finally {
+    clearTimeout(timeout)
+    options.signal?.removeEventListener('abort', cancel)
   }
-
-  // 📌 PADRÃO: Log de requests em dev para debug
-  if (import.meta.env.DEV) {
-    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
-  }
-
-  return config
-})
-
-// ============================================================
-// RESPONSE INTERCEPTOR
-// Tratamento global de erros HTTP.
-// ============================================================
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error: AxiosError<{ error?: string }>) => {
-    const status = error?.response?.status
-    const message = error?.response?.data?.error ?? 'Erro inesperado'
-
-    switch (status) {
-      case 401:
-        // 💡 REAL API: Limpar sessão e redirecionar para login
-        useAuthStore.getState().clearUser()
-        toast.error('Sessão expirada. Faça login novamente.')
-        break
-      case 403:
-        toast.error('Você não tem permissão para esta ação.')
-        break
-      case 422:
-        // Erro de regra de negócio
-        toast.error(message)
-        break
-      case 500:
-        toast.error('Erro interno do servidor. Tente novamente mais tarde.')
-        break
-      default:
-        // 400, 404, 409 etc. — tratados individualmente pelos hooks de mutation
-        break
-    }
-
-    return Promise.reject(error)
-  }
-)
-
-// ============================================================
-// HELPER: Obter o guildID ativo para rotas que dependem dele
-// ============================================================
-export function getActiveGuildId(): number {
-  const { activeGuild } = useGuildStore.getState()
-  return activeGuild?.id ?? 1
 }

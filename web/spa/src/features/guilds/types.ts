@@ -1,2 +1,2 @@
-// Re-export do Guild type que já está no store
-export type { Guild } from '@/src/shared/store/guild.store'
+import type { components } from '@/src/shared/api/schema'
+export type Guild = components['schemas']['GuildResponse']

@@ -7,7 +7,7 @@ let nextTxId = 200
 
 export const transactionsHandlers = [
   // operationId: listTransactions
-  http.get('/api/v1/guilds/:guildID/transactions', async ({ request }) => {
+  http.get('*/api/v1/guilds/:guildID/transactions', async ({ request }) => {
     await delay(600)
     const url = new URL(request.url)
     const limit = Number(url.searchParams.get('limit') ?? '10')
@@ -31,7 +31,7 @@ export const transactionsHandlers = [
   }),
 
   // operationId: createTransaction
-  http.post('/api/v1/guilds/:guildID/transactions', async ({ request }) => {
+  http.post('*/api/v1/guilds/:guildID/transactions', async ({ request }) => {
     await delay(500)
     const body = (await request.json()) as {
       type: string
@@ -60,7 +60,7 @@ export const transactionsHandlers = [
   }),
 
   // operationId: deleteTransaction
-  http.delete('/api/v1/guilds/:guildID/transactions/:id', async ({ params }) => {
+  http.delete('*/api/v1/guilds/:guildID/transactions/:id', async ({ params }) => {
     await delay(400)
     const id = Number(params['id'])
     const tx = transactions.find((t) => t.id === id)
@@ -71,7 +71,7 @@ export const transactionsHandlers = [
   }),
 
   // operationId: setTransactionVisibility
-  http.patch('/api/v1/guilds/:guildID/transactions/:id/visibility', async ({ params, request }) => {
+  http.patch('*/api/v1/guilds/:guildID/transactions/:id/visibility', async ({ params, request }) => {
     await delay(300)
     const id = Number(params['id'])
     const body = (await request.json()) as { visibility: string }
@@ -86,7 +86,7 @@ export const transactionsHandlers = [
   }),
 
   // operationId: updateTransaction
-  http.patch('/api/v1/guilds/:guildID/transactions/:id', async ({ params, request }) => {
+  http.patch('*/api/v1/guilds/:guildID/transactions/:id', async ({ params, request }) => {
     await delay(400)
     const id = Number(params['id'])
     const body = (await request.json()) as Partial<TransactionResponse>

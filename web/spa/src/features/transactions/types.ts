@@ -1,25 +1,10 @@
-// Types: Transactions — derivados da OpenAPI spec
-
-export type TransactionType = 'EXPENSE' | 'INCOME'
-
-export type TransactionCategory =
-  | 'GROCERY'
-  | 'HOUSING'
-  | 'UTILITIES'
-  | 'SUBSCRIPTIONS'
-  | 'INSURANCE'
-  | 'EDUCATION'
-  | 'TRANSPORTATION'
-  | 'HEALTH'
-  | 'PERSONAL_CARE'
-  | 'TAXES'
-  | 'OTHER'
-  | 'FOOD_AND_DINING'
-  | 'ENTERTAINMENT'
-  | 'SHOPPING'
-  | 'PETS'
-  | 'TRAVEL'
-  | 'INVESTMENTS'
+import type { components } from '@/src/shared/api/schema'
+export type TransactionType = components['schemas']['TransactionType']
+export type TransactionCategory = components['schemas']['TransactionCategory']
+export type TransactionStatus = components['schemas']['TransactionStatus']
+export type TransactionSource = components['schemas']['TransactionSource']
+export type TransactionVisibility = components['schemas']['TransactionVisibility']
+export type TransactionResponse = components['schemas']['TransactionResponse']
 
 export const TRANSACTION_CATEGORIES: TransactionCategory[] = [
   'GROCERY', 'HOUSING', 'UTILITIES', 'SUBSCRIPTIONS', 'INSURANCE',
@@ -27,23 +12,3 @@ export const TRANSACTION_CATEGORIES: TransactionCategory[] = [
   'OTHER', 'FOOD_AND_DINING', 'ENTERTAINMENT', 'SHOPPING', 'PETS',
   'TRAVEL', 'INVESTMENTS',
 ]
-
-export type TransactionStatus = 'ACTIVE' | 'CANCELLED'
-export type TransactionSource = 'MANUAL' | 'IMPORT'
-export type TransactionVisibility = 'PRIVATE' | 'PUBLIC'
-
-export interface TransactionResponse {
-  id: number
-  type: TransactionType
-  description: string
-  amount: string
-  category: TransactionCategory
-  status: TransactionStatus
-  source: TransactionSource
-  visibility: TransactionVisibility
-  occurredAt: string
-  guildId: number
-  userAccountId: number
-  createdAt: string
-  updatedAt?: string
-}

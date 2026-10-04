@@ -145,3 +145,6 @@ recomendação de ação.
 - Não foi executado nenhum linter/validador previamente configurado no
   repositório, pois não foi encontrado nenhum (`Makefile`, `package.json`
   ou scripts de CI dedicados a OpenAPI) no momento da análise.
+
+## Correções GB-20 (2026-10-04)
+Conferidos routes.go, middleware/auth.go e DTOs/handlers de fixed_expense, transaction, guild e importer. Corrigidos servidor local 8081, /transactions/bulk-categorize, /imports/{importID}/confirm, enum de deactivate PAUSED/CANCELLED e resposta protegida 501. Os mocks demonstram handlers; não simulam autenticação real nem provam persistência/autorização. Sem endpoint GET de membros.

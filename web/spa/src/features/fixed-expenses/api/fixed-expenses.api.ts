@@ -1,42 +1,22 @@
-// ============================================================
-// API Layer: Fixed Expenses
-// Funções puras que fazem as chamadas HTTP via apiClient.
-// ============================================================
-import { apiClient } from '@/src/shared/lib/api-client'
+import { safeID } from '@/src/shared/api/id'
+import { apiClient, type RequestOptions } from '@/src/shared/lib/api-client'
+import { legacyRequestOptions } from '@/src/shared/lib/legacy-session'
+import type { components } from '@/src/shared/api/schema'
 import type { FixedExpenseResponse } from '../types'
 import type { CreateFixedExpenseInput } from '../schemas/fixed-expense.schema'
 
 export const fixedExpensesApi = {
-  // 💡 REAL API: GET /api/v1/fixed-expenses
-  // Retorna apenas despesas ACTIVE do usuário (filtrado pelo X-User-ID no backend)
-  list: async (): Promise<FixedExpenseResponse[]> => {
-    const { data } = await apiClient.get<FixedExpenseResponse[]>('/api/v1/fixed-expenses')
-    return data
+  list: (options: RequestOptions = legacyRequestOptions()) => apiClient<FixedExpenseResponse[]>('/api/v1/fixed-expenses', options),
+  create: (input: CreateFixedExpenseInput, options: RequestOptions = legacyRequestOptions()) => {
+    const body: components['schemas']['CreateFixedExpenseRequest'] = { ...input, category: input.category as FixedExpenseResponse['category'], amount: input.amount.replace(',', '.') }
+    return apiClient<FixedExpenseResponse>('/api/v1/fixed-expenses', { ...options, method: 'POST', body })
   },
-
-  // 💡 REAL API: POST /api/v1/fixed-expenses
-  create: async (input: CreateFixedExpenseInput): Promise<FixedExpenseResponse> => {
-    // 📌 PADRÃO: Normalizar amount de "2500,00" para "2500.00"
-    const payload = {
-      ...input,
-      amount: input.amount.replace(',', '.'),
-    }
-    const { data } = await apiClient.post<FixedExpenseResponse>('/api/v1/fixed-expenses', payload)
-    return data
+  update: (id: number, input: CreateFixedExpenseInput, options: RequestOptions = legacyRequestOptions()) => {
+    const body: components['schemas']['UpdateFixedExpenseRequest'] = { amount: input.amount.replace(',', '.'), due_day: input.due_day, category: input.category as FixedExpenseResponse['category'] }
+    return apiClient<FixedExpenseResponse>(`/api/v1/fixed-expenses/${safeID(id)}`, { ...options, method: 'PATCH', body })
   },
-
-  // 💡 REAL API: PATCH /api/v1/fixed-expenses/:id
-  update: async (id: number, input: CreateFixedExpenseInput): Promise<FixedExpenseResponse> => {
-    const payload = {
-      ...input,
-      amount: input.amount.replace(',', '.'),
-    }
-    const { data } = await apiClient.patch<FixedExpenseResponse>(`/api/v1/fixed-expenses/${id}`, payload)
-    return data
-  },
-
-  // 💡 REAL API: PATCH /api/v1/fixed-expenses/:id/deactivate
-  deactivate: async (id: number, status: 'PAUSED' | 'CANCELLED' = 'PAUSED'): Promise<void> => {
-    await apiClient.patch(`/api/v1/fixed-expenses/${id}/deactivate`, { status })
+  deactivate: (id: number, status: 'PAUSED' | 'CANCELLED' = 'PAUSED', options: RequestOptions = legacyRequestOptions()) => {
+    const body: components['schemas']['DeactivateFixedExpenseRequest'] = { status }
+    return apiClient(`/api/v1/fixed-expenses/${safeID(id)}/deactivate`, { ...options, method: 'PATCH', body })
   },
 }

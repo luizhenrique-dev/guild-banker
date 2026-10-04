@@ -4,9 +4,8 @@
 // ============================================================
 
 /** Envelope padrão de erro da API (gin.H{"error": ...}) */
-export interface ApiError {
-  error: string
-}
+import type { components } from '../api/schema'
+export type ApiError = components['schemas']['ErrorResponse']
 
 /** Resposta paginada por cursor (usada em listTransactions) */
 export interface CursorPaginatedResponse<T> {

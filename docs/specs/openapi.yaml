@@ -9,7 +9,7 @@ info:
     A versão de `info.version` não pôde ser confirmada em código ou release
     notes; ver `OPENAPI_GAPS.md`.
 servers:
-  - url: http://localhost:8080
+  - url: http://localhost:8081
     description: Ambiente local (porta padrão via WEBSERVER_PORT, config.go)
 security:
   - bearerAuth: []
@@ -69,6 +69,8 @@ paths:
                 $ref: "#/components/schemas/GuildResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "409":
@@ -94,6 +96,8 @@ paths:
                   $ref: "#/components/schemas/GuildResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -125,6 +129,8 @@ paths:
                 $ref: "#/components/schemas/GuildResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -156,6 +162,8 @@ paths:
           description: Guild habilitado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -181,6 +189,8 @@ paths:
           description: Guild desabilitado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -211,6 +221,8 @@ paths:
           description: Usuário convidado/adicionado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -249,6 +261,8 @@ paths:
           description: Membro removido com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -283,6 +297,8 @@ paths:
                 $ref: "#/components/schemas/FixedExpenseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
     get:
@@ -302,6 +318,8 @@ paths:
                   $ref: "#/components/schemas/FixedExpenseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -329,6 +347,8 @@ paths:
                 $ref: "#/components/schemas/FixedExpenseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -362,6 +382,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -395,6 +417,8 @@ paths:
                 $ref: "#/components/schemas/TransactionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -467,6 +491,8 @@ paths:
                 $ref: "#/components/schemas/ListTransactionsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -503,6 +529,8 @@ paths:
                 $ref: "#/components/schemas/TransactionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -539,6 +567,8 @@ paths:
           description: Transação cancelada com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -562,7 +592,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
 
-  /api/v1/guilds/{guildID}/transactions:bulk-categorize:
+  /api/v1/guilds/{guildID}/transactions/bulk-categorize:
     post:
       operationId: bulkCategorizeTransactions
       tags: [Transactions]
@@ -590,6 +620,8 @@ paths:
                 $ref: "#/components/schemas/BulkCategorizeResult"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -626,6 +658,8 @@ paths:
                 $ref: "#/components/schemas/SetVisibilityResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -677,6 +711,8 @@ paths:
                 $ref: "#/components/schemas/UploadImportResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -705,6 +741,8 @@ paths:
                 $ref: "#/components/schemas/GetImportBatchResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -746,6 +784,8 @@ paths:
                 $ref: "#/components/schemas/ImportItemResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -775,6 +815,8 @@ paths:
           description: Item descartado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -790,7 +832,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
-  /api/v1/guilds/{guildID}/imports/{importID}:confirm:
+  /api/v1/guilds/{guildID}/imports/{importID}/confirm:
     post:
       operationId: confirmImport
       tags: [Imports]
@@ -809,6 +851,8 @@ paths:
                 $ref: "#/components/schemas/ConfirmImportResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+        "501":
+          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -908,6 +952,12 @@ components:
         type: integer
         format: int64
   responses:
+    NotImplemented:
+      description: Validação JWT Keycloak ainda não implementada; qualquer Bearer chega a esta resposta antes dos handlers.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     BadRequest:
       description: Requisição inválida (corpo malformado, parâmetro inválido ou violação de regra de validação).
       content:
@@ -1039,7 +1089,8 @@ components:
       required: [status]
       properties:
         status:
-          $ref: "#/components/schemas/FixedExpenseStatus"
+          type: string
+          enum: [PAUSED, CANCELLED]
           description: Deve ser PAUSED ou CANCELLED; qualquer outro valor resulta em 400.
     FixedExpenseResponse:
       type: object

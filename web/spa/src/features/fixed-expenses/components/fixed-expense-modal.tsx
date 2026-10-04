@@ -85,6 +85,8 @@ export function FixedExpenseModal({ open, onClose, editingExpense }: Props) {
           </label>
           <input
             type="text"
+            readOnly={isEditing}
+            aria-label={t('fx.modal.name')}
             {...register('name')}
             placeholder={t('fx.modal.namePlaceholder')}
             className="w-full rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff]"

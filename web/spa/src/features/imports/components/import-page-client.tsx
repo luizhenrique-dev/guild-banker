@@ -2,7 +2,8 @@
 import { useState, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FileUp, Upload, CheckCircle, Trash2, AlertTriangle } from 'lucide-react'
-import { apiClient, getActiveGuildId } from '@/src/shared/lib/api-client'
+import { getActiveGuildId } from '@/src/shared/lib/legacy-session'
+import { importsApi } from '../api/imports.api'
 import { toast } from 'sonner'
 import type { UploadImportResponse, ImportItemResponse } from '../types'
 
@@ -27,14 +28,7 @@ export function ImportPageClient() {
     if (!file) return
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      const guildId = getActiveGuildId()
-      const { data } = await apiClient.post<UploadImportResponse>(
-        `/api/v1/guilds/${guildId}/imports`,
-        formData,
-        { headers: { 'Content-Type': 'multipart/form-data' } }
-      )
+      const data = await importsApi.upload(getActiveGuildId(), file)
       setImportResult(data)
       toast.success(t('import.toast.uploaded'))
     } catch {
@@ -48,11 +42,8 @@ export function ImportPageClient() {
     if (!importResult) return
     setConfirming(true)
     try {
-      const guildId = getActiveGuildId()
-      const { data } = await apiClient.post(
-        `/api/v1/guilds/${guildId}/imports/${importResult.importId}:confirm`
-      )
-      const created = (data as { created?: number })?.created ?? 0
+      const data = await importsApi.confirm(getActiveGuildId(), importResult.importId)
+      const created = data.created
       toast.success(t('import.toast.confirmed', { created }))
       setImportResult(null)
       setFile(null)

@@ -6,12 +6,8 @@
 // ============================================================
 import { create } from 'zustand'
 
-export interface Guild {
-  id: number
-  name: string
-  display_name: string
-  enabled: boolean
-}
+import type { Guild } from '@/src/features/guilds/types'
+export type { Guild } from '@/src/features/guilds/types'
 
 interface GuildState {
   activeGuild: Guild | null

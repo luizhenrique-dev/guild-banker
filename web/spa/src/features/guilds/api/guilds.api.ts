@@ -1,17 +1,15 @@
-import { apiClient } from '@/src/shared/lib/api-client'
-import type { Guild } from '@/src/shared/store/guild.store'
+import { safeID } from '@/src/shared/api/id'
+import { apiClient, type RequestOptions } from '@/src/shared/lib/api-client'
+import { legacyRequestOptions } from '@/src/shared/lib/legacy-session'
+import type { Guild } from '../types'
+import type { components } from '@/src/shared/api/schema'
 
 export const guildsApi = {
-  list: async (): Promise<Guild[]> => {
-    const { data } = await apiClient.get<Guild[]>('/api/v1/guilds')
-    return data
+  list: (options: RequestOptions = legacyRequestOptions()) => apiClient<Guild[]>('/api/v1/guilds', options),
+  invite: (guildId: number, email: string, options: RequestOptions = legacyRequestOptions()) => {
+    const body: components['schemas']['InviteUserRequest'] = { email }
+    return apiClient(`/api/v1/guilds/${safeID(guildId)}/invites`, { ...options, method: 'POST', body })
   },
-
-  invite: async (guildId: number, email: string): Promise<void> => {
-    await apiClient.post(`/api/v1/guilds/${guildId}/invites`, { email })
-  },
-
-  removeMember: async (guildId: number, userId: number): Promise<void> => {
-    await apiClient.delete(`/api/v1/guilds/${guildId}/members/${userId}`)
-  },
+  removeMember: (guildId: number, userId: number, options: RequestOptions = legacyRequestOptions()) =>
+    apiClient(`/api/v1/guilds/${safeID(guildId)}/members/${safeID(userId)}`, { ...options, method: 'DELETE' }),
 }
