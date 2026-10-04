@@ -8,7 +8,7 @@ import type { FixedExpenseResponse } from '@/src/features/fixed-expenses/types'
 
 // 📌 PADRÃO: Estado in-memory para que mutations persistam durante a sessão.
 // Em produção, isso é o banco de dados.
-let expenses = [...fixedExpensesFixtures]
+let expenses = structuredClone(fixedExpensesFixtures)
 let nextId = 100
 
 export const fixedExpensesHandlers = [
@@ -108,3 +108,8 @@ export const fixedExpensesHandlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 ]
+
+export function resetFixedExpensesMocks() {
+  expenses = structuredClone(fixedExpensesFixtures)
+  nextId = 100
+}

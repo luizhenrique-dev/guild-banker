@@ -28,11 +28,7 @@ interface AuthState {
 // ⚠️ ATENÇÃO: Usuário mock é inicializado aqui para desenvolvimento.
 // Em produção, o user seria null até o login via Keycloak.
 export const useAuthStore = create<AuthState>((set) => ({
-  user: {
-    id: 1,
-    email: 'ana@familia.com',
-    name: 'Ana Silva',
-  },
+  user: null,
   setUser: (user: AuthUser) => set({ user }),
   clearUser: () => set({ user: null }),
 }))

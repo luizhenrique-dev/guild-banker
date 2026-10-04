@@ -29,7 +29,7 @@ import { useGuildStore } from '@/src/shared/store/guild.store'
 import { toast } from 'sonner'
 
 // 💡 REAL API: Em produção, troque para a URL do seu backend.
-const baseURL = process.env.NEXT_PUBLIC_API_URL ?? ''
+const baseURL = import.meta.env.VITE_API_URL ?? ''
 
 export const apiClient = axios.create({
   baseURL,
@@ -59,7 +59,7 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   }
 
   // 📌 PADRÃO: Log de requests em dev para debug
-  if (process.env.NODE_ENV === 'development') {
+  if (import.meta.env.DEV) {
     console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
   }
 

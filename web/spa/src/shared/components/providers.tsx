@@ -7,7 +7,6 @@
 import { useState, type ReactNode } from 'react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { makeQueryClient } from '@/src/shared/lib/query-client'
-import { MSWProvider } from './msw-provider'
 import { I18nProvider } from './i18n-provider'
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -17,11 +16,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <I18nProvider>
-      <MSWProvider>
         <QueryClientProvider client={queryClient}>
           {children}
         </QueryClientProvider>
-      </MSWProvider>
     </I18nProvider>
   )
 }

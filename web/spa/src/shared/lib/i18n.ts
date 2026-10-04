@@ -17,6 +17,8 @@ const resources = {
       'nav.import': 'Importar',
       'nav.guild': 'Guild / Membros',
       'header.logout': 'Sair',
+      'session.missing': 'Sessão não integrada',
+      'route.missing': 'Página não encontrada',
 
       // Fixed Expenses
       'fx.title': 'Minhas despesas fixas',
@@ -147,6 +149,8 @@ const resources = {
       'nav.import': 'Import',
       'nav.guild': 'Guild / Members',
       'header.logout': 'Logout',
+      'session.missing': 'Session not integrated',
+      'route.missing': 'Page not found',
 
       'fx.title': 'My fixed expenses',
       'fx.badge': 'personal',

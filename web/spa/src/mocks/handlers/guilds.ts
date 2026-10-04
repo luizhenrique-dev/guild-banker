@@ -2,7 +2,7 @@ import { http, HttpResponse, delay } from 'msw'
 import { guildsFixtures } from '../fixtures/guilds'
 import type { Guild } from '@/src/shared/store/guild.store'
 
-let guilds = [...guildsFixtures]
+let guilds = structuredClone(guildsFixtures)
 
 export const guildsHandlers = [
   // operationId: listGuildsByMember
@@ -66,3 +66,7 @@ export const guildsHandlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 ]
+
+export function resetGuildsMocks() {
+  guilds = structuredClone(guildsFixtures)
+}

@@ -136,3 +136,10 @@ build/
 # ============================================================
 uploads/
 exports/
+
+# SPA tooling
+web/spa/node_modules/
+web/spa/.vite/
+web/spa/playwright-report/
+!web/spa/.env.demo
+!web/spa/.env.test

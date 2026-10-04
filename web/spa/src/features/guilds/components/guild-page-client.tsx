@@ -35,7 +35,7 @@ export function GuildPageClient() {
 
       {/* Guild info */}
       <div className="mb-8 rounded-[24px] border border-[#dee1e6] bg-white p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center justify-between">
           <div className="flex items-center gap-4">
             <span className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#eef0f3]">
               <Users size={22} className="text-[#0052ff]" />
@@ -67,13 +67,13 @@ export function GuildPageClient() {
           <Mail size={18} className="text-[#0052ff]" />
           {t('guild.invite')}
         </h3>
-        <form onSubmit={handleInvite} className="flex gap-3">
+        <form onSubmit={handleInvite} className="flex flex-wrap gap-3">
           <input
             type="email"
             value={inviteEmail}
             onChange={(e) => setInviteEmail(e.target.value)}
             placeholder={t('guild.invitePlaceholder')}
-            className="flex-1 rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none focus:border-[#0052ff]"
+            className="min-w-0 flex-1 rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none focus:border-[#0052ff]"
           />
           <button
             type="submit"
@@ -95,7 +95,7 @@ export function GuildPageClient() {
         </div>
         <div className="divide-y divide-[#eef0f3]">
           {mockMembers.map((member) => (
-            <div key={member.id} className="flex items-center justify-between px-6 py-4">
+            <div key={member.id} className="flex flex-wrap gap-2 items-center justify-between px-6 py-4">
               <div className="flex items-center gap-3">
                 <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">
                   {member.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}

@@ -1,7 +1,7 @@
 import { http, HttpResponse, delay } from 'msw'
 
 // 📌 PADRÃO: Handlers simplificados para a feature de import
-let mockImportItems = [
+const mockImportItems = [
   {
     itemId: 1,
     occurredAt: '2026-07-15T00:00:00Z',

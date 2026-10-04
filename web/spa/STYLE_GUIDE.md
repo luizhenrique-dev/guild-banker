@@ -1,14 +1,14 @@
 ## Layout
 
-The root layout, `app/layout.tsx`, is the single place for app-wide providers and global infrastructure.
+The root layout, `src/app/app.tsx`, is the single place for app-wide providers and global infrastructure.
 
 **Do not remove any existing entries without a reason.** Current infrastructure in the layout:
 
 | Entry | Purpose |
 |-------|---------|
-| `ThemeProvider` | Light/dark mode via `next-themes` |
+| `ThemeProvider` | Light/dark mode via Context local |
 | `Toaster` | Global toast notifications via Sonner |
-| `ChunkLoadErrorHandler` | Required — prevents known ChunkLoadError race condition bug |
+O handler de chunks e o script Abacus foram removidos por pertencerem à infraestrutura Next substituída.
 
 ---
 
@@ -16,8 +16,8 @@ The root layout, `app/layout.tsx`, is the single place for app-wide providers an
 
 | Role | Font | Tailwind Class | Default Usage |
 |------|------|---------------|-------|
-| Body | DM Sans | `font-sans` | All body text, labels, descriptions |
-| Display | Plus Jakarta Sans | `font-display` | Page titles, hero headings, section headers |
+| Body | Inter | `font-sans` | All body text, labels, descriptions |
+| Display | Inter | `font-display` | Page titles, hero headings, section headers |
 | Mono | JetBrains Mono | `font-mono` | Code snippets, numeric data, IDs, timestamps |
 
 **Size hierarchy:** Use Tailwind's scale. Headings: `text-4xl`→`text-3xl`→`text-2xl`→`text-xl`. Body: `text-base`→`text-sm`. Captions: `text-xs`.

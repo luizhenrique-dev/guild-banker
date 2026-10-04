@@ -2,7 +2,7 @@ import { http, HttpResponse, delay } from 'msw'
 import { transactionsFixtures } from '../fixtures/transactions'
 import type { TransactionResponse } from '@/src/features/transactions/types'
 
-let transactions = [...transactionsFixtures]
+let transactions = structuredClone(transactionsFixtures)
 let nextTxId = 200
 
 export const transactionsHandlers = [
@@ -96,3 +96,8 @@ export const transactionsHandlers = [
     return HttpResponse.json(tx)
   }),
 ]
+
+export function resetTransactionsMocks() {
+  transactions = structuredClone(transactionsFixtures)
+  nextTxId = 200
+}

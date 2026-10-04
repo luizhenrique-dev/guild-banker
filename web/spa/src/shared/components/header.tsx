@@ -33,9 +33,9 @@ export function Header() {
     ?.slice(0, 2) ?? '??'
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#dee1e6] bg-white px-6">
+    <header className="sticky top-0 z-20 flex min-h-16 flex-wrap gap-2 items-center justify-between border-b border-[#dee1e6] bg-white px-3 py-2 md:px-6">
       {/* Left: Logo + Guild switcher */}
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 md:gap-6">
         <div className="flex items-center gap-2">
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-white">
             <Shield size={14} />
@@ -44,9 +44,10 @@ export function Header() {
         </div>
 
         {/* Guild Switcher */}
-        <div className="relative" ref={guildRef}>
+        <div className="relative" ref={guildRef} onKeyDown={(e) => e.key === 'Escape' && setGuildOpen(false)}>
           <button
             type="button"
+            aria-expanded={guildOpen}
             onClick={() => setGuildOpen(!guildOpen)}
             className="flex items-center gap-2 rounded-full bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#dee1e6]"
           >
@@ -56,7 +57,7 @@ export function Header() {
           </button>
 
           {guildOpen && (
-            <div className="absolute left-0 top-full mt-1 w-56 rounded-xl border border-[#dee1e6] bg-white py-1 shadow-lg">
+            <div className="absolute right-0 top-full mt-1 w-56 rounded-xl border border-[#dee1e6] bg-white py-1 shadow-lg">
               {guilds.map((g) => (
                 <button
                   key={g.id}
@@ -79,7 +80,7 @@ export function Header() {
       </div>
 
       {/* Right: Language switcher + User + Logout */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Language Switcher */}
         <div className="flex items-center gap-1 rounded-full bg-[#f7f7f7] p-1">
           <button
@@ -113,7 +114,7 @@ export function Header() {
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">
             {initials}
           </span>
-          <div className="leading-tight">
+          <div className="hidden md:block leading-tight">
             <div className="text-[13px] font-semibold">{user?.name ?? ''}</div>
             <div className="text-[11px] text-[#7c828a]" suppressHydrationWarning>
               {user?.email ?? ''}
@@ -129,7 +130,7 @@ export function Header() {
             useAuthStore.getState().clearUser()
           }}
           className="inline-flex h-9 w-9 items-center justify-center rounded-full text-[#7c828a] transition-colors hover:bg-[#f7f7f7] hover:text-[#0a0b0d]"
-          title={t('header.logout')}
+          aria-label={t('header.logout')} title={t('header.logout')}
         >
           <LogOut size={16} />
         </button>

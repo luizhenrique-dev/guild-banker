@@ -7,8 +7,6 @@ import { TableSkeleton } from '@/src/shared/components/loading-skeleton'
 import {
   ArrowDownCircle,
   ArrowUpCircle,
-  Eye,
-  EyeOff,
   Lock,
   Unlock,
   Trash2,

@@ -150,3 +150,12 @@
       radial-gradient(ellipse 40% 30% at 20% 10%, hsl(240 80% 60% / 0.08), transparent);
   }
 }
+
+:root { --font-sans: 'Inter'; --font-mono: 'JetBrains Mono'; }
+@media (max-width: 767px) {
+  main { padding: 1rem !important; }
+  main > div { flex-wrap: wrap; gap: 0.75rem; }
+  main h1 { font-size: 1.5rem !important; }
+  main section { overflow-x: auto; }
+  main table { min-width: 700px; }
+}

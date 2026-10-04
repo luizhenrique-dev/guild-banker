@@ -1,6 +1,5 @@
 'use client'
-import { usePathname } from 'next/navigation'
-import Link from 'next/link'
+import { useLocation, Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
   Home,
@@ -18,7 +17,7 @@ interface NavItem {
 }
 
 export function Sidebar() {
-  const pathname = usePathname()
+  const { pathname, search } = useLocation()
   const { t } = useTranslation()
 
   const navItems: NavItem[] = [
@@ -30,8 +29,8 @@ export function Sidebar() {
   ]
 
   return (
-    <aside className="sticky top-16 h-[calc(100vh-64px)] w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
-      <nav className="space-y-1">
+    <aside className="sticky top-16 h-auto md:h-[calc(100vh-64px)] w-full md:w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
+      <nav aria-label="Navegação" className="flex flex-wrap md:block space-y-1">
         {navItems.map((item) => {
           const isActive =
             item.href === '/'
@@ -41,7 +40,7 @@ export function Sidebar() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href + search}
               className={`flex items-center gap-3 rounded-[12px] px-3 py-2.5 text-[14px] font-medium transition-colors ${
                 isActive
                   ? 'bg-[#eef0f3] font-semibold text-[#0a0b0d]'

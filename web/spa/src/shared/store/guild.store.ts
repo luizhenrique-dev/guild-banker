@@ -21,20 +21,8 @@ interface GuildState {
 }
 
 export const useGuildStore = create<GuildState>((set) => ({
-  activeGuild: {
-    id: 1,
-    name: 'familia-silva',
-    display_name: 'Família Silva',
-    enabled: true,
-  },
-  guilds: [
-    {
-      id: 1,
-      name: 'familia-silva',
-      display_name: 'Família Silva',
-      enabled: true,
-    },
-  ],
+  activeGuild: null,
+  guilds: [],
   setActiveGuild: (guild: Guild) => set({ activeGuild: guild }),
   setGuilds: (guilds: Guild[]) => set({ guilds }),
 }))

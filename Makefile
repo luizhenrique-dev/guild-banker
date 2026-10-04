@@ -5,7 +5,7 @@
 
 APP_NAME        := guildbanker
 API_DIR         := api
-WEB_DIR         := web
+WEB_DIR         := web/spa
 INFRA_DIR       := infra
 MIGRATIONS_DIR  := migrations
 BINARY          := $(API_DIR)/bin/$(APP_NAME)
