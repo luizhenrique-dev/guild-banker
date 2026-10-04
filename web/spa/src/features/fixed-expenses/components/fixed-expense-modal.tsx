@@ -1,181 +1,95 @@
-'use client'
-// ============================================================
-// FixedExpenseModal — Modal de criação/edição de despesa fixa
-// Usa React Hook Form + Zod para validação.
-// ============================================================
+import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Modal } from '@/src/shared/components/modal'
-import {
-  createFixedExpenseSchema,
-  type CreateFixedExpenseInput,
-} from '../schemas/fixed-expense.schema'
+import { createFixedExpenseSchema, updateFixedExpenseSchema, type UpdateFixedExpenseInput } from '../schemas/fixed-expense.schema'
 import { FIXED_EXPENSE_CATEGORIES, type FixedExpenseResponse } from '../types'
 import { useCreateFixedExpense, useUpdateFixedExpense } from '../api/use-fixed-expenses'
-import { useEffect } from 'react'
 
 interface Props {
   open: boolean
   onClose: () => void
+  onSaved: () => void
   editingExpense?: FixedExpenseResponse | null
 }
+type FormValues = UpdateFixedExpenseInput & { name?: string }
 
-export function FixedExpenseModal({ open, onClose, editingExpense }: Props) {
+export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Props) {
   const { t } = useTranslation()
   const createMutation = useCreateFixedExpense()
   const updateMutation = useUpdateFixedExpense()
-
   const isEditing = !!editingExpense
   const isSubmitting = createMutation.isPending || updateMutation.isPending
-
-  const {
-    register,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateFixedExpenseInput>({
-    resolver: zodResolver(createFixedExpenseSchema),
-    defaultValues: {
-      name: '',
-      amount: '',
-      due_day: 1,
-      category: 'OTHER',
-    },
+  const sending = useRef(false)
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+    resolver: zodResolver(isEditing ? updateFixedExpenseSchema : createFixedExpenseSchema),
+    defaultValues: { name: '', amount: '', due_day: 1, category: 'OTHER' },
   })
-
-  // 📌 PADRÃO: Preencher form quando editando
+  const resetCreate = createMutation.reset
+  const resetUpdate = updateMutation.reset
   useEffect(() => {
-    if (editingExpense) {
-      reset({
-        name: editingExpense.name,
-        amount: editingExpense.amount.replace('.', ','),
-        due_day: editingExpense.due_day,
-        category: editingExpense.category,
-      })
-    } else {
-      reset({ name: '', amount: '', due_day: 1, category: 'OTHER' })
-    }
-  }, [editingExpense, reset])
+    if (!open) return
+    reset(editingExpense ? { ...editingExpense, amount: editingExpense.amount.replace('.', ',') } : { name: '', amount: '', due_day: 1, category: 'OTHER' })
+    resetCreate()
+    resetUpdate()
+  }, [open, editingExpense, reset, resetCreate, resetUpdate])
 
-  const onSubmit = handleSubmit(async (data: CreateFixedExpenseInput) => {
+  const onSubmit = handleSubmit(async (data) => {
+    if (sending.current) return
+    sending.current = true
     try {
-      if (isEditing && editingExpense) {
-        await updateMutation.mutateAsync({ id: editingExpense.id, input: data })
-      } else {
-        await createMutation.mutateAsync(data)
-      }
+      if (editingExpense) await updateMutation.mutateAsync({ id: editingExpense.id, input: data })
+      else await createMutation.mutateAsync(createFixedExpenseSchema.parse(data))
+      onSaved()
       onClose()
     } catch {
-      // Erro já tratado pelo hook (toast)
+      // Keep the draft; the mutation error is presented below.
+    } finally {
+      sending.current = false
     }
   })
-
-  return (
-    <Modal
-      open={open}
-      onOpenChange={(isOpen: boolean) => !isOpen && onClose()}
-      title={isEditing ? t('fx.modal.editTitle') : t('fx.modal.createTitle')}
-    >
-      <form onSubmit={onSubmit} className="space-y-4">
-        {/* Nome */}
+  const field = (name: keyof FormValues) => ({
+    id: `expense-${name}`,
+    'aria-invalid': !!errors[name],
+    'aria-describedby': errors[name] ? `expense-${name}-error` : undefined,
+  })
+  const error = (name: keyof FormValues) => errors[name] && <p id={`expense-${name}-error`} className="mt-1 text-[12px] text-destructive">{t(errors[name]?.message ?? '')}</p>
+  const inputClass = 'h-auto rounded-xl px-4 py-2.5 text-[14px]'
+  return <Modal open={open} onOpenChange={(value) => { if (!value && !isSubmitting) onClose() }} title={t(isEditing ? 'fx.modal.editTitle' : 'fx.modal.createTitle')}>
+    <form onSubmit={onSubmit} noValidate className="space-y-4">
+      <fieldset disabled={isSubmitting} className="space-y-4">
         <div>
-          <label className="mb-1 block text-[13px] font-medium text-[#5b616e]">
-            {t('fx.modal.name')}
-          </label>
-          <input
-            type="text"
-            readOnly={isEditing}
-            aria-label={t('fx.modal.name')}
-            {...register('name')}
-            placeholder={t('fx.modal.namePlaceholder')}
-            className="w-full rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff]"
-          />
-          {errors.name && (
-            <p className="mt-1 text-[12px] text-[#cf202f]">{errors.name.message}</p>
-          )}
+          <Label htmlFor="expense-name" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.name')}</Label>
+          <Input {...field('name')} readOnly={isEditing} {...register('name')} placeholder={t('fx.modal.namePlaceholder')} className={inputClass} />
+          {error('name')}
         </div>
-
-        {/* Valor */}
         <div>
-          <label className="mb-1 block text-[13px] font-medium text-[#5b616e]">
-            {t('fx.modal.amount')}
-          </label>
-          <input
-            type="text"
-            {...register('amount')}
-            placeholder={t('fx.modal.amountPlaceholder')}
-            className="w-full rounded-xl border border-[#dee1e6] px-4 py-2.5 font-mono text-[14px] outline-none transition-colors focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff]"
-          />
-          {errors.amount && (
-            <p className="mt-1 text-[12px] text-[#cf202f]">{errors.amount.message}</p>
-          )}
+          <Label htmlFor="expense-amount" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.amount')}</Label>
+          <Input {...field('amount')} inputMode="decimal" {...register('amount')} placeholder={t('fx.modal.amountPlaceholder')} className={`${inputClass} font-mono`} />
+          {error('amount')}
         </div>
-
-        {/* Dia de vencimento */}
         <div>
-          <label className="mb-1 block text-[13px] font-medium text-[#5b616e]">
-            {t('fx.modal.dueDay')}
-          </label>
-          <input
-            type="number"
-            {...register('due_day', { valueAsNumber: true })}
-            min={1}
-            max={31}
-            placeholder={t('fx.modal.dueDayPlaceholder')}
-            className="w-full rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff]"
-          />
-          {errors.due_day && (
-            <p className="mt-1 text-[12px] text-[#cf202f]">{errors.due_day.message}</p>
-          )}
+          <Label htmlFor="expense-due_day" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.dueDay')}</Label>
+          <Input {...field('due_day')} type="number" min={1} max={31} step={1} {...register('due_day', { valueAsNumber: true })} placeholder={t('fx.modal.dueDayPlaceholder')} className={inputClass} />
+          {error('due_day')}
         </div>
-
-        {/* Categoria */}
         <div>
-          <label className="mb-1 block text-[13px] font-medium text-[#5b616e]">
-            {t('fx.modal.category')}
-          </label>
-          <select
-            {...register('category')}
-            className="w-full rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none transition-colors focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff]"
-          >
-            <option value="" disabled>
-              {t('fx.modal.selectCategory')}
-            </option>
-            {FIXED_EXPENSE_CATEGORIES.map((cat) => (
-              <option key={cat} value={cat}>
-                {t(`category.${cat}`)}
-              </option>
-            ))}
+          <Label htmlFor="expense-category" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.category')}</Label>
+          <select {...field('category')} {...register('category')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            {FIXED_EXPENSE_CATEGORIES.map((cat) => <option key={cat} value={cat}>{t(`category.${cat}`)}</option>)}
           </select>
-          {errors.category && (
-            <p className="mt-1 text-[12px] text-[#cf202f]">{errors.category.message}</p>
-          )}
+          {error('category')}
         </div>
-
-        {/* Botões */}
-        <div className="flex justify-end gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="rounded-full bg-[#eef0f3] px-5 py-2.5 text-[14px] font-semibold text-[#5b616e] transition-colors hover:bg-[#dee1e6]"
-          >
-            {t('fx.modal.cancel')}
-          </button>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="rounded-full bg-[#0052ff] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#003ecc] disabled:opacity-50"
-          >
-            {isSubmitting
-              ? isEditing
-                ? t('fx.modal.saving')
-                : t('fx.modal.creating')
-              : t('fx.modal.save')}
-          </button>
-        </div>
-      </form>
-    </Modal>
-  )
+      </fieldset>
+      {(isEditing ? updateMutation.error : createMutation.error) && <p role="alert" className="text-sm text-destructive">{t('fx.toast.error')}</p>}
+      <div className="flex justify-end gap-3 pt-2">
+        <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5">{t('fx.modal.cancel')}</Button>
+        <Button type="submit" disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5">{t(isSubmitting ? isEditing ? 'fx.modal.saving' : 'fx.modal.creating' : 'fx.modal.save')}</Button>
+      </div>
+    </form>
+  </Modal>
 }

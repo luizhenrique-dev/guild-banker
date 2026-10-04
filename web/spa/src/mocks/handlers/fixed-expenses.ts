@@ -84,7 +84,7 @@ export const fixedExpensesHandlers = [
       return HttpResponse.json({ error: 'Despesa fixa não encontrada' }, { status: 404 })
     }
 
-    const updated: FixedExpenseResponse = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category, status: body.status ?? existing.status }
+    const updated: FixedExpenseResponse = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category }
     expenses[index] = updated
     return HttpResponse.json(updated)
   }),

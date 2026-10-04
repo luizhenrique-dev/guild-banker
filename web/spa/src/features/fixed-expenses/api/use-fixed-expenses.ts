@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fixedExpensesApi } from './fixed-expenses.api'
 import { useSession } from '@/src/app/session-provider'
-import type { CreateFixedExpenseInput } from '../schemas/fixed-expense.schema'
+import type { CreateFixedExpenseInput, UpdateFixedExpenseInput } from '../schemas/fixed-expense.schema'
 import type { RequestOptions } from '@/src/shared/lib/api-client'
 import { toast } from 'sonner'
 import i18n from '@/src/shared/lib/i18n'
@@ -28,14 +28,13 @@ function useExpenseMutation<V, R>(operation: (input: V, options: RequestOptions)
       void qc.invalidateQueries({ queryKey: fixedExpenseKeys.list(userID) })
       toast.success(i18n.t(message))
     },
-    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
   })
 }
 export function useCreateFixedExpense() {
   return useExpenseMutation((input: CreateFixedExpenseInput, options) => fixedExpensesApi.create(input, options), 'fx.toast.created')
 }
 export function useUpdateFixedExpense() {
-  return useExpenseMutation(({ id, input }: { id: number; input: CreateFixedExpenseInput }, options) => fixedExpensesApi.update(id, input, options), 'fx.toast.updated')
+  return useExpenseMutation(({ id, input }: { id: number; input: UpdateFixedExpenseInput }, options) => fixedExpensesApi.update(id, input, options), 'fx.toast.updated')
 }
 export function useDeactivateFixedExpense() {
   return useExpenseMutation(({ id, status }: { id: number; status: 'PAUSED' | 'CANCELLED' }, options) => fixedExpensesApi.deactivate(id, status, options), 'fx.toast.deactivated')

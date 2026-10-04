@@ -55,11 +55,11 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
   const statusColor = expense.status === 'ACTIVE' ? '#05b169' : '#7c828a'
 
   return (
-    <tr className="transition-colors hover:bg-[#f7f7f7]/50">
+    <tr className="transition-colors hover:bg-muted/50">
       {/* Nome com ícone */}
       <td className="py-4 pl-6">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#eef0f3] text-[#5b616e]">
+          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
             {icon}
           </span>
           <span className="font-semibold">{expense.name}</span>
@@ -68,7 +68,7 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
 
       {/* Categoria badge */}
       <td className="py-4">
-        <span className="rounded-full bg-[#eef0f3] px-2.5 py-1 text-[12px] font-semibold text-[#5b616e]">
+        <span className="rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold text-secondary-foreground">
           {categoryLabel}
         </span>
       </td>
@@ -79,7 +79,7 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
       </td>
 
       {/* Vencimento */}
-      <td className="py-4 pl-6 font-mono text-[#5b616e]">
+      <td className="py-4 pl-6 font-mono text-secondary-foreground">
         {t('fx.dueDay', { day: expense.due_day })}
       </td>
 
@@ -93,7 +93,7 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
             className="h-2 w-2 rounded-full"
             style={{ backgroundColor: statusColor }}
           />
-          {expense.status}
+          {t(`fx.status.${expense.status}`)}
         </span>
       </td>
 
@@ -102,16 +102,18 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
         <button
           type="button"
           onClick={() => onEdit(expense)}
-          className="mr-2 text-[#7c828a] transition-colors hover:text-[#0052ff]"
-          title="Editar"
+          className="mr-2 text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-primary"
+          title={t('fx.edit', { name: expense.name })}
+          aria-label={t('fx.edit', { name: expense.name })}
         >
           <Pencil size={15} />
         </button>
         <button
           type="button"
           onClick={() => onDeactivate(expense)}
-          className="text-[#7c828a] transition-colors hover:text-[#cf202f]"
-          title="Desativar"
+          className="text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-destructive"
+          title={t('fx.deactivate.action', { name: expense.name })}
+          aria-label={t('fx.deactivate.action', { name: expense.name })}
         >
           <Power size={15} />
         </button>

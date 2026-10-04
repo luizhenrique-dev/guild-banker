@@ -219,3 +219,6 @@ Centered card on gradient background. Use for login, signup, onboarding flows.
 | `ToggleGroup` | `@/components/ui/toggle-group` |
 | `Collapsible` | `@/components/ui/collapsible` |
 | `ThemeToggle` | `@/components/theme-toggle` — light/dark mode switch |
+## Fixed expenses reference flow
+
+Brand primary/ring is blue (`#0052ff` in light mode); the residual purple template palette is not the product identity. Preserve 24px table cards, pill actions, Inter/JetBrains Mono and existing spacing. The reference flow uses the shared Input, Label, Button, Table and Radix dialogs with semantic color tokens. Associate errors using aria-invalid/aria-describedby, translate messages, label icon actions and restore focus after closing. Tables scroll within their container at 375px; dialogs have viewport margins and vertical scrolling. The 100-character name limit is a frontend policy. Name remains read-only when editing.

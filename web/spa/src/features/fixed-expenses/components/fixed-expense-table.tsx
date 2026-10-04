@@ -6,6 +6,7 @@
 import { useTranslation } from 'react-i18next'
 import { FixedExpenseRow } from './fixed-expense-row'
 import type { FixedExpenseResponse } from '../types'
+import { Table } from '@/components/ui/table'
 import { Repeat } from 'lucide-react'
 
 interface Props {
@@ -20,30 +21,30 @@ export function FixedExpenseTable({ expenses, onEdit, onDeactivate }: Props) {
   // Empty state
   if (!expenses?.length) {
     return (
-      <div className="flex flex-col items-center justify-center gap-4 rounded-[24px] border border-[#dee1e6] bg-white py-16">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[#eef0f3]">
-          <Repeat size={28} className="text-[#7c828a]" />
+      <div className="flex flex-col items-center justify-center gap-4 rounded-[24px] border border-border bg-card py-16">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
+          <Repeat size={28} className="text-muted-foreground" />
         </div>
-        <p className="text-[15px] font-medium text-[#5b616e]">{t('fx.empty')}</p>
-        <p className="text-[13px] text-[#7c828a]">{t('fx.emptyHint')}</p>
+        <p className="text-[15px] font-medium text-secondary-foreground">{t('fx.empty')}</p>
+        <p className="text-[13px] text-muted-foreground">{t('fx.emptyHint')}</p>
       </div>
     )
   }
 
   return (
-    <section className="overflow-hidden rounded-[24px] border border-[#dee1e6] bg-white">
-      <table className="w-full text-left text-[14px]">
-        <thead className="border-b border-[#dee1e6] bg-[#f7f7f7] text-[12px] uppercase tracking-wide text-[#7c828a]">
+    <section aria-label={t('fx.title')} className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-[24px] border border-border bg-card">
+      <Table aria-label={t('fx.title')} className="w-full text-left text-[14px]">
+        <thead className="border-b border-border bg-muted text-[12px] uppercase tracking-wide text-muted-foreground">
           <tr>
-            <th className="py-3 pl-6 font-semibold">{t('fx.col.name')}</th>
-            <th className="py-3 font-semibold">{t('fx.col.category')}</th>
-            <th className="py-3 text-right font-semibold">{t('fx.col.amount')}</th>
-            <th className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
-            <th className="py-3 font-semibold">{t('fx.col.status')}</th>
-            <th className="py-3 pr-6 text-right font-semibold">{t('fx.col.actions')}</th>
+            <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.name')}</th>
+            <th scope="col" className="py-3 font-semibold">{t('fx.col.category')}</th>
+            <th scope="col" className="py-3 text-right font-semibold">{t('fx.col.amount')}</th>
+            <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
+            <th scope="col" className="py-3 font-semibold">{t('fx.col.status')}</th>
+            <th scope="col" className="py-3 pr-6 text-right font-semibold">{t('fx.col.actions')}</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#eef0f3]">
+        <tbody className="divide-y divide-border/50">
           {expenses.map((expense) => (
             <FixedExpenseRow
               key={expense.id}
@@ -53,7 +54,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDeactivate }: Props) {
             />
           ))}
         </tbody>
-      </table>
+      </Table>
     </section>
   )
 }
