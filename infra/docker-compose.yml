@@ -36,7 +36,7 @@ services:
       - guildbanker-net
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.5.7
+    image: quay.io/keycloak/keycloak:26.7.5
     container_name: guildbanker-keycloak
     restart: unless-stopped
     depends_on:
