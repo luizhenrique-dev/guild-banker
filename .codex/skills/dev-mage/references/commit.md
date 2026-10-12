@@ -12,10 +12,13 @@ Só se commits locais forem permitidos pelas instruções e aprovações do ambi
 
 ## Mensagem
 - Convenção do repositório; na ausência, Conventional Commits.
-- Inglês, baseada no diff preparado.
+- Mensagem em pt-br, baseada no diff preparado.
 - Título ≤ 72 caracteres, imperativo, sem ponto final. Corpo com quebra em 72.
 - Referencie o identificador de issue **fornecido** (título ou rodapé conforme convenção). Não invente ids.
 - Breaking change comprovada → `!` no tipo e rodapé `BREAKING CHANGE:` descrevendo a incompatibilidade.
+
+### Exemplo de Saída Esperada
+`feat: SET-1234 implementa validação no cadastro de usuário`
 
 ## Se não puder commitar ou falhar
 Preserve as alterações e reporte separadamente:

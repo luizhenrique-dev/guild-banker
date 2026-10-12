@@ -8,7 +8,7 @@
 Corrija antes de apresentar.
 
 ## Checklist
-- [ ] ≤ 5 tasks; sem dependência circular ou futura
+- [ ] ≤ 7 tasks; sem dependência circular ou futura
 - [ ] 1 arquivo por task; links relativos corretos nos dois sentidos
 - [ ] Índice da spec ≡ arquivos individuais
 - [ ] Fatos × propostas × premissas × lacunas marcados

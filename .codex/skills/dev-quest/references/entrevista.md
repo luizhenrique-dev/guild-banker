@@ -21,11 +21,11 @@ Confirmar: <pergunta direta, resposta curta>
 ```
 
 ## Regras
-- Máx. 5 perguntas por rodada; bloqueantes primeiro.
+- Máx. 6 perguntas por rodada; bloqueantes primeiro.
 - Não pergunte o que o repositório responde.
 - Registre cada resposta como **decisão aprovada** (com Q<n>) ou **informação do usuário**.
 - Sugestão não confirmada permanece **proposta**.
-- Após 2 rodadas sem convergência, resuma o que falta decidir e proponha fechar o restante como premissas explícitas.
+- Após 3 rodadas sem convergência, resuma o que falta decidir e proponha fechar o restante como premissas explícitas.
 
 ## Fast path
 Se a issue é clara, pequena e sem contradições: uma rodada com síntese + lista de premissas + "confirmar ou ajustar".

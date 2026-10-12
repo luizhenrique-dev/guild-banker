@@ -2,6 +2,7 @@
 name: grill-me
 description: Entrevista implacável para afiar um plano ou design, expondo lacunas, contradições e ambiguidades, e consolidando uma proposta final.
 author: "Luiz Henrique FS"
+disable-model-invocation: true
 ---
 
 <!-- Adaptado da skill "grilling" de https://github.com/mattpocock/skills (MIT License, Matt Pocock). -->

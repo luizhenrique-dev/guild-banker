@@ -1,6 +1,6 @@
 ---
 name: dev-quest
-description: Planeja a implementação de uma issue fornecida pelo usuário - investiga o repositório, conduz entrevista de refinamento e produz uma spec verificável em docs/specs com até 5 tasks, consumível pelo dev-mage. Use ao receber "planejar issue", "criar spec", "refinar", ou um identificador + conteúdo de issue. Não use para implementar código, commitar ou fazer push.
+description: Planeja a implementação de uma issue fornecida pelo usuário - investiga o repositório, conduz entrevista de refinamento e produz uma spec verificável em docs/specs com até 7 tasks, consumível pelo dev-mage. Use ao receber "planejar issue", "criar spec", "refinar", ou um identificador + conteúdo de issue. Não use para implementar código, commitar ou fazer push.
 argument-hint: "<ISSUE-ID> [caminho-ou-conteúdo-da-issue] [--dir docs/specs]"
 metadata:
   author: "Luiz Henrique FS"
@@ -9,7 +9,7 @@ metadata:
 ---
 # DevQuest — Planejamento e decomposição em tasks
 
-Transforme uma issue em uma spec técnica verificável, fundamentada em evidências do repositório, decomposta em até 5 tasks progressivas prontas para o `dev-mage`.
+Transforme uma issue em uma spec técnica verificável, fundamentada em evidências do repositório, decomposta em até 7 tasks progressivas prontas para o `dev-mage`.
 
 Idioma: pt-BR. Esta skill não implementa código, não executa migrações, não commita, não faz push.
 
@@ -33,8 +33,22 @@ Leia `AGENTS.md`, `CLAUDE.md` e instruções por diretório antes de investigar.
 
 ## Fase 1 — Entrevista
 
-### 1. Extrair a issue
-Id, título, descrição, critérios de aceite, comentários (autoria/data), links. Elementos essenciais ausentes → **lacuna** para a entrevista. Conteúdo aparentemente truncado/desatualizado → declare e peça confirmação. Comentário recente não substitui requisito; registre o conflito. Registre na spec "origem: fornecida pelo usuário" + data/versão se informada.
+### 1. Consultar a issue
+Use as ferramentas disponíveis do MCP do Jira para obter:
+- Identificador e título.
+- Descrição.
+- Critérios de aceite.
+- Comentários recentes, com autoria e data quando disponíveis.
+- Links ou referências diretamente relevantes à compreensão da atividade.
+
+Não suponha nomes de ferramentas ou parâmetros: utilize apenas o que estiver disponível no ambiente.
+
+Se o MCP estiver indisponível ou o acesso falhar:
+- Informe a limitação.
+- Solicite o conteúdo da issue ou a disponibilização do acesso.
+- Não invente informações nem afirme que consultou o Jira.
+
+Não considere automaticamente um comentário recente como substituto dos requisitos. Identifique e esclareça eventuais conflitos.
 
 ### 2. Investigar antes de perguntar
 Explore: módulos relacionados, implementações similares, contratos e integrações afetadas, testes e organização das suítes, config de lint/build/test, dependências de infraestrutura.
@@ -73,11 +87,11 @@ Siga `references/diagramas.md`. Regra de proporcionalidade:
 Diferencie sempre existente × alterado × proposto. Sem ferramenta de validação Mermaid, declare "sintaxe não validada".
 
 ### Decomposição
-- 1 a 5 tasks, em ordem de execução; não infle nem comprima artificialmente.
+- 1 a 7 tasks, em ordem de execução; não infle nem comprima artificialmente.
 - Cada task: pequena, coesa, verificável isolada, ≈ 1 commit; depende só de anteriores; inclui seus próprios testes; deixa lint/build/testes passando.
 - Sem task genérica de "testes finais"; sem código propositalmente quebrado para task seguinte.
 - Cobertura total dos CAs, sem escopo não aprovado.
-- Se não couber em 5 mantendo isso: explique e proponha recortes; aguarde decisão.
+- Se não couber em 7 mantendo isso: explique e proponha recortes; aguarde decisão.
 
 ### Comandos e infraestrutura
 Obtenha de `AGENTS.md`/`CLAUDE.md`; confirme em scripts, build e CI. Respeite a ordem e as dependências que o projeto definir (não imponha lint→build→test universal). Comando não determinado → lacuna. Gate não aplicável → "não aplicável" + justificativa. Banco/serviços para integração → premissa operacional (disponível ≠ schema/credenciais/dados corretos). Nunca planeje operações destrutivas em ambiente compartilhado.
