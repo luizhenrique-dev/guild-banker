@@ -1,0 +1,17 @@
+{
+  "keycloak_version": "26.7.5",
+  "issuer": "http://localhost:8080/realms/guild-banker",
+  "audience": "guild-banker-api",
+  "kid": "2ndw2tqa2omNMRBEvkAPMgZzKpBrkXhBXjgwnfy4JsM",
+  "sub": "00000000-0000-4000-8000-000000000042",
+  "preferred_username": "fixture-member",
+  "realm_roles": [
+    "member"
+  ],
+  "issued_at": 1791859767,
+  "expires_at": 1791860067,
+  "valid_at": 1791859768,
+  "captured_at": "2026-10-13T02:49:28.035925+00:00",
+  "transport_url": "http://127.0.0.1:18880",
+  "identity": "fictional local fixture; no production account"
+}

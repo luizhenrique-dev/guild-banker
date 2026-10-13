@@ -6,11 +6,11 @@ Validar access tokens do Keycloak em `/api/*`, disponibilizar claims e identidad
 
 ## Contexto e decisões
 
-Origem: issue fornecida pelo usuário, identificada como **Issue 1**, sem data/versão informada. `ISSUE-1` é apenas a normalização do identificador para os arquivos desta spec. Planejamento realizado em 2026-10-12. Estado: **aprovada pelo usuário para implementação com dev-mage em 2026-10-12**. Implementação em andamento, começando por T1; CI permanece fora do escopo conforme D5.
+Origem: issue fornecida pelo usuário, identificada como **Issue 1**, sem data/versão informada. `ISSUE-1` é apenas a normalização do identificador para os arquivos desta spec. Planejamento realizado em 2026-10-12 e aprovado pelo usuário para implementação com dev-mage. Estado: **implementação concluída — T1–T6 validadas**. CI permanece fora do escopo conforme D5.
 
-### Fatos verificados
+### Baseline verificado no planejamento
 
-| Evidência no repositório | Comportamento atual |
+| Evidência no repositório | Comportamento antes da implementação |
 |---|---|
 | `api/internal/infra/webserver/middleware/auth.go`, `Auth` | Bearer ausente recebe 401; Bearer presente recebe 501. Não há verificação de JWT. |
 | `api/internal/infra/webserver/routes.go`, `Server.registerRoutes` | Rotas de negócio estão sob `/api/v1`; `/health` é público. |
@@ -42,7 +42,7 @@ As regras lidas são `AGENTS.md` e `docs/go/{architecture,coding,naming}.md`. Os
 
 ### Critérios de aceite
 
-CA1–CA8 correspondem a API-CA1–API-CA8 da issue, com os esclarecimentos aprovados. CA10–CA14 tornam verificáveis as tarefas da issue e as decisões da entrevista. **Esclarecimento técnico proposto para aprovação final:** os CAs de autenticação HTTP consideram requests sem Origin ou com origem CORS autorizada. Por D7, CORS precede auth; origem negada pode receber 403 da biblioteca antes do JWT, e esse cenário pertence a CA11, não à resposta 403 de usuário/role.
+CA1–CA8 correspondem a API-CA1–API-CA8 da issue, com os esclarecimentos aprovados. CA10–CA14 tornam verificáveis as tarefas da issue e as decisões da entrevista. **Esclarecimento técnico aprovado com o plano:** os CAs de autenticação HTTP consideram requests sem Origin ou com origem CORS autorizada. Por D7, CORS precede auth; origem negada pode receber 403 da biblioteca antes do JWT, e esse cenário pertence a CA11, não à resposta 403 de usuário/role.
 
 - **CA1:** Request sob `/api/*` que passa pela política CORS, sem Authorization, recebe 401 e não executa handler. Inclui request sem Origin e rota inexistente; `/health` e preflight CORS são exceções aprovadas.
 - **CA2:** Access token válido, com usuário local ativo previamente cadastrado, chega ao handler de prova e recebe 200; UserID externo, PreferredUsername, RealmRoles e ator local estão disponíveis em request.Context. Rotas reais preservam seus próprios status de sucesso.
@@ -287,7 +287,7 @@ Todos os arquivos futuros abaixo são **propostos**; testes com nomes definidos 
 | T3 | Vínculo com usuário local | ✅ concluida | T1, T2 | [T3](./ISSUE-1-T3-identidade-local.md) |
 | T4 | Ativação HTTP e abandono dos headers | ✅ concluida | T1, T2, T3 | [T4](./ISSUE-1-T4-autenticacao-http.md) |
 | T5 | CORS restrito e preflight | ✅ concluida | T4 | [T5](./ISSUE-1-T5-cors-restrito.md) |
-| T6 | Fixture de access token Keycloak real | ⬜ pendente | T2, T4, T5 | [T6](./ISSUE-1-T6-fixture-keycloak.md) |
+| T6 | Fixture de access token Keycloak real | ✅ concluida | T2, T4, T5 | [T6](./ISSUE-1-T6-fixture-keycloak.md) |
 
 Cada task deixa build/testes/lint passando. Até T3 o middleware existente continua 401/501; T4 ativa auth e troca a fonte de identidade dos quatro módulos no mesmo commit. Não deixar estado intermediário aceitando JWT e identidade fornecida por headers.
 
@@ -300,32 +300,32 @@ Cada task deixa build/testes/lint passando. Até T3 o middleware existente conti
 1. `make api/vet` — esperado: nenhuma falha nova nos pacotes afetados.
 2. `make api/lint` — esperado: linter Go tool passa.
 3. `make api/test` — esperado: unitários passam com race e count=1.
-4. `make api/test/integration` — **alvo proposto, inexistente hoje, criado em T2**; executa `go test ./... -race -count=1 -tags=integration` em api. Sintaxe de build tags documentada no [comando Go oficial](https://pkg.go.dev/cmd/go#hdr-Build_constraints). Esperado: suíte HTTP/JWKS/fixture real passa sem serviços externos.
+4. `make api/test/integration` — **criado em T2**; executa `go test ./... -race -count=1 -tags=integration` em api. Sintaxe de build tags documentada no [comando Go oficial](https://pkg.go.dev/cmd/go#hdr-Build_constraints). Esperado: suíte HTTP/JWKS/fixture real passa sem serviços externos.
 5. `make api/build` — esperado: binário compila; não executá-lo contra banco compartilhado.
 
 Após mudança de OpenAPI em T4: `npm --prefix web/spa run api:types` regenera tipos; `make web/types` verifica drift; `make web/build` verifica compilação dos consumidores. Comandos existentes em Makefile/package.json, com Node compatível com >=22.12 e dependências já instaladas. Nenhuma mudança de comportamento da SPA é planejada; E2E de demonstração não comprova auth real e não é gate desta issue backend.
 
-Captura da fixture real em T6 requer Keycloak isolado; comandos específicos de criação/captura ainda não foram executados e serão documentados no README da fixture após validação. Não executar infra/clean, reset de banco, migration ou export de realm compartilhado. Não há gate CI nesta issue.
+Captura real em T6 foi executada em Keycloak26.7.5 isolado e documentada no [README da fixture](../../api/internal/infra/keycloak/testdata/keycloak/README.md). A execução regular usa arquivos públicos versionados, sem Keycloak/PostgreSQL ativos. Não executar infra/clean, reset de banco, migration ou export de realm compartilhado. Não há gate CI nesta issue.
 
-### Matriz CA → task → evidência esperada
+### Matriz CA → task → evidência observada
 
-| CA | Tasks | Evidência esperada (não obtida no planejamento) |
+| CA | Tasks | Teste/inspeção observados — PASS salvo CI adiado |
 |---|---|---|
-| CA1 | T4 | HTTP 401 sem Bearer em requests sem Origin/permitidas, inclusive NoRoute /api; nenhuma invocação de handler/lookup. |
-| CA2 | T1, T3, T4, T6 | HTTP 200 no handler de prova, claims via request.Context, Actor local correto; replay da fixture real. |
-| CA3 | T2, T4 | HTTP 401 para chave externa, assinatura/payload adulterado e issuer errado. |
-| CA4 | T2, T4, T6 | HTTP 401 expirado; fixture real válida em instante fixo e rejeitada após exp. |
-| CA5 | T2, T4 | aud ausente/incorreto rejeitado; string/array correto aceito; azp não substitui aud. |
-| CA6 | T1, T4 | Role guard de teste: 401 sem principal, 403 sem role, 200 com role; rotas reais sem novo guard. |
-| CA7 | T2, T4 | Verifier/servidor preservado entre requests; kid B aceito após mudança JWKS; cache A usado; C rejeitado. |
-| CA8 | T2, T4 | 401 para none, HS256 e algoritmo assimétrico não permitido. |
-| CA9 local | T2, T4, T6 | Alvos unitários/integration executam CA1–CA8 e fixture real de forma reproduzível. |
+| CA1 | T4, T5 | TestAuth, TestAPIPrefixProtection e TestServerCORS: 401 sem Bearer; NoRoute, OPTIONS comum e barras finais protegidos. |
+| CA2 | T1, T3, T4, T6 | TestAuthAcceptance, TestAuthKeycloakFixture/valid: HTTP200 e Principal/claims/Actor no contexto. |
+| CA3 | T2, T4 | TestVerifierVerify e TestAuthAcceptance: chave externa, payload adulterado e issuer errado rejeitados. |
+| CA4 | T2, T4, T6 | TestAuthAcceptance/CA4 e fixture real após exp: 401; TestVerifierKeycloakFixture confirma ReasonTokenExpired. |
+| CA5 | T2, T4 | TestVerifierVerify e TestAuthAcceptance: aud ausente/incorreto/azp rejeitados; string/array válido aceitos. |
+| CA6 | T1, T4 | TestClaimsHasRole, TestRequireRole com 401/403/200; inspeção routes.go sem novo guard de negócio. |
+| CA7 | T2, T4 | TestVerifierJWKSRotation e TestAuthHTTPRotation: cache A, rotação B no mesmo verifier e C desconhecido rejeitado. |
+| CA8 | T2, T4 | TestVerifierVerify e TestAuthAcceptance: none/HS256/RS512 rejeitados. |
+| CA9 local | T2, T4, T6 | make api/test e api/test/integration completos com race/count1; fixture real obrigatória e sem skips. |
 | CA9 remoto | nenhuma | Adiado para outra issue; sem evidência de CI exigida ou alegada aqui. |
-| CA10 | T3, T4 | Lookup por sub, ID/Email locais em cada família de handler, headers de B ignorados; inexistente/inativo 403, técnico 500, inválido sem lookup. |
-| CA11 | T5 | Preflight sem JWT autoriza Authorization apenas nas origens permitidas; origem externa sem permissão CORS; GET efetivo401 sem token. |
-| CA12 | T2, T4, T5 | Env/config validadas; discovery falho/issuer divergente impede inicialização; timeout e cancelamento observáveis. |
-| CA13 | T1–T4 | Mesmo envelope em todos os erros de auth e mesmo corpo entre motivos que resultam no mesmo status; slog com reason fechado e sem segredos/PII inseridos no teste. |
-| CA14 | T2, T4 | 401 para ID/refresh token ou sub ausente; ausência de roles aceita em rota sem guard. |
+| CA10 | T3, T4 | TestServiceAuthenticate; TestAuthenticatedHandlerIdentity/TestHandlerUsesTrustedActor nas quatro famílias; HTTP lookup/403/500 e token inválido sem lookup. |
+| CA11 | T5 | TestLoadCORSOrigins, TestServerCORS e TestServerCORSLoadedOrigins: allowlist, preflight, Authorization, efetiva 401, externa 403 e sem credentials/X-User. |
+| CA12 | T2, T4, T5 | TestLoad, TestProviderDiscovery, TestBootstrapDiscoveryFailure e testes de timeout/cancelamento; config/discovery impedem startup. |
+| CA13 | T1–T4 | TestAuth e TestRejectionError: envelopes sanitizados, um log por rejeição e ausência de token/sub/username/email/erro bruto. |
+| CA14 | T2, T4 | TestVerifierVerify/TestAuthAcceptance: ID/refresh/sub ausente rejeitados; no_roles aceito sem guard. |
 
 ### Revisão do planejamento
 
@@ -333,8 +333,16 @@ Captura da fixture real em T6 requer Keycloak isolado; comandos específicos de 
 - Engenharia: dependências só para trás, sem migration/refactor geral; contexto/identidade separados do adapter OIDC; ativação HTTP atômica em T4.
 - Qualidade: cada task tem testes e critérios próprios, caminhos futuros marcados criar, gates existentes separados do alvo novo, evidência futura não descrita como teste executado.
 - Convenções: nenhuma biblioteca extra JWT, domínio sem DTO, interfaces no consumidor, errors.Is/As e %w, slog sanitizado, sem globals/goroutines próprias de refresh.
-- Documentação: seis tasks pendentes, links relativos em ambos os sentidos; três diagramas com sintaxe não validada.
+- Documentação: seis tasks concluídas, com evidências próprias e links relativos em ambos os sentidos; os diagramas do planejamento não são gate de implementação.
 
 ## Decisões
 
-<!-- Preenchido pelo dev-mage durante a implementação: aprovação final, escolhas locais, evidências e desvios explicitamente autorizados. -->
+Plano confirmado pelo usuário, com execução de T1–T6 usando dev-mage. D1–D7 preservadas; nenhuma dependency JWT adicional, migration, pipeline, push ou PR.
+
+Commits locais: T1 `7d73802`, T2 `8fa8cea`, T3 `cd4be4f`, T4 `95c81aa`, T5 `36ee656`; correção de órfãos T4 no fechamento `78cfc48`. T6 inclui fixture real e este fechamento. Revisão independente aprovada para cada task de risco e correções.
+
+Gates finais observados: `make api/vet`, `make api/lint` (0 issues), `make api/test` (race/count1), `make api/test/integration` (race/count1), `make api/build`, lint global com integration (0 issues), `make web/types` e `make web/build` passaram. Nenhuma falha detectada nas verificações finais executadas. Vite emitiu apenas aviso de bundle >500kB. A suíte integrada passou após encerrar a instância isolada Keycloak, sem DB real; CA9 remoto permanece adiado.
+
+Ambiente: Go1.26.2 via asdf; GCC15, Make4.4.1, Node24.6.0 e Keycloak/JRE extraídos somente em /tmp; caches redirecionados a /tmp. Nenhuma versão global ou do projeto foi atualizada. A alteração externa em `.codex/skills/dev-mage/references/commit.md` foi preservada e não incluída nos commits.
+
+Pré-requisitos operacionais: definir KEYCLOAK_ISSUER, API_AUDIENCE e CORS_ALLOWED_ORIGINS (exemplo em api/config.env.example); client do Keycloak deve emitir audience e sub; usuário local ativo previamente cadastrado com external_id igual ao sub. O guard de role existe, mas permanece exclusivo dos testes. Integração real OIDC da SPA e CI são issues separadas conforme decisões aprovadas.

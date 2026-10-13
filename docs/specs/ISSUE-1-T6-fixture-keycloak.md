@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T2, T4, T5
 
 ## O que fazer
@@ -41,4 +41,17 @@ D4 aprovada: fixture real capturada, relógio fixo apenas em teste, suíte indep
 
 ## Evidências
 
-<!-- Preenchido pelo dev-mage: origem da fixture, comandos validados, testes observados e evidência de cada T6-AC. -->
+T5 concluída no commit `36ee656`; correção final dos órfãos de T4 no commit `78cfc48`.
+
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| T6-AC1 | Keycloak26.7.5 standalone/JDK21 em /tmp; realm importado em dev-mem; resposta original do token endpoint com RS256, aud guild-banker-api e usuário fictício fixture-member; JWKS público correspondente e README do procedimento | captura concluída |
+| T6-AC2 | TestVerifierKeycloakFixture e TestAuthKeycloakFixture/valid: claims, sub consultado, Actor local42/e-mail fictício, HTTP200 em valid_at | PASS com race |
+| T6-AC3 | Mesmos testes após expires_at+1: ReasonTokenExpired/HTTP401 e nenhum lookup; JWT original sem alteração | PASS com race |
+| T6-AC4 | make api/test/integration completo após shutdown confirmado da instância isolada; arquivos obrigatórios, nenhum skip e nenhuma conexão PostgreSQL | PASS com race |
+
+O ambiente não tinha acesso ao Docker; foi usada distribuição standalone26.7.5 com banco em memória, bind127.0.0.1:18880 e hostname http://localhost:8080. JRE extraído em /tmp precisou de truststore público local; o sandbox autorizou sockets. A primeira emissão sem scope basic omitiu sub e foi recusada na captura; corrigido somente o client isolado, sem alterar validação da API. Metadados registram captura UTC e intervalo original. Nenhum realm/volume pessoal, migration ou usuário real foi usado. Processo isolado encerrado com Ctrl-C e mensagem Keycloak stopped antes da suíte completa.
+
+RED observado: arquivos de fixture ainda ausentes. Após captura real, verifier e replay HTTP válido/expirado passaram. Revisão independente confirmou metadados, public-only e assinatura RS256 com RSA2048 via cálculo independente; nenhuma opção Skip na implementação ou nos testes.
+
+Gates finais observados na raiz: `make api/vet api/lint api/test api/build` PASS; `make api/test/integration` PASS após correção T4 e shutdown; golangci-lint global com integration PASS (0 issues); `make web/types web/build` PASS (Vite apenas aviso de bundle >500kB). Nenhuma falha detectada nas verificações finais executadas. Go1.26.2, GCC15, GNU Make4.4.1 e Node24.6.0 foram fornecidos por PATH/CC/caches em /tmp sem atualizar versões do projeto. CI não executado/criado conforme D5.
