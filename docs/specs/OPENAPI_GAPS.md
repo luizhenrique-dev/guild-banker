@@ -7,41 +7,20 @@ recomendação de ação.
 
 ---
 
-## 1. Autenticação JWT (Keycloak) não está implementada
+## 1. Autenticação JWT — resolvida por ISSUE-1
 
-- **Endpoint/componente afetado**: todos os endpoints sob `/api/v1/*`
-  (security scheme `bearerAuth`).
-- **Informação faltante**: regras reais de validação do token (claims,
-  audience, issuer, expiração, mapeamento de roles/escopos).
-- **Motivo da incerteza**: `api/internal/infra/webserver/middleware/auth.go`
-  apenas extrai o Bearer token do header `Authorization` e imediatamente
-  retorna `501 Not Implemented` com o comentário
-  `// TODO: implement Keycloak JWT validation.`. Nenhuma validação de
-  assinatura, claims ou expiração é executada.
-- **Arquivo(s) a revisar**: `api/internal/infra/webserver/middleware/auth.go`,
-  `api/config/config.go` (campos `Keycloak.*`).
-- **Recomendação**: implementar a validação JWT via JWKS do Keycloak antes de
-  considerar o endpoint utilizável em produção; atualizar a especificação
-  com os claims/roles relevantes assim que a implementação existir.
+Access token Keycloak validado por go-oidc/v3 com RS256, JWKS, issuer,
+expiração e audience configurada. ID/refresh tokens rejeitados. `/api` e
+`/api/*` protegidos, inclusive NoRoute; health público. Ver spec ISSUE-1 e
+os testes em `api/internal/infra/keycloak` e `webserver/middleware`.
 
-## 2. Identidade efetiva do requisitante via headers, não via JWT
+## 2. Identidade efetiva — resolvida por ISSUE-1
 
-- **Endpoint/componente afetado**: todos os handlers de `guild`,
-  `fixed_expense`, `transaction` e `importer`.
-- **Informação faltante**: se os headers `X-User-ID` / `X-User-Email` são um
-  mecanismo definitivo (ex.: para uso interno/gateway) ou um placeholder
-  temporário até a validação JWT estar pronta.
-- **Motivo da incerteza**: como a validação JWT retorna 501 antes de chegar
-  aos handlers, é impossível, hoje, executar qualquer chamada autenticada
-  com sucesso fim-a-fim; os headers são a única fonte de identidade lida
-  pelo código dos handlers.
-- **Arquivo(s) a revisar**: `api/internal/guild/handler.go`,
-  `api/internal/fixed_expense/handler.go`,
-  `api/internal/transaction/handler.go`, `api/internal/importer/handler.go`.
-- **Recomendação**: definir se os headers serão substituídos por claims do
-  JWT (ex.: `sub`, `email`) quando a validação for implementada, e atualizar
-  a especificação removendo os parâmetros de header caso a identidade passe
-  a vir exclusivamente do token.
+`sub` resolve ExternalID do usuário local previamente cadastrado e ativo.
+ID/e-mail locais formam o Actor no request.Context dos quatro handlers.
+Headers de identidade não são aceitos como fonte de autenticação; parâmetros
+removidos do OpenAPI. Ausente/inativo recebe403; falha técnica500 sanitizado.
+Integração OIDC real da SPA e CI permanecem em issues separadas.
 
 ## 3. Inconsistência de nomenclatura em `PUT /api/v1/guilds/{id}`
 

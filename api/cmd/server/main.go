@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -12,10 +13,14 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jmoiron/sqlx"
 
 	"github.com/luizhenrique-dev/guild-banker/api/config"
 	"github.com/luizhenrique-dev/guild-banker/api/database"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/infra/keycloak"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/infra/webserver"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/user"
 )
 
 func main() {
@@ -69,7 +74,13 @@ func main() {
 	}
 	slog.Info("migrations applied successfully")
 
-	server := webserver.NewServer(cfg, db)
+	authCtx, authCancel := context.WithTimeout(context.Background(), time.Duration(cfg.Keycloak.Timeout)*time.Second)
+	server, err := newServer(authCtx, cfg, db, logger)
+	authCancel()
+	if err != nil {
+		logger.Error("failed to initialize authentication", "error", err)
+		os.Exit(1)
+	}
 
 	go func() {
 		if startErr := server.Start(); startErr != nil && !errors.Is(startErr, http.ErrServerClosed) {
@@ -92,4 +103,18 @@ func main() {
 	}
 
 	slog.Info("server exited gracefully")
+}
+
+func newServer(ctx context.Context, cfg *config.Config, db *sqlx.DB, logger *slog.Logger) (*webserver.Server, error) {
+	verifier, err := keycloak.NewVerifier(
+		ctx,
+		cfg.Keycloak.Issuer,
+		cfg.Keycloak.Audience,
+		time.Duration(cfg.Keycloak.Timeout)*time.Second,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("initialize authentication: %w", err)
+	}
+	service := auth.NewService(verifier, user.NewService(user.NewStorage(db)))
+	return webserver.NewServer(cfg, db, service, logger), nil
 }

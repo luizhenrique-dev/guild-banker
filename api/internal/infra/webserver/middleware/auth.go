@@ -1,41 +1,86 @@
 package middleware
 
 import (
+	"context"
+	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/luizhenrique-dev/guild-banker/api/config"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
 )
 
-func Auth(cfg *config.Config) gin.HandlerFunc {
+type Authenticator interface {
+	Authenticate(ctx context.Context, raw string) (auth.Principal, error)
+}
+
+func Auth(service Authenticator, logger *slog.Logger, timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		token, ok := extractBearerToken(c.GetHeader("Authorization"))
-		if !ok || token == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		path := c.Request.URL.Path
+		if path != "/api" && !strings.HasPrefix(path, "/api/") {
+			c.Next()
 			return
 		}
-
-		_ = cfg.Keycloak.JWKSURI
-
-		// TODO: implement Keycloak JWT validation.
-		c.AbortWithStatusJSON(
-			http.StatusNotImplemented,
-			gin.H{"error": "keycloak jwt validation is not implemented"},
-		)
+		headers := c.Request.Header.Values("Authorization")
+		if len(headers) == 0 {
+			reject(c, logger, http.StatusUnauthorized, "missing_token")
+			return
+		}
+		if len(headers) != 1 {
+			reject(c, logger, http.StatusUnauthorized, "malformed_authorization")
+			return
+		}
+		raw, ok := extractBearerToken(headers[0])
+		if !ok {
+			reject(c, logger, http.StatusUnauthorized, "malformed_authorization")
+			return
+		}
+		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
+		principal, err := service.Authenticate(ctx, raw)
+		cancel()
+		if err != nil {
+			status, reason := http.StatusInternalServerError, "lookup_failed"
+			if errors.Is(err, auth.ErrInvalidToken) {
+				status, reason = http.StatusUnauthorized, "invalid_token"
+			}
+			if errors.Is(err, auth.ErrForbidden) {
+				status, reason = http.StatusForbidden, "access_denied"
+			}
+			var rejection *auth.RejectionError
+			if errors.As(err, &rejection) {
+				reason = rejection.Reason.String()
+			}
+			reject(c, logger, status, reason)
+			return
+		}
+		c.Request = c.Request.WithContext(auth.WithPrincipal(c.Request.Context(), principal))
+		c.Next()
 	}
 }
 
-func extractBearerToken(authHeader string) (string, bool) {
-	parts := strings.SplitN(authHeader, " ", 2)
-	if len(parts) != 2 {
+func reject(c *gin.Context, logger *slog.Logger, status int, reason string) {
+	message := "internal server error"
+	switch status {
+	case http.StatusUnauthorized:
+		message = "unauthorized"
+		c.Header("WWW-Authenticate", "Bearer")
+	case http.StatusForbidden:
+		message = "forbidden"
+	}
+	logger.WarnContext(c.Request.Context(), "authentication rejected", "reason", reason, "status", status)
+	c.AbortWithStatusJSON(status, gin.H{"error": message})
+}
+
+func extractBearerToken(header string) (string, bool) {
+	parts := strings.SplitN(header, " ", 2)
+	if len(parts) != 2 || !strings.EqualFold(parts[0], "Bearer") {
 		return "", false
 	}
-
-	if !strings.EqualFold(parts[0], "Bearer") {
+	raw := strings.TrimLeft(parts[1], " ")
+	if raw == "" || strings.ContainsAny(raw, " \t\r\n,") {
 		return "", false
 	}
-
-	return strings.TrimSpace(parts[1]), true
+	return raw, true
 }

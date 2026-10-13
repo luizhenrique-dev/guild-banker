@@ -49,11 +49,7 @@ paths:
       tags: [Guilds]
       summary: Cria um novo guild
       description: >-
-        Cria um guild com o usuário requisitante (identificado pelo header
-        X-User-ID) como membro criador. Falha com 409 se o nome já estiver em uso.
-      parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
+        Cria um guild com o usuário local autenticado como membro criador. Falha com 409 se o nome já estiver em uso.
       requestBody:
         required: true
         content:
@@ -61,6 +57,10 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateGuildRequest"
       responses:
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "201":
           description: Guild criado.
           content:
@@ -69,8 +69,6 @@ paths:
                 $ref: "#/components/schemas/GuildResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "409":
@@ -83,9 +81,11 @@ paths:
       operationId: listGuildsByMember
       tags: [Guilds]
       summary: Lista os guilds em que o requisitante é membro
-      parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
       responses:
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Lista de guilds do requisitante.
           content:
@@ -96,8 +96,6 @@ paths:
                   $ref: "#/components/schemas/GuildResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -112,8 +110,6 @@ paths:
         requisitante seja membro do guild.
       parameters:
         - $ref: "#/components/parameters/GuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -121,6 +117,8 @@ paths:
             schema:
               $ref: "#/components/schemas/UpdateGuildRequest"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Guild atualizado.
           content:
@@ -129,8 +127,6 @@ paths:
                 $ref: "#/components/schemas/GuildResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -155,15 +151,13 @@ paths:
       summary: Habilita um guild desabilitado
       parameters:
         - $ref: "#/components/parameters/GuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "204":
           description: Guild habilitado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -182,15 +176,13 @@ paths:
       summary: Desabilita um guild habilitado
       parameters:
         - $ref: "#/components/parameters/GuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "204":
           description: Guild desabilitado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -209,7 +201,6 @@ paths:
       summary: Convida um usuário para o guild pelo e-mail
       parameters:
         - $ref: "#/components/parameters/GuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
       requestBody:
         required: true
         content:
@@ -217,12 +208,12 @@ paths:
             schema:
               $ref: "#/components/schemas/InviteUserRequest"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "204":
           description: Usuário convidado/adicionado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -255,14 +246,13 @@ paths:
           schema:
             type: integer
             format: int64
-        - $ref: "#/components/parameters/UserIDHeader"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "204":
           description: Membro removido com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -279,9 +269,6 @@ paths:
       operationId: createFixedExpense
       tags: [FixedExpenses]
       summary: Cria uma despesa fixa recorrente
-      parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -289,6 +276,10 @@ paths:
             schema:
               $ref: "#/components/schemas/CreateFixedExpenseRequest"
       responses:
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "201":
           description: Despesa fixa criada.
           content:
@@ -297,17 +288,17 @@ paths:
                 $ref: "#/components/schemas/FixedExpenseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
     get:
       operationId: listActiveFixedExpenses
       tags: [FixedExpenses]
       summary: Lista as despesas fixas ativas do requisitante
-      parameters:
-        - $ref: "#/components/parameters/UserIDHeader"
       responses:
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Lista de despesas fixas.
           content:
@@ -318,8 +309,6 @@ paths:
                   $ref: "#/components/schemas/FixedExpenseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -330,8 +319,6 @@ paths:
       summary: Atualiza uma despesa fixa
       parameters:
         - $ref: "#/components/parameters/FixedExpenseIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -339,6 +326,10 @@ paths:
             schema:
               $ref: "#/components/schemas/UpdateFixedExpenseRequest"
       responses:
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Despesa fixa atualizada.
           content:
@@ -347,8 +338,6 @@ paths:
                 $ref: "#/components/schemas/FixedExpenseResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -365,8 +354,6 @@ paths:
       summary: Desativa uma despesa fixa (pausa ou cancela)
       parameters:
         - $ref: "#/components/parameters/FixedExpenseIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -374,6 +361,10 @@ paths:
             schema:
               $ref: "#/components/schemas/DeactivateFixedExpenseRequest"
       responses:
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "204":
           description: Despesa fixa desativada com sucesso.
         "400":
@@ -382,8 +373,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "404":
@@ -400,8 +389,6 @@ paths:
       summary: Cria uma transação manual em um guild
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -417,8 +404,6 @@ paths:
                 $ref: "#/components/schemas/TransactionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -435,8 +420,6 @@ paths:
       summary: Lista transações de um guild com filtros e paginação por cursor
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
         - name: cursor
           in: query
           description: >-
@@ -491,8 +474,6 @@ paths:
                 $ref: "#/components/schemas/ListTransactionsResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -512,8 +493,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/TransactionIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -529,8 +508,6 @@ paths:
                 $ref: "#/components/schemas/TransactionResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -560,15 +537,11 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/TransactionIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       responses:
         "204":
           description: Transação cancelada com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -603,8 +576,6 @@ paths:
         do restante do lote.
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -620,8 +591,6 @@ paths:
                 $ref: "#/components/schemas/BulkCategorizeResult"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -641,8 +610,6 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/TransactionIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -658,8 +625,6 @@ paths:
                 $ref: "#/components/schemas/SetVisibilityResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -688,8 +653,6 @@ paths:
         arquivo: 5MB.
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -703,6 +666,8 @@ paths:
                   format: binary
                   description: Arquivo CSV da fatura/extrato (máx. 5MB).
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "201":
           description: Lote de importação criado e itens candidatos processados.
           content:
@@ -711,8 +676,6 @@ paths:
                 $ref: "#/components/schemas/UploadImportResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -730,9 +693,9 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/ImportIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Lote de importação encontrado.
           content:
@@ -741,8 +704,6 @@ paths:
                 $ref: "#/components/schemas/GetImportBatchResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -767,8 +728,6 @@ paths:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/ImportIDPath"
         - $ref: "#/components/parameters/ImportItemIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       requestBody:
         required: true
         content:
@@ -776,6 +735,8 @@ paths:
             schema:
               $ref: "#/components/schemas/UpdateImportItemRequest"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Item de importação atualizado.
           content:
@@ -784,8 +745,6 @@ paths:
                 $ref: "#/components/schemas/ImportItemResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -808,15 +767,13 @@ paths:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/ImportIDPath"
         - $ref: "#/components/parameters/ImportItemIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "204":
           description: Item descartado com sucesso.
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -840,9 +797,9 @@ paths:
       parameters:
         - $ref: "#/components/parameters/TransactionGuildIDPath"
         - $ref: "#/components/parameters/ImportIDPath"
-        - $ref: "#/components/parameters/UserIDHeader"
-        - $ref: "#/components/parameters/UserEmailHeader"
       responses:
+        "500":
+          $ref: "#/components/responses/InternalServerError"
         "200":
           description: Importação confirmada.
           content:
@@ -851,8 +808,6 @@ paths:
                 $ref: "#/components/schemas/ConfirmImportResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
-        "501":
-          $ref: "#/components/responses/NotImplemented"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -875,34 +830,13 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        Token JWT emitido pelo Keycloak, exigido pelo middleware Auth em
-        `/api/v1/*`. TODO: a validação do JWT ainda não está implementada no
-        código (api/internal/infra/webserver/middleware/auth.go); atualmente
-        qualquer chamada autenticada retorna 501 Not Implemented.
+        Access token Keycloak RS256 exigido em `/api` e `/api/*`.
+        Assinatura via JWKS, issuer, expiração e audience API_AUDIENCE validados.
+        O sub resolve um usuário local ativo; ID/e-mail de auditoria vêm desse
+        cadastro. Usuário ausente/inativo recebe 403; erro técnico de lookup,
+        500. Headers X-User-ID e X-User-Email não definem identidade.
+        Roles member/admin são claims disponíveis, sem novo guard nas rotas.
   parameters:
-    UserIDHeader:
-      name: X-User-ID
-      in: header
-      required: true
-      description: >-
-        ID numérico do usuário requisitante. Usado pelos handlers para
-        identificar o ator da operação e checar membership/autorização.
-        TODO: hoje é a única fonte de identidade efetivamente utilizada pelos
-        handlers, já que a validação do JWT Bearer não está implementada.
-      schema:
-        type: integer
-        format: int64
-        minimum: 1
-    UserEmailHeader:
-      name: X-User-Email
-      in: header
-      required: true
-      description: >-
-        E-mail do usuário requisitante, usado para registro de auditoria
-        (createdBy/updatedBy). Exigido nas operações de escrita.
-      schema:
-        type: string
-        format: email
     GuildIDPath:
       name: id
       in: path
@@ -952,20 +886,25 @@ components:
         type: integer
         format: int64
   responses:
-    NotImplemented:
-      description: Validação JWT Keycloak ainda não implementada; qualquer Bearer chega a esta resposta antes dos handlers.
-      content:
-        application/json:
-          schema:
-            $ref: "#/components/schemas/ErrorResponse"
     BadRequest:
       description: Requisição inválida (corpo malformado, parâmetro inválido ou violação de regra de validação).
       content:
         application/json:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Usuário local inexistente/inativo ou acesso negado por regra existente.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
     Unauthorized:
-      description: Token de autenticação ausente ou inválido.
+      description: Access token ausente, inválido ou expirado; resposta genérica unauthorized.
+      headers:
+        WWW-Authenticate:
+          schema:
+            type: string
+            example: Bearer
       content:
         application/json:
           schema:

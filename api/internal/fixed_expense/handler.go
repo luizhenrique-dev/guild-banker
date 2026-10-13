@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
 )
 
 type Handler struct {
@@ -27,7 +28,7 @@ func (h *Handler) Create(c *gin.Context) {
 
 	actor, ok := getRequesterActor(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "x-user-id and x-user-email headers are required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -43,7 +44,7 @@ func (h *Handler) Create(c *gin.Context) {
 func (h *Handler) ListActiveByUser(c *gin.Context) {
 	requesterUserID, ok := getRequesterUserID(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "x-user-id header is required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -76,7 +77,7 @@ func (h *Handler) Update(c *gin.Context) {
 
 	actor, ok := getRequesterActor(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "x-user-id and x-user-email headers are required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -104,7 +105,7 @@ func (h *Handler) Deactivate(c *gin.Context) {
 
 	actor, ok := getRequesterActor(c)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "x-user-id and x-user-email headers are required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
@@ -138,25 +139,11 @@ func parseIDParam(c *gin.Context, name string) (int64, error) {
 }
 
 func getRequesterActor(c *gin.Context) (audit.Actor, bool) {
-	requesterUserID, ok := getRequesterUserID(c)
-	if !ok {
-		return audit.Actor{}, false
-	}
-
-	email := c.GetHeader("x-user-email")
-	if email == "" {
-		return audit.Actor{}, false
-	}
-
-	return audit.Actor{UserID: requesterUserID, Email: email}, true
+	principal, ok := auth.PrincipalFromContext(c.Request.Context())
+	return principal.Actor, ok
 }
 
 func getRequesterUserID(c *gin.Context) (int64, bool) {
-	value := c.GetHeader("x-user-id")
-	userID, err := strconv.ParseInt(value, 10, 64)
-	if err != nil || userID <= 0 {
-		return 0, false
-	}
-
-	return userID, true
+	principal, ok := auth.PrincipalFromContext(c.Request.Context())
+	return principal.Actor.UserID, ok
 }

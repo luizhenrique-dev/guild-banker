@@ -285,7 +285,7 @@ Todos os arquivos futuros abaixo são **propostos**; testes com nomes definidos 
 | T1 | Claims e contexto tipados | ✅ concluida | nenhuma | [T1](./ISSUE-1-T1-claims-contexto.md) |
 | T2 | Verifier OIDC e configuração | ✅ concluida | T1 | [T2](./ISSUE-1-T2-verifier-oidc.md) |
 | T3 | Vínculo com usuário local | ✅ concluida | T1, T2 | [T3](./ISSUE-1-T3-identidade-local.md) |
-| T4 | Ativação HTTP e abandono dos headers | ⬜ pendente | T1, T2, T3 | [T4](./ISSUE-1-T4-autenticacao-http.md) |
+| T4 | Ativação HTTP e abandono dos headers | ✅ concluida | T1, T2, T3 | [T4](./ISSUE-1-T4-autenticacao-http.md) |
 | T5 | CORS restrito e preflight | ⬜ pendente | T4 | [T5](./ISSUE-1-T5-cors-restrito.md) |
 | T6 | Fixture de access token Keycloak real | ⬜ pendente | T2, T4, T5 | [T6](./ISSUE-1-T6-fixture-keycloak.md) |
 

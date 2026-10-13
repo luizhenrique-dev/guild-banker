@@ -33,7 +33,7 @@ export interface paths {
         put?: never;
         /**
          * Cria um novo guild
-         * @description Cria um guild com o usuário requisitante (identificado pelo header X-User-ID) como membro criador. Falha com 409 se o nome já estiver em uso.
+         * @description Cria um guild com o usuário local autenticado como membro criador. Falha com 409 se o nome já estiver em uso.
          */
         post: operations["createGuild"];
         delete?: never;
@@ -530,15 +530,6 @@ export interface components {
         };
     };
     responses: {
-        /** @description Validação JWT Keycloak ainda não implementada; qualquer Bearer chega a esta resposta antes dos handlers. */
-        NotImplemented: {
-            headers: {
-                [name: string]: unknown;
-            };
-            content: {
-                "application/json": components["schemas"]["ErrorResponse"];
-            };
-        };
         /** @description Requisição inválida (corpo malformado, parâmetro inválido ou violação de regra de validação). */
         BadRequest: {
             headers: {
@@ -548,9 +539,19 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description Token de autenticação ausente ou inválido. */
+        /** @description Usuário local inexistente/inativo ou acesso negado por regra existente. */
+        Forbidden: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/json": components["schemas"]["ErrorResponse"];
+            };
+        };
+        /** @description Access token ausente, inválido ou expirado; resposta genérica unauthorized. */
         Unauthorized: {
             headers: {
+                "WWW-Authenticate"?: string;
                 [name: string]: unknown;
             };
             content: {
@@ -577,10 +578,6 @@ export interface components {
         };
     };
     parameters: {
-        /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-        UserIDHeader: number;
-        /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-        UserEmailHeader: string;
         /** @description ID do guild. */
         GuildIDPath: number;
         /** @description ID da despesa fixa. */
@@ -626,10 +623,7 @@ export interface operations {
     listGuildsByMember: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -646,18 +640,14 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            501: components["responses"]["NotImplemented"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     createGuild: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -678,6 +668,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             /** @description Nome de guild já utilizado. */
             409: {
                 headers: {
@@ -687,18 +678,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     updateGuildName: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild. */
                 id: components["parameters"]["GuildIDPath"];
@@ -741,18 +727,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     enableGuild: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild. */
                 id: components["parameters"]["GuildIDPath"];
@@ -780,18 +761,13 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     disableGuild: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild. */
                 id: components["parameters"]["GuildIDPath"];
@@ -819,16 +795,13 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     inviteGuildMember: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild. */
                 id: components["parameters"]["GuildIDPath"];
@@ -869,16 +842,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     removeGuildMember: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild. */
                 id: components["parameters"]["GuildIDPath"];
@@ -908,16 +878,13 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     listActiveFixedExpenses: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -934,18 +901,14 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            501: components["responses"]["NotImplemented"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     createFixedExpense: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path?: never;
             cookie?: never;
         };
@@ -966,18 +929,14 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
-            501: components["responses"]["NotImplemented"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     updateFixedExpense: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID da despesa fixa. */
                 id: components["parameters"]["FixedExpenseIDPath"];
@@ -1001,6 +960,7 @@ export interface operations {
             };
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             /** @description Despesa fixa não encontrada. */
             404: {
                 headers: {
@@ -1010,18 +970,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     deactivateFixedExpense: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID da despesa fixa. */
                 id: components["parameters"]["FixedExpenseIDPath"];
@@ -1051,6 +1006,7 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             /** @description Despesa fixa não encontrada. */
             404: {
                 headers: {
@@ -1060,7 +1016,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     listTransactions: {
@@ -1080,12 +1036,7 @@ export interface operations {
                 status?: components["schemas"]["TransactionStatus"];
                 visibility?: components["schemas"]["TransactionVisibility"];
             };
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1115,18 +1066,12 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     createTransaction: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1160,18 +1105,12 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     deleteTransaction: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1219,18 +1158,12 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     updateTransaction: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1284,18 +1217,12 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     bulkCategorizeTransactions: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1329,18 +1256,12 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     setTransactionVisibility: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1385,18 +1306,12 @@ export interface operations {
                 };
             };
             500: components["responses"]["InternalServerError"];
-            501: components["responses"]["NotImplemented"];
         };
     };
     uploadImport: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1435,18 +1350,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     getImportById: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1486,18 +1396,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     discardImportItem: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1537,18 +1442,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     updateImportItem: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1594,18 +1494,13 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
     confirmImport: {
         parameters: {
             query?: never;
-            header: {
-                /** @description ID numérico do usuário requisitante. Usado pelos handlers para identificar o ator da operação e checar membership/autorização. TODO: hoje é a única fonte de identidade efetivamente utilizada pelos handlers, já que a validação do JWT Bearer não está implementada. */
-                "X-User-ID": components["parameters"]["UserIDHeader"];
-                /** @description E-mail do usuário requisitante, usado para registro de auditoria (createdBy/updatedBy). Exigido nas operações de escrita. */
-                "X-User-Email": components["parameters"]["UserEmailHeader"];
-            };
+            header?: never;
             path: {
                 /** @description ID do guild ao qual a transação/importação pertence. */
                 guildID: components["parameters"]["TransactionGuildIDPath"];
@@ -1645,7 +1540,7 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            501: components["responses"]["NotImplemented"];
+            500: components["responses"]["InternalServerError"];
         };
     };
 }

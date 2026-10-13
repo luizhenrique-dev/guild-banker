@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T1, T2, T3
 
 ## O que fazer
@@ -51,4 +51,21 @@ D2/D3/D6/D7 aprovadas. Esta é a troca atômica: antes T4 a API permanece 401/50
 
 ## Evidências
 
-<!-- Preenchido pelo dev-mage: testes observados, regeneração de tipos e evidência de cada T4-AC. -->
+T3 concluída no commit `cd4be4f`.
+
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| T4-AC1 | TestAuth, TestAPIPrefixProtection, TestAuthAcceptance; inclui NoRoute, OPTIONS sem preflight e barras finais GET/POST | PASS com race |
+| T4-AC2 | TestAuthAcceptance: claims e Actor no handler de prova | PASS com race |
+| T4-AC3 | TestAuthHTTPRotation: requests A/B/C no mesmo verifier | PASS com race |
+| T4-AC4 | TestRequireRole: 401/403/200; routes.go sem RequireRole | PASS com race + inspeção |
+| T4-AC5 | TestAuthenticatedHandlerIdentity e TestHandlerUsesTrustedActor nas quatro famílias; TestAuthAcceptance lookup/403/500 | PASS com race |
+| T4-AC6 | TestAuth: logs JSON/envelope/contexto ativo/deadline original; TestAuthTimeoutAndCancellation | PASS com race |
+| T4-AC7 | TestBootstrapDiscoveryFailure sem listener/banco | PASS com race |
+| T4-AC8 | api:types, api:types:check, build SPA; 22 operações protegidas com401/403/500 e sem501/headers; TestAuthAcceptance | PASS |
+
+TDD observado: helpers antigos confiavam nos headers e falharam nas quatro famílias; middleware placeholder falhou nos cenários válidos; OPTIONS comum retornava204; Gin redirecionava barras finais com301/307. Após as correções, os cenários passam. RedirectTrailingSlash foi desabilitado; CORS só trata OPTIONS como preflight quando Access-Control-Request-Method está presente. gin.New + Recovery evita o access log padrão com URL/IP, mantendo o log sanitizado de rejeição.
+
+Gates incrementais executados em `api`: testes com `-race -count=1 -tags=integration` de keycloak, webserver/middleware, cmd/server e quatro famílias de handlers; vet e golangci-lint com integration nos mesmos componentes (0 issues); build de cmd/server em /tmp. SPA: regeneração, drift e build passaram; Vite emitiu aviso de bundle >500kB. Gates globais serão executados no fechamento T6. Revisão independente aprovou T4 após corrigir redirect e adicionar regressão do contexto. Nenhuma falha detectada nas verificações executadas.
+
+`server_integration_test.go` será criado em T5 para CORS; prefixo está em `routes_integration_test.go` nesta task.

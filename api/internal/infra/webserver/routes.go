@@ -4,14 +4,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	"github.com/luizhenrique-dev/guild-banker/api/internal/infra/webserver/middleware"
 )
 
 func (s *Server) registerRoutes() {
 	s.router.GET("/health", s.healthHandler)
 
-	api := s.router.Group("/api/v1", middleware.Auth(s.cfg))
+	api := s.router.Group("/api/v1")
 	{
 		api.POST("/guilds", s.guild.Create)
 		api.PUT("/guilds/:guildID", s.guild.UpdateName)
