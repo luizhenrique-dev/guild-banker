@@ -56,7 +56,7 @@ infra/clean: ## Stop services and remove volumes (destroys data)
 # ==============================================================================
 # API (Go)
 # ==============================================================================
-.PHONY: api/build api/run api/test api/test/cover api/lint api/fmt api/tidy api/vet
+.PHONY: api/build api/run api/test api/test/integration api/test/cover api/lint api/fmt api/tidy api/vet
 
 api/build: ## Build the API binary
 	@echo "$(CYAN)▶ Building API...$(RESET)"
@@ -70,6 +70,9 @@ api/run: api/build ## Build and run the API
 api/test: ## Run API unit tests
 	@echo "$(CYAN)▶ Running tests...$(RESET)"
 	cd $(API_DIR) && go test ./... -race -count=1
+
+api/test/integration: ## Run API integration tests with local fixtures
+	cd $(API_DIR) && go test ./... -race -count=1 -tags=integration
 
 api/test/cover: ## Run tests with coverage report
 	@echo "$(CYAN)▶ Running tests with coverage...$(RESET)"

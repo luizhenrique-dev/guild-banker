@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T1
 
 ## O que fazer
@@ -45,4 +45,17 @@ D1/D4/D7 aprovadas. API real ainda usa placeholder 401/501 ao fim desta task. go
 
 ## Evidências
 
-<!-- Preenchido pelo dev-mage: versão escolhida, testes e evidência de cada T2-AC. -->
+T1 concluída no commit `7d73802`. Versão de go-oidc proposta: v3.21.0, confirmada no pkg.go.dev; compatibilidade será verificada no go.mod baixado. Alteração externa observada em `.codex/skills/dev-mage/references/commit.md`; será preservada fora dos commits de implementação.
+
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| T2-AC1 | TestLoad e TestProviderDiscovery (HTTP/issuer/timeout), TestDiscoveryCancellation | aprovado |
+| T2-AC2 | TestVerifierVerify: assinatura, iss, exp, aud, azp, alg | aprovado |
+| T2-AC3 | TestVerifierVerify: typ, sub, roles e tipos, incluindo null indevido | aprovado |
+| T2-AC4 | TestVerifierJWKSRotation: cache, kid B, kid C, JWKS503 com chave conhecida/desconhecida | aprovado |
+| T2-AC5 | TestVerifierVerify: RejectionError sanitizado/TokenExpiredError | aprovado |
+| T2-AC6 | Unitários + integração com httptest sem serviços externos | aprovado |
+
+RED observado nos contratos ausentes de config/Verifier. GREEN: `go test -v ./internal/infra/keycloak ./config -race -count=1 -tags=integration` PASS, sem skips (25 casos do verifier, config e quatro testes de IO). Integração exige sockets locais: bloqueio do sandbox resolvido por execução autorizada. Vet com tag integration, lint com tag integration (0 issues), build e `go mod tidy -diff` passaram. Suites restritas aos componentes; alvo Makefile criado será executado no fechamento integrado.
+
+Versão fixada v3.21.0 (Go mínimo1.25), compatível com Go1.26.2. Transitivos necessários: go-jose/v4 v4.1.4 e oauth2 v0.36.0; go-jose usado apenas nos tipos de fixtures/JWKS, assinatura sintética pela stdlib. Revisão independente aprovou após correção de elementosnull, uso da stdlib e teste cache durante503. Implementação validada; commit local preparado.

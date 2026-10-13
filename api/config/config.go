@@ -1,9 +1,13 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
+	"strings"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -30,10 +34,12 @@ type DBConfig struct {
 }
 
 type KeycloakConfig struct {
-	BaseURL string
-	Realm   string
-	Timeout int
-	JWKSURI string
+	Issuer   string
+	Audience string
+	BaseURL  string
+	Realm    string
+	Timeout  int
+	JWKSURI  string
 }
 
 func (d DBConfig) DSN() string {
@@ -44,8 +50,12 @@ func (d DBConfig) DSN() string {
 }
 
 func Load() (*Config, error) {
-	if err := godotenv.Load(envFile); err != nil {
+	if err := godotenv.Load(envFile); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return nil, fmt.Errorf("config: failed to load env file %q: %w", envFile, err)
+	}
+	keycloak, err := loadKeycloak()
+	if err != nil {
+		return nil, err
 	}
 
 	cfg := &Config{
@@ -61,16 +71,41 @@ func Load() (*Config, error) {
 			MaxIdleConns:           mustInt("DB_MAX_IDLE_CONNS", 5),
 			ConnMaxLifetimeMinutes: mustInt("DB_CONN_MAX_LIFETIME_MINUTES", 30),
 		},
-		Keycloak: KeycloakConfig{
-			BaseURL: requireEnv("KEYCLOAK_BASE_URL"),
-			Realm:   requireEnv("KEYCLOAK_REALM"),
-			Timeout: mustInt("KEYCLOAK_TIMEOUT_SECONDS", 5),
-			JWKSURI: getEnv("KEYCLOAK_JWKS_URI", ""),
-		},
+		Keycloak:      keycloak,
 		WebServerPort: getEnv("WEBSERVER_PORT", "8081"),
 	}
 
 	return cfg, nil
+}
+
+func loadKeycloak() (KeycloakConfig, error) {
+	issuer := os.Getenv("KEYCLOAK_ISSUER")
+	issuerURL, err := url.Parse(issuer)
+	if err != nil {
+		return KeycloakConfig{}, fmt.Errorf("config: invalid KEYCLOAK_ISSUER: %w", err)
+	}
+	hasHTTP := issuerURL.Scheme == "http" || issuerURL.Scheme == "https"
+	hasAuthority := issuerURL.Hostname() != "" && issuerURL.User == nil
+	hasExtra := issuerURL.RawQuery != "" || issuerURL.Fragment != "" || issuerURL.ForceQuery
+	if !hasHTTP || !hasAuthority || hasExtra {
+		return KeycloakConfig{}, errors.New("config: KEYCLOAK_ISSUER must be an absolute HTTP(S) URL")
+	}
+	audience := os.Getenv("API_AUDIENCE")
+	if strings.TrimSpace(audience) == "" {
+		return KeycloakConfig{}, errors.New("config: API_AUDIENCE is required")
+	}
+	timeout, err := strconv.Atoi(getEnv("KEYCLOAK_TIMEOUT_SECONDS", "5"))
+	if err != nil {
+		return KeycloakConfig{}, fmt.Errorf("config: invalid KEYCLOAK_TIMEOUT_SECONDS: %w", err)
+	}
+	if timeout <= 0 || int64(timeout) > int64((1<<63-1)/time.Second) {
+		return KeycloakConfig{}, errors.New("config: KEYCLOAK_TIMEOUT_SECONDS must be positive and fit a duration")
+	}
+	return KeycloakConfig{
+		Issuer: issuer, Audience: audience, Timeout: timeout,
+		BaseURL: os.Getenv("KEYCLOAK_BASE_URL"), Realm: os.Getenv("KEYCLOAK_REALM"),
+		JWKSURI: os.Getenv("KEYCLOAK_JWKS_URI"),
+	}, nil
 }
 
 func requireEnv(key string) string {
