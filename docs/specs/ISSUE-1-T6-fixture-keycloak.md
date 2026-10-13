@@ -1,0 +1,44 @@
+# ISSUE-1 — T6: Fixture de access token Keycloak real
+
+Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
+
+- **Status:** ⬜ pendente
+- **Depende de:** T2, T4, T5
+
+## O que fazer
+
+1. Preparar realm guild-banker em Keycloak LOCAL ISOLADO, com identidade fictícia, client de emissão de teste, audience guild-banker-api nos access tokens e realm roles member/admin. Usar versão compatível com Keycloak 26.7.5 declarada no compose. Não alterar realm/volume/usuários compartilhados; não executar migration da API. D4 autoriza fixture isolada, não configuração do ambiente pessoal.
+2. Keycloak precisa emitir o token: capturar access token original, JWKS público e metadados de issuer/audience/kid/versão/instante. JWKS não fornece chave privada e não permite assinar um novo token do realm. Nunca exportar/commitar chave privada real, credencial pessoal ou JWT de usuário real. Arquivos contêm somente material fictício de teste e são identificados assim.
+3. Documentar no README preparo/captura reproduzível com comandos efetivamente validados no ambiente isolado, requisitos e configuração do mapper de audience. Capturar token+JWKS coerentes; não editar payload/sub/exp de JWT já assinado. Não exigir automatização de Docker/Keycloak para toda execução da suíte.
+4. Criar TestVerifierKeycloakFixture e TestAuthKeycloakFixture (planejados) com tag integration, ambos em infra/keycloak/verifier_keycloak_integration_test.go. Reutilizar validação de produção e ponto privado de construção do verifier criado em T2; esse pacote pode importar middleware/auth.Service para o replay HTTP sem ciclo. Fornecer apenas chave pública local e relógio dentro do intervalo válido em teste. Preservar issuer original; não usar SkipIssuerCheck/SkipClientIDCheck/SkipExpiryCheck/InsecureSkipSignatureCheck. Relógio após exp comprova rejeição. User lookup da suíte usa registro fictício ativo ligado ao sub da fixture, sem banco real.
+5. Replay pode construir verifier com key set público capturado ou transportar apenas URLs de teste conhecidas para httptest, conforme ponto de injeção já utilizado em T2; nenhuma opção pública de bypass é introduzida. Discovery/rotação continuam cobertos pelos testes sintéticos de T2/T4. Provar assinatura/claims e passagem HTTP pelo mesmo middleware/serviço com 200 válido e 401 expirado.
+6. Exigir todos os testes de fixture no alvo api/test/integration, sem skip condicional por ausência de Keycloak/arquivo/token. Captura inicial depende da infraestrutura isolada; execução posterior usa apenas os arquivos versionados. Não criar pipeline CI; CA9 remoto foi transferido por D5.
+
+## Arquivos
+
+- [criar] `api/internal/infra/keycloak/testdata/keycloak/access-token.jwt` — JWT original de teste fictício.
+- [criar] `api/internal/infra/keycloak/testdata/keycloak/jwks.json` — somente chaves públicas.
+- [criar] `api/internal/infra/keycloak/testdata/keycloak/metadata.json` — versão/issuer/audience/kid/instante reproduzível, sem credenciais.
+- [criar] `api/internal/infra/keycloak/testdata/keycloak/README.md` — procedimento validado e isolamento.
+- [criar] `api/internal/infra/keycloak/verifier_keycloak_integration_test.go` — compatibilidade do adapter e replay HTTP da fixture real, com relógio privado do mesmo pacote.
+
+## Critérios de aceite
+
+- T6-AC1 Fixture contém JWT emitido pelo Keycloak e JWKS público correspondente, com identidade fictícia e origem documentada; nenhum segredo pessoal/chave privada real → CA9 local, CA13.
+- T6-AC2 Token real recebe 200 no handler de prova e principal/claims corretos no contexto em instante fixo válido → CA2, CA10.
+- T6-AC3 Mesma fixture recebe 401 depois de exp sem modificar JWT nem desabilitar validação → CA4.
+- T6-AC4 Alvo integration executa a fixture real sem Keycloak/PostgreSQL ativos, sem skips; cobertura local CA1–CA8 continua passando → CA9 local.
+
+## Verificação
+
+- Na raiz: `make api/vet`, `make api/lint`, `make api/test`, `make api/test/integration`, `make api/build` — Go compatível/race/dependências; alvo integration criado em T2. Esperado: fixture real válida/expirada e suíte local completa passam sem serviços externos.
+- Manual inicial: captura em Keycloak isolado, conferência de correspondência kid/chave pública, RS256, issuer e aud, identidade fictícia e ausência de chave privada/credenciais nos arquivos. Procedimento será documentado após execução; comandos de captura ainda não são fatos verificados no planejamento.
+- Gate CI: não aplicável nesta issue, conforme D5; não alegar atendimento integral ao API-CA9 original.
+
+## Contexto adicional
+
+D4 aprovada: fixture real capturada, relógio fixo apenas em teste, suíte independente de Keycloak ativo. D6: user local previamente cadastrado; aqui o lookup é stubado com usuário fictício ligado ao sub. O issuer local de referência é http://localhost:8080/realms/guild-banker, lido da fixture/config, não hardcoded na implementação. Esta task entrega compatibilidade externa, não uma task genérica de testes finais. Sem export/import destrutivo ou infra/clean no ambiente compartilhado.
+
+## Evidências
+
+<!-- Preenchido pelo dev-mage: origem da fixture, comandos validados, testes observados e evidência de cada T6-AC. -->
