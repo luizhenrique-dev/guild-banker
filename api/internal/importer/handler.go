@@ -245,8 +245,3 @@ func getRequesterActor(c *gin.Context) (audit.Actor, bool) {
 	principal, ok := auth.PrincipalFromContext(c.Request.Context())
 	return principal.Actor, ok
 }
-
-func getRequesterUserID(c *gin.Context) (int64, bool) {
-	principal, ok := auth.PrincipalFromContext(c.Request.Context())
-	return principal.Actor.UserID, ok
-}

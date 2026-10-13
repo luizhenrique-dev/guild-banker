@@ -237,11 +237,6 @@ func getRequesterActor(c *gin.Context) (audit.Actor, bool) {
 	return principal.Actor, ok
 }
 
-func getRequesterUserID(c *gin.Context) (int64, bool) {
-	principal, ok := auth.PrincipalFromContext(c.Request.Context())
-	return principal.Actor.UserID, ok
-}
-
 func parseListInput(c *gin.Context, guildID int64) (ListInput, error) {
 	input := ListInput{GuildID: guildID, Cursor: c.Query("cursor")}
 

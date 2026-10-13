@@ -32,15 +32,12 @@ func TestAuthenticatedHandlerIdentity(t *testing.T) {
 			}
 			got, ok := getRequesterActor(c)
 			assert.Equal(t, tt.authenticated, ok)
-			id, ok := getRequesterUserID(c)
-			assert.Equal(t, tt.authenticated, ok)
 			if tt.authenticated {
 				assert.Equal(t, actor, got)
-				assert.EqualValues(t, 42, id)
+				assert.EqualValues(t, 42, got.UserID)
 				return
 			}
 			assert.Zero(t, got)
-			assert.Zero(t, id)
 		})
 	}
 }
