@@ -15,9 +15,10 @@ import (
 const envFile = "api/config.env"
 
 type Config struct {
-	DB            DBConfig
-	Keycloak      KeycloakConfig
-	WebServerPort string
+	DB                 DBConfig
+	Keycloak           KeycloakConfig
+	WebServerPort      string
+	CORSAllowedOrigins []string
 }
 
 type DBConfig struct {
@@ -57,6 +58,10 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	origins, err := loadCORSOrigins()
+	if err != nil {
+		return nil, err
+	}
 
 	cfg := &Config{
 		DB: DBConfig{
@@ -71,11 +76,41 @@ func Load() (*Config, error) {
 			MaxIdleConns:           mustInt("DB_MAX_IDLE_CONNS", 5),
 			ConnMaxLifetimeMinutes: mustInt("DB_CONN_MAX_LIFETIME_MINUTES", 30),
 		},
-		Keycloak:      keycloak,
-		WebServerPort: getEnv("WEBSERVER_PORT", "8081"),
+		Keycloak:           keycloak,
+		WebServerPort:      getEnv("WEBSERVER_PORT", "8081"),
+		CORSAllowedOrigins: origins,
 	}
 
 	return cfg, nil
+}
+
+func loadCORSOrigins() ([]string, error) {
+	origins := strings.Split(os.Getenv("CORS_ALLOWED_ORIGINS"), ",")
+	invalid := errors.New("config: CORS_ALLOWED_ORIGINS must contain only complete HTTP(S) origins")
+	for i, origin := range origins {
+		origin = strings.TrimSpace(origin)
+		u, err := url.Parse(origin)
+		if err != nil {
+			return nil, invalid
+		}
+		hasHTTP := u.Scheme == "http" || u.Scheme == "https"
+		hasHost := u.Hostname() != "" && !strings.ContainsAny(u.Host, "* \t\n\r")
+		hasExtra := u.User != nil || u.Path != "" || u.RawQuery != "" || u.ForceQuery || strings.Contains(origin, "#")
+		if !hasHTTP || !hasHost || hasExtra || strings.HasSuffix(u.Host, ":") {
+			return nil, invalid
+		}
+		if strings.Contains(u.Hostname(), ":") && !strings.HasPrefix(u.Host, "[") {
+			return nil, invalid
+		}
+		if port := u.Port(); port != "" {
+			n, err := strconv.Atoi(port)
+			if err != nil || n < 1 || n > 65535 {
+				return nil, invalid
+			}
+		}
+		origins[i] = u.String()
+	}
+	return origins, nil
 }
 
 func loadKeycloak() (KeycloakConfig, error) {

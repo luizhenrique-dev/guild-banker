@@ -20,6 +20,58 @@ func configEnvironment(t *testing.T) {
 	t.Setenv("KEYCLOAK_TIMEOUT_SECONDS", "")
 	t.Setenv("KEYCLOAK_BASE_URL", "")
 	t.Setenv("KEYCLOAK_REALM", "")
+	t.Setenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+}
+
+func TestLoadCORSOrigins(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		origins string
+		valid   bool
+	}{
+		{name: "UI list", origins: " http://localhost:5173 , http://127.0.0.1:5173 ", valid: true},
+		{name: "HTTPS", origins: "https://ui.example.test", valid: true},
+		{name: "uppercase scheme", origins: "HTTP://localhost:5173", valid: true},
+		{name: "IPv6", origins: "http://[::1]:5173", valid: true},
+		{name: "missing"},
+		{name: "blank", origins: " "},
+		{name: "wildcard", origins: "*"},
+		{name: "host wildcard", origins: "https://*.example.test"},
+		{name: "empty list element", origins: "http://localhost:5173,"},
+		{name: "no scheme", origins: "localhost:5173"},
+		{name: "invalid scheme", origins: "ftp://localhost:5173"},
+		{name: "no host", origins: "https://"},
+		{name: "path", origins: "https://ui.example.test/app"},
+		{name: "root path", origins: "https://ui.example.test/"},
+		{name: "query", origins: "https://ui.example.test?secret=query"},
+		{name: "empty query", origins: "https://ui.example.test?"},
+		{name: "fragment", origins: "https://ui.example.test#fragment"},
+		{name: "empty fragment", origins: "https://ui.example.test#"},
+		{name: "unbracketed IPv6", origins: "http://::1"},
+		{name: "credentials", origins: "https://user:secret@ui.example.test"},
+		{name: "non-numeric port", origins: "https://ui.example.test:abc"},
+		{name: "empty port", origins: "https://ui.example.test:"},
+		{name: "zero port", origins: "https://ui.example.test:0"},
+		{name: "overflow port", origins: "https://ui.example.test:65536"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			configEnvironment(t)
+			t.Setenv("CORS_ALLOWED_ORIGINS", tt.origins)
+			cfg, err := Load()
+			if tt.valid {
+				require.NoError(t, err)
+				if tt.name == "UI list" {
+					assert.Equal(t, []string{"http://localhost:5173", "http://127.0.0.1:5173"}, cfg.CORSAllowedOrigins)
+				}
+				if tt.name == "uppercase scheme" {
+					assert.Equal(t, []string{"http://localhost:5173"}, cfg.CORSAllowedOrigins)
+				}
+				return
+			}
+			require.Error(t, err)
+			assert.EqualError(t, err, "config: CORS_ALLOWED_ORIGINS must contain only complete HTTP(S) origins")
+		})
+	}
 }
 
 func TestLoad(t *testing.T) {
@@ -30,6 +82,7 @@ func TestLoad(t *testing.T) {
 		assert.Equal(t, "fixture-api", cfg.Keycloak.Audience)
 		assert.Equal(t, "http://localhost:8080/realms/fixture", cfg.Keycloak.Issuer)
 		assert.Equal(t, 5, cfg.Keycloak.Timeout)
+		assert.Equal(t, []string{"http://localhost:5173", "http://127.0.0.1:5173"}, cfg.CORSAllowedOrigins)
 	})
 	t.Run("process wins over file", func(t *testing.T) {
 		configEnvironment(t)

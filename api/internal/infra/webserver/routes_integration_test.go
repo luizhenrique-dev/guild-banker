@@ -24,7 +24,11 @@ func (s *testAuthenticator) Authenticate(context.Context, string) (auth.Principa
 func TestAPIPrefixProtection(t *testing.T) {
 	var logs bytes.Buffer
 	authenticator := &testAuthenticator{}
-	server := NewServer(&config.Config{Keycloak: config.KeycloakConfig{Timeout: 1}}, nil, authenticator, slog.New(slog.NewJSONHandler(&logs, nil)))
+	cfg := &config.Config{
+		Keycloak:           config.KeycloakConfig{Timeout: 1},
+		CORSAllowedOrigins: []string{"http://localhost:5173"},
+	}
+	server := NewServer(cfg, nil, authenticator, slog.New(slog.NewJSONHandler(&logs, nil)))
 	for _, tt := range []struct {
 		path   string
 		token  bool

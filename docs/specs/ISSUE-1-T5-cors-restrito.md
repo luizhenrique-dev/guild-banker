@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T4
 
 ## O que fazer
@@ -17,7 +17,7 @@ Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
 
 - [alterar] `api/config/config.go`, `api/config.env.example` — allowlist.
 - [alterar] `api/config/config_test.go` — arquivo criado em T2.
-- [alterar] `api/internal/infra/webserver/server.go`, `server_integration_test.go` — arquivo de teste criado em T4.
+- [alterar] `api/internal/infra/webserver/server.go`; [criar] `server_integration_test.go` — teste de CORS separado do teste de prefixo de T4.
 
 ## Critérios de aceite
 
@@ -37,4 +37,15 @@ D7 aprovou allowlist e preflight antes de Auth. Evidência UI local: web/spa/REA
 
 ## Evidências
 
-<!-- Preenchido pelo dev-mage: testes observados e evidência de cada T5-AC. -->
+T4 concluída no commit `95c81aa`.
+
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| T5-AC1 | TestLoadCORSOrigins: origens válidas, trimming/normalização, ausente/wildcard/path/query/fragment/credenciais/portas inválidas com erro sanitizado; TestServerCORSLoadedOrigins | PASS com race |
+| T5-AC2 | TestServerCORS: preflight GET/POST204 com Authorization, zero chamadas ao autenticador; efetivas401 | PASS com race |
+| T5-AC3 | Origem externa/preview403 sem ACAO; nenhuma credencial ou X-User nos headers permitidos | PASS com race |
+| T5-AC4 | TestAPIPrefixProtection, TestAuthAcceptance CA1–CA8 e TestAuthHTTPRotation; health público | PASS com race |
+
+RED observado: Load aceitava origens ausentes/inválidas; CORS retornava wildcard e credentials=true, liberando origem externa. Após implementar allowlist, revisão independente encontrou scheme maiúsculo causando panic em cors.New: regressão RED do valor normalizado, correção via URL.String e teste Load→NewServer sem panic passaram. Revisão independente final aprovada.
+
+Gates incrementais: `go test -v -race -count=1 -tags=integration` de config, webserver/middleware, keycloak e cmd/server; vet e golangci-lint integration em config/webserver (0 issues); build cmd/server em /tmp. Nenhuma falha detectada nas verificações executadas. Gates globais permanecem para T6. Domínio de produção e preview devem ser acrescentados explicitamente no env operacional.
