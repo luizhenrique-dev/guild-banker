@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-1-autenticacao-jwt-rs256.md](./ISSUE-1-autenticacao-jwt-rs256.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T1, T2
 
 ## O que fazer
@@ -39,4 +39,13 @@ D3/D6 aprovadas: cadastro prévio obrigatório, 403 para inexistente/inativo, se
 
 ## Evidências
 
-<!-- Preenchido pelo dev-mage: testes observados e evidência de cada T3-AC. -->
+T2 concluída no commit `8fa8cea`.
+
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| T3-AC1 | TestServiceAuthenticate: sub intacto, ID/Email locais | aprovado |
+| T3-AC2 | TestServiceAuthenticate: inexistente/inativo/técnico | aprovado |
+| T3-AC3 | TestServiceAuthenticate: ordem, lookup ausente no token inválido, contexto | aprovado |
+| T3-AC4 | TestStorageGetByExternalID e TestService_GetByExternalID/notfound | aprovado |
+
+RED observado: contratos auth.NewService/user.ErrNotFound ausentes. GREEN: `go test -v ./internal/auth ./internal/user -race -count=1` PASS, com todos os novos testes descobertos e sem skips. Vet, lint (0 issues) nos dois componentes e build API PASS. Driver stdlib prova parâmetro SQL e ausência/erro técnico sem banco ativo. Revisão independente aprovada sem achados. Implementação validada; commit local preparado.

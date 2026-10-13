@@ -136,7 +136,7 @@ func (s *postgresStorage) get(ctx context.Context, query string, arg any) (*User
 	var entity userEntity
 	if err := s.db.GetContext(ctx, &entity, query, arg); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("user not found: %w", err)
+			return nil, fmt.Errorf("%w: %w", ErrNotFound, err)
 		}
 		return nil, fmt.Errorf("query user: %w", err)
 	}

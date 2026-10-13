@@ -184,6 +184,14 @@ func TestService_GetByID(t *testing.T) {
 }
 
 func TestService_GetByExternalID(t *testing.T) {
+	t.Run("not found is preserved", func(t *testing.T) {
+		svc, storage := newService(t)
+		storage.On("GetByExternalID", mock.Anything, "missing").Return((*User)(nil), ErrNotFound)
+		u, err := svc.GetByExternalID(context.Background(), "missing")
+		assert.Nil(t, u)
+		assert.ErrorIs(t, err, ErrNotFound)
+		storage.AssertExpectations(t)
+	})
 	t.Run("success", func(t *testing.T) {
 		svc, storage := newService(t)
 		existing := stubUser()
