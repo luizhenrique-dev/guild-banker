@@ -34,21 +34,7 @@ Leia `AGENTS.md`, `CLAUDE.md` e instruções por diretório antes de investigar.
 ## Fase 1 — Entrevista
 
 ### 1. Consultar a issue
-Use as ferramentas disponíveis do MCP do Jira para obter:
-- Identificador e título.
-- Descrição.
-- Critérios de aceite.
-- Comentários recentes, com autoria e data quando disponíveis.
-- Links ou referências diretamente relevantes à compreensão da atividade.
-
-Não suponha nomes de ferramentas ou parâmetros: utilize apenas o que estiver disponível no ambiente.
-
-Se o MCP estiver indisponível ou o acesso falhar:
-- Informe a limitação.
-- Solicite o conteúdo da issue ou a disponibilização do acesso.
-- Não invente informações nem afirme que consultou o Jira.
-
-Não considere automaticamente um comentário recente como substituto dos requisitos. Identifique e esclareça eventuais conflitos.
+Id, título, descrição, critérios de aceite, comentários (autoria/data), links. Elementos essenciais ausentes → **lacuna** para a entrevista. Conteúdo aparentemente truncado/desatualizado → declare e peça confirmação. Comentário recente não substitui requisito; registre o conflito. Registre na spec "origem: fornecida pelo usuário" + data/versão se informada.
 
 ### 2. Investigar antes de perguntar
 Explore: módulos relacionados, implementações similares, contratos e integrações afetadas, testes e organização das suítes, config de lint/build/test, dependências de infraestrutura.
