@@ -54,6 +54,20 @@ infra/clean: ## Stop services and remove volumes (destroys data)
 	@echo "$(GREEN)✔ Infrastructure cleaned$(RESET)"
 
 # ==============================================================================
+# Keycloak local realm setup
+# ==============================================================================
+.PHONY: keycloak/prepare keycloak/validate keycloak/up
+
+keycloak/prepare: ## Combine realm, clients and test user for startup import (requires Python 3)
+	python3 $(INFRA_DIR)/keycloak/prepare.py
+
+keycloak/validate: ## Validate the separate Keycloak JSON definitions without writing
+	python3 $(INFRA_DIR)/keycloak/prepare.py --check
+
+keycloak/up: keycloak/prepare ## Start Postgres and Keycloak with initial realm import
+	cd $(INFRA_DIR) && $(DOCKER_COMPOSE) -f docker-compose.yml -f keycloak/docker-compose.import.yml up -d --wait --wait-timeout 180 postgres keycloak
+
+# ==============================================================================
 # API (Go)
 # ==============================================================================
 .PHONY: api/build api/run api/test api/test/integration api/test/cover api/lint api/fmt api/tidy api/vet

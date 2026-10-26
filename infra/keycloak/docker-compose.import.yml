@@ -1,0 +1,16 @@
+# Paths are relative to infra/docker-compose.yml, the first Compose file.
+services:
+  keycloak:
+    command:
+      - start-dev
+      - --http-port=8080
+      - --hostname=http://localhost:8080
+      - --import-realm
+    environment:
+      KC_TEST_USER_PASSWORD: ${KC_TEST_USER_PASSWORD:?Set KC_TEST_USER_PASSWORD in infra/.env or your environment}
+    volumes:
+      - ./keycloak/import:/opt/keycloak/data/import:ro
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - "{ printf 'HEAD /health/ready HTTP/1.0\r\n\r\n' >&0; grep -q 'HTTP/1.0 200'; } 0<>/dev/tcp/127.0.0.1/9000"

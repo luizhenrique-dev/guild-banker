@@ -1,0 +1,35 @@
+{
+  "realm": "guild-banker",
+  "displayName": "GuildBanker",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": true,
+  "editUsernameAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "defaultSignatureAlgorithm": "RS256",
+  "accessTokenLifespan": 300,
+  "roles": {
+    "realm": [
+      {"name": "member", "description": "GuildBanker member"},
+      {"name": "admin", "description": "GuildBanker administrator"}
+    ]
+  },
+  "users": [
+    {
+      "id": "00000000-0000-4000-8000-000000000001",
+      "username": "foo.bar@email.com",
+      "firstName": "Foo",
+      "lastName": "Bar",
+      "email": "foo.bar@email.com",
+      "emailVerified": true,
+      "enabled": true,
+      "requiredActions": [],
+      "realmRoles": ["member"],
+      "credentials": [
+        {"type": "password", "value": "${KC_TEST_USER_PASSWORD}", "temporary": false}
+      ]
+    }
+  ]
+}

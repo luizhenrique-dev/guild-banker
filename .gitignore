@@ -57,6 +57,7 @@ web/.vite/
 # ============================================================
 infra/postgres/data/
 infra/keycloak/data/
+infra/keycloak/import/
 
 # ============================================================
 # IDEs & Editors

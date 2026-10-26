@@ -56,6 +56,13 @@ The project use case and roadmap are defined in [PROJECT.md](./PROJECT.md) (work
 
 # Repository Instructions
 
+## Keycloak local setup
+
+Realm `guild-banker`, clients `guild-banker-ui`/`guild-banker-api` and the Foo Bar
+test user can be prepared and imported with `make keycloak/up`.
+See [the setup instructions](infra/keycloak/README.md) for the environment,
+initial import, manual client import and API user mapping.
+
 ## API – Golang
 
 ### Architecture
