@@ -15,7 +15,8 @@ services:
     container_name: guildbanker-postgres
     restart: unless-stopped
     environment:
-      # Superuser used only for initialization.
+      # Administrative account; the init SQL creates the application account
+      # guildbanker and database "guild-banker", separately from Keycloak.
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: postgres

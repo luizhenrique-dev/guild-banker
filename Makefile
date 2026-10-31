@@ -11,6 +11,9 @@ MIGRATIONS_DIR  := migrations
 BINARY          := $(API_DIR)/bin/$(APP_NAME)
 DOCKER_COMPOSE  := docker compose
 
+# Make recipes also find asdf when the calling shell has not loaded its config.
+export PATH := $(HOME)/.local/bin:$(or $(ASDF_DATA_DIR),$(HOME)/.asdf)/bin:$(or $(ASDF_DATA_DIR),$(HOME)/.asdf)/shims:$(PATH)
+
 .DEFAULT_GOAL   := help
 
 
@@ -170,10 +173,41 @@ web/preview: ## Preview an existing static frontend build locally
 # ==============================================================================
 # All-in-one
 # ==============================================================================
-.PHONY: setup check clean
+.PHONY: setup setup/tools dev check clean
 
-setup: infra/up api/tidy web/install ## First-time setup: start infra + install deps
+setup/tools: ## Check system prerequisites and install missing asdf, Node.js/npm and Go
+	@bash infra/scripts/setup-tools.sh
+
+setup: setup/tools ## Prepare the environment and Keycloak, then stop containers (preserves data)
+	@test -f api/config.env || cp api/config.env.example api/config.env
+	@test -f infra/.env || cp infra/.env.example infra/.env
+	@set -e; \
+		trap 'status=$$?; $(MAKE) infra/down || exit $$?; exit $$status' EXIT; \
+		trap 'exit 130' INT; trap 'exit 143' TERM; \
+		$(MAKE) keycloak/up; \
+		$(MAKE) api/tidy web/install
 	@echo "$(GREEN)✔ Project setup complete$(RESET)"
+
+dev: ## Start Postgres, Keycloak, API and UI for local development (requires Bash)
+	@command -v node >/dev/null 2>&1 && node --version >/dev/null 2>&1 && \
+		command -v npm >/dev/null 2>&1 && npm --version >/dev/null 2>&1 || \
+		{ echo "Error: Node.js/npm unavailable. Install the Node.js version in .tool-versions (asdf install nodejs) and ensure it is on PATH."; exit 1; }
+	$(MAKE) keycloak/up
+	$(MAKE) api/build web/install
+	@echo "$(CYAN)▶ API: http://localhost:8081 | UI: http://localhost:5173 | Keycloak: http://localhost:8080$(RESET)"
+	@bash -c 'set -m; \
+		api_pid=; web_pid=; \
+		cleanup() { \
+			trap "" INT TERM; \
+			[ -z "$$api_pid" ] || kill -TERM -- -$$api_pid 2>/dev/null; \
+			[ -z "$$web_pid" ] || kill -TERM -- -$$web_pid 2>/dev/null; \
+			wait; \
+		}; \
+		trap cleanup EXIT; \
+		trap "exit 130" INT; trap "exit 143" TERM; \
+		./$(BINARY) & api_pid=$$!; \
+		(cd $(WEB_DIR) && exec npm run dev -- --port 5173 --strictPort) & web_pid=$$!; \
+		wait -n "$$api_pid" "$$web_pid"; exit $$?'
 
 check: api/vet api/lint api/test web/lint web/test ## Run all checks (lint + test) for API and Web
 	@echo "$(GREEN)✔ All checks passed$(RESET)"

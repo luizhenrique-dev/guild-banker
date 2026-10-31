@@ -56,6 +56,59 @@ The project use case and roadmap are defined in [PROJECT.md](./PROJECT.md) (work
 
 # Repository Instructions
 
+## Run the local environment
+
+Install the system prerequisites: Docker with the Compose plugin, GNU Make,
+Bash 4.3+, Git, curl, tar, gzip, awk, grep and Python 3. Start Docker and verify
+that `docker info` works for your user. Compose is invoked as `docker compose`;
+the standalone `docker-compose` command is insufficient. On macOS, install a
+recent Bash and ensure `bash` on PATH points to it. Then run:
+
+```sh
+make setup
+make dev
+```
+
+`make setup/tools` first checks these system tools, Python 3, the Compose plugin
+and access to the Docker daemon. It logs available prerequisites and reports
+missing or unusable ones before downloading toolchains. System prerequisites
+are installed through your operating system, not by this target.
+
+It then installs asdf if missing (Linux/macOS on x86_64 or ARM64), adds the
+Node.js and Go plugins and installs the versions in `.tool-versions`. npm is
+included with Node.js. Existing versions are reused with an `OK` log.
+
+`make setup` runs `setup/tools` first, then
+creates missing `api/config.env` and `infra/.env` from their examples, starts
+Postgres/Keycloak with realm import and installs API/UI dependencies. At the end,
+it shuts down the containers with `infra/down`, preserving volumes and the
+imported realm. Cleanup also runs if service startup or dependency installation
+fails, or setup is interrupted. Run `make dev` to keep the environment running.
+Existing environment files are preserved. Review `infra/.env` to choose your local test
+user password before the first import: copy `infra/.env.example` to `infra/.env`
+and edit it before running `make setup`. See the
+[Keycloak instructions](infra/keycloak/README.md) for details. The application
+database name, user and local password are defined in `api/config.env.example`
+and `infra/postgres/init/01-init-multiple-dbs.sql`; change `api/config.env` if
+your existing database uses different credentials. The initialization SQL only
+runs for new volumes; setup does not reset existing databases or passwords.
+
+`make setup/tools` does not start containers or install API/UI dependencies. Make includes
+the asdf binary and shims in its PATH, so opening a new terminal is unnecessary.
+For direct use of `node`, `npm` and `go` outside Make, add the following to your
+shell configuration, following the [asdf setup guide](https://asdf-vm.com/guide/getting-started.html):
+
+```sh
+export PATH="$HOME/.local/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/bin:${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+```
+
+`make dev` starts Postgres and Keycloak with realm import, waits for their health
+checks, builds the API, installs UI dependencies and runs both applications.
+UI: `http://localhost:5173`, API: `http://localhost:8081`,
+Keycloak: `http://localhost:8080`.
+Ctrl+C stops the API and UI; `make infra/down` stops the containers and preserves
+their data. If either application exits, the other is stopped as well.
+
 ## Keycloak local setup
 
 Realm `guild-banker`, clients `guild-banker-ui`/`guild-banker-api` and the Foo Bar

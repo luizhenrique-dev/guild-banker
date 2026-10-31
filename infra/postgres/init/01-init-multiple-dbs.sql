@@ -5,12 +5,12 @@
 DO $$
 	BEGIN
 		IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'guildbanker') THEN
-			CREATE ROLE guildbanker LOGIN PASSWORD 'guildbanker';
+			CREATE ROLE guildbanker LOGIN PASSWORD 'qQ71MkD19ishCrrt';
 		END IF;
 	END $$;
 
-SELECT 'CREATE DATABASE guildbanker OWNER guildbanker'
-WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'guildbanker')\gexec
+SELECT 'CREATE DATABASE "guild-banker" OWNER guildbanker'
+WHERE NOT EXISTS (SELECT 1 FROM pg_database WHERE datname = 'guild-banker')\gexec
 
 -- Keycloak DB + role
 DO $$
