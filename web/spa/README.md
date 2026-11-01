@@ -34,7 +34,7 @@ O lockfile npm é a fonte da instalação reproduzível; o frontend não utiliza
 
 `VITE_USE_MOCKS=true` só habilita MSW quando `import.meta.env.DEV` também é verdadeiro. `.env.demo` e `.env.test` ativam esse opt-in. O bootstrap aguarda o worker antes de montar; falha de startup aparece na tela. Requests `/api` não reconhecidas falham nos mocks. Produção ignora o opt-in, não inicializa worker nem identidade demo.
 
-A sessão usa Context restrito, dados remotos usam Query, seleção de guild e filtros usam URL; formulários/arquivo selecionado ficam locais. Logout/401 aborta requests e limpa cache. Keys incluem usuário/guild/filtros pertinentes; despesas fixas são pessoais. GET repete no máximo uma vez falhas de rede/5xx (exceto 501); mutations não têm retry automático nem atualização financeira otimista. A revisão de importação é descartada na troca de guild. Os membros exibidos são fixtures explicitamente demonstrativas, pois não existe GET de membros no backend.
+A sessão usa Context restrito, dados remotos usam Query, seleção de guild e filtros usam URL; formulários/arquivo selecionado ficam locais. Logout/401 aborta requests e limpa cache; logout voluntário encerra também o SSO, enquanto 401 inicia recuperação de login limitada. Keys incluem usuário/guild/filtros pertinentes; despesas fixas são pessoais. GET repete no máximo uma vez falhas de rede/5xx (exceto 501); mutations não têm retry automático nem atualização financeira otimista. A revisão de importação é descartada na troca de guild. Os membros exibidos são fixtures explicitamente demonstrativas, pois não existe GET de membros no backend.
 
 Os tipos são gerados do OpenAPI corrigido contra rotas/DTOs Go; a geração não substitui a conferência do contrato. [OPENAPI_GAPS](../../docs/specs/OPENAPI_GAPS.md) registra limites e divergências. Valores monetários são strings decimais no payload, com normalização de vírgula para ponto; não há cálculos financeiros no cliente. Nome da despesa é somente leitura na edição porque PATCH não aceita renomear. A política local de nome tem limite de 100 caracteres.
 
@@ -48,7 +48,7 @@ A API valida Bearer pelo Keycloak e resolve o `sub` em `user_account`; cadastro 
 
 ## Entrega estática e hosting futuro
 
-Artefato: **`web/spa/dist/`**, com `index.html`, JS/CSS com hash e fontes locais. A premissa é publicação sob a **raiz `/` do domínio**. Um subpath futuro exige ajustar `base` do Vite e basename do Router. Nenhum hosting/provedor ou pipeline remoto foi configurado ou publicado nesta issue.
+Artefato: **`web/spa/dist/`**, com `index.html`, JS/CSS com hash e fontes locais. A premissa é publicação sob a **raiz `/` do domínio**. Um subpath futuro exige ajustar `base` do Vite e basename do Router. Nenhum hosting/provedor ou pipeline remoto foi configurado ou publicado.
 
 O hosting escolhido deverá:
 
@@ -60,7 +60,7 @@ O hosting escolhido deverá:
 
 ## Evidências e checklist de publicação
 
-A configuração `playwright.production.config.ts` serve o build com vite preview. O smoke verifica acesso direto às quatro telas, assets sem erro, ausência de worker/identidade demo/requests financeiros, estado sem sessão, redirect e 404 de UI. Os E2E demo verificam histórico/filtros/guild, importação, membros e CRUD de despesas fixas, incluindo teclado/foco/rolagem local a 375 e 1280 px. Vitest cobre HTTP/cancelamento, sessões/cache, validação e falhas/pending/refetch.
+A configuração `playwright.production.config.ts` serve o build com vite preview. O smoke intercepta a navegação OIDC e verifica guarda das rotas, assets, ausência de worker/identidade demo/requests financeiros, PKCE e callback inválido sem loop. A página 404 só aparece após autenticação. Os E2E demo verificam histórico/filtros/guild, importação, membros e CRUD de despesas fixas, incluindo teclado/foco/rolagem local a 375 e 1280 px. Vitest cobre HTTP/cancelamento, sessões/cache, validação e falhas/pending/refetch.
 
 Gate local reproduzível: `npm ci` → tipos sem drift → lint → build → Vitest → E2E demo → smoke do dist. Consultar as evidências observadas nas [tasks GB-20](../../docs/specs/GB-20-reestruturacao-frontend.md). O build pode avisar que o chunk principal tem aproximadamente 500 kB; isso não impede a geração do artefato.
 
@@ -90,3 +90,55 @@ Tokens permanecem na memória do SDK; recarga restaura sessão pelo SSO.
 O smoke de produção deve receber essas variáveis no build e intercepta apenas
 as requisições OIDC no navegador do teste. Ele não comprova login real.
 Para usar outra porta no E2E demo: `PLAYWRIGHT_PORT=5273 npm --prefix web/spa run test:e2e`.
+
+### Sessão, expiração e saída
+O SDK `keycloak-js` 26.2.5 é usado diretamente, sem wrapper React. Antes de
+cada request, `updateToken(30)` renova o token se necessário. O evento de
+expiração também tenta renovar. Uma falha definitiva encerra a sessão local e
+inicia login; não se repetem mutations. 403, rede e 5xx não provocam logout.
+Um marcador sem token em sessionStorage limita recuperação automática entre
+recargas; é apagado após uma chamada API bem sucedida. Storage bloqueado impede
+recuperação automática e mantém tentativa explícita. Tokens não são persistidos.
+
+Sair limpa IO/cache e bloqueia o conteúdo antes de encerrar SSO. A URL de logout
+com ID token hint é preparada antes de limpar tokens. Uma checagem de disponibilidade
+do Keycloak (até 5s) permite exibir falha e repetir na UI; falhas depois da navegação
+são exibidas pelo próprio navegador. O iframe de sessão fica desabilitado: logout
+em outra aba é percebido na renovação/expiração, não necessariamente de imediato.
+Configurar retornos de logout conforme [Keycloak local](../../infra/keycloak/README.md).
+
+### Testes reais de autenticação
+Na raiz: `npm --prefix web/spa run test:e2e:auth`. Requer UI 5173 livre,
+Keycloak local 8080 configurado, API atual na 8081 e usuário da API ativo/vinculado
+ao sub do Keycloak. A suíte inicia/encerra apenas o Vite e nunca faz seed, migrations
+ou mudanças de política no realm. Pré-requisitos ausentes resultam em falha, sem skip.
+A API deve ser iniciada pelo responsável pelo ambiente, considerando que o startup
+atual executa automaticamente sua rotina de migrações.
+
+Credenciais: `E2E_USERNAME` (padrão `foo.bar@email.com`), `E2E_NAME` (padrão `Foo Bar`)
+e `E2E_PASSWORD` ou `KC_TEST_USER_PASSWORD`. O config lê também `infra/.env` local
+se existir, sem substituir variáveis já exportadas. Não grave senha no repositório.
+Trace, screenshots e vídeo ficam desabilitados nessa suíte para não registrar
+credenciais/códigos/tokens. A demo e o smoke compilado são suítes separadas.
+
+Os testes reais cobrem login/Home, deep link/query, reload/SSO, Bearer na API,
+logout/histórico, erro de transporte no logout e renovação/expiração. O relógio do
+browser avança até `expires_in` para disparar o timer do SDK; o servidor Keycloak
+continua real, sem alterar duração de sessão do realm compartilhado. Outra aba
+encerra SSO para provar rejeição real do refresh e retorno ao login.
+
+Gate reproduzível (raiz), com configuração pública OIDC no build:
+```sh
+npm --prefix web/spa ci
+npm --prefix web/spa run api:types:check
+npm --prefix web/spa run lint
+VITE_KEYCLOAK_URL=http://localhost:8080 VITE_KEYCLOAK_REALM=guild-banker VITE_KEYCLOAK_CLIENT_ID=guild-banker-ui npm --prefix web/spa run build
+npm --prefix web/spa test
+npm --prefix web/spa run test:e2e
+npm --prefix web/spa run test:e2e:prod
+npm --prefix web/spa run test:e2e:auth
+```
+
+Follow-up: cadastro automático/provisionamento de `user_account` após autenticação.
+Sem esse vínculo, login OIDC pode funcionar enquanto a API rejeita o acesso. A Home
+permanece acessível e não exige guild ou sucesso nas consultas da API.

@@ -133,7 +133,7 @@ Caminhos existentes confirmados durante investigação; novos marcados como [cri
 | T2 | Preparar adaptador OIDC e configuração | ✅ concluida | T1 | [T2](./ISSUE-2-T2-adaptador-oidc.md) |
 | T3 | Conectar sessão real e guarda integral | ✅ concluida | T2 | [T3](./ISSUE-2-T3-guarda-sessao.md) |
 | T4 | Completar renovação, expiração e logout | ✅ concluida | T3 | [T4](./ISSUE-2-T4-ciclo-sessao.md) |
-| T5 | Validar jornada real com Keycloak | ⬜ pendente | T4 | [T5](./ISSUE-2-T5-integracao-real.md) |
+| T5 | Validar jornada real com Keycloak | ⛔ bloqueada | T4 | [T5](./ISSUE-2-T5-integracao-real.md) |
 
 ## Verificação final
 Comandos confirmados em `web/spa/package.json`, `Makefile` e `web/spa/README.md`. Na raiz, seguir gate documentado: `npm --prefix web/spa ci` → `npm --prefix web/spa run api:types:check` → `npm --prefix web/spa run lint` → `npm --prefix web/spa run build` → `npm --prefix web/spa test` → `npm --prefix web/spa run test:e2e` → `npm --prefix web/spa run test:e2e:prod`. Instalar Chromium conforme README. Não existe gate remoto CI verificado. Backend build/test: não aplicável se nenhum Go for alterado, pois esta issue não muda API.
@@ -161,3 +161,12 @@ T2 usa também `make keycloak/validate`, confirmado, somente leitura de definiç
 <!-- preenchido pelo dev-mage durante a implementação; propostas técnicas acima aguardam aprovação da spec -->
 
 Implementação autorizada pelo usuário nesta conversa. T1: revisão própria, gates aprovados; E2E demo porta 5273 para preservar servidor existente.
+
+### Checkpoint de implementação — 2026-11-01
+- T1–T4 concluídas: commits 575b825, 357d3a0, 8c2b85c e 58abf79. T5 com código de testes/documentação entregue, bloqueada em T5-AC2.
+- Aprovação explícita do usuário abrangeu spec e implementação dev-mage. Decisões técnicas aprovadas mantidas: sub textual, SDK direto, tokens em memória, Home e cadastro automático como follow-up.
+- Gates finais observados: instalação limpa, tipos/lint/build, 104 Vitest, 10 E2E demo e 8 smoke compilados passaram. Nenhuma falha detectada nessas verificações.
+- Integração real: cinco cenários passaram (Home/SSO/logout; deep link/Bearer; refresh; expiração pós-logout noutra aba; falha de transporte logout/retry), um falhou (API esperada 200, recebeu 500 lookup_failed). Não declarar a spec concluída.
+- CA1–CA6 e CA8 têm evidência frontend e jornadas Keycloak nas tasks. CA7 tem prova unitária de 401/403/rede/5xx sem loop; falta comprovação API real 403 e positiva 200 conforme T5-AC2. Matriz detalhada na T5.
+- Revisão independente auth_review realizada para autenticação/concorrência. Sem Go alterado; API/dados não corrigidos fora do escopo. Ocorrência de rotina automática de migração no startup do binário existente está registrada integralmente na T5.
+- Mermaid continua não validado. Sem push ou PR. Retomar T5 após API/fixture disponíveis.

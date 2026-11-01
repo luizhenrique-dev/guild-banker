@@ -12,6 +12,7 @@
     "test:e2e": "playwright test",
     "api:types": "openapi-typescript ../../docs/specs/openapi.yaml -o src/shared/api/schema.d.ts",
     "api:types:check": "openapi-typescript ../../docs/specs/openapi.yaml -o src/shared/api/schema.d.ts --check",
+    "test:e2e:auth": "playwright test --config playwright.auth.config.ts",
     "test:e2e:prod": "playwright test --config playwright.production.config.ts"
   },
   "devDependencies": {

@@ -80,7 +80,7 @@ O mapper do client UI inclui `aud: guild-banker-api` no access token. Os scopes
 `basic`, `profile`, `email` e `roles` expõem `sub`, username e realm roles.
 O ID token não ganha essa audience. Implicit Flow, password grant e service
 accounts ficam desabilitados; testes de login usam Authorization Code com PKCE.
-Esta configuração prepara o Keycloak; a SPA ainda precisa da integração OIDC.
+A SPA integra OIDC via keycloak-js; configurar as variáveis públicas conforme web/spa/.env.example.
 
 Configuração correspondente em `api/config.env`:
 
@@ -120,3 +120,9 @@ Em realms existentes, configure **Valid post logout redirect URIs** no client
 `guild-banker-ui` com essas duas URLs pelo console; importação SKIP não atualiza
 configurações existentes. Preserve as demais configurações. Não exclua o realm.
 O SDK envia o ID token hint ao encerramento SSO e retorna à raiz da UI.
+
+A suíte real é `npm --prefix web/spa run test:e2e:auth` na raiz. Ela lê a senha
+do ambiente ou de infra/.env, desabilita artefatos de autenticação e não provisiona
+cadastros. Requer API atual disponível e user_account vinculado/ativo para a prova
+positiva de autorização. Refresh/expiração usam relógio virtual só no browser;
+nenhum tempo de sessão do realm compartilhado é alterado.

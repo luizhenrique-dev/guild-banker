@@ -27,3 +27,16 @@ for (const route of ['/', '/home', '/fixed-expenses', '/transactions?guild=2&cat
     await expect(page.getByText('Ana Silva', { exact: true })).toHaveCount(0)
   })
 }
+
+test('invalid callback stays closed and offers an explicit retry without an automatic login loop', async ({ page }) => {
+  let logins = 0
+  await page.route(`${issuer}/.well-known/openid-configuration`, (route) => route.fulfill({ json: {
+    issuer, authorization_endpoint: `${issuer}/protocol/openid-connect/auth`, token_endpoint: `${issuer}/protocol/openid-connect/token`, end_session_endpoint: `${issuer}/protocol/openid-connect/logout`,
+  } }))
+  await page.route(`${issuer}/protocol/openid-connect/auth?*`, (route) => { logins++; return route.abort() })
+  await page.goto('/home#code=invalid&state=unknown')
+  await expect(page.getByRole('alert')).toContainText('Não foi possível autenticar')
+  await expect(page.getByRole('button', { name: 'Tentar novamente' })).toBeVisible()
+  await expect(page.getByRole('navigation')).toHaveCount(0)
+  expect(logins).toBe(0)
+})
