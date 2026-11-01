@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { expect, it, vi, afterEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { toast } from 'sonner'
+import { SessionExpiredError, type KeycloakSession } from './keycloak-session'
 import { SessionProvider, useSession } from './session-provider'
 import { makeQueryClient } from '../shared/lib/query-client'
 import { APIError, apiClient } from '../shared/lib/api-client'
@@ -111,7 +112,7 @@ it('retries only eligible GET failures once and never retries mutations', async 
 
 it('uses the live Bearer token and never demo identity headers for a real sub', async () => {
   const qc = makeQueryClient()
-  const auth = { getToken: vi.fn().mockResolvedValue('fresh-access') }
+  const auth = { getToken: vi.fn().mockResolvedValue('fresh-access'), accepted: vi.fn(), onExpiration: () => () => {} }
   const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}><SessionProvider initialUser={{ id: 'keycloak-sub', name: 'Ana', email: 'ana@example.com' }} auth={auth as unknown as import('./keycloak-session').KeycloakSession}>{children}</SessionProvider></QueryClientProvider>
   const { result } = renderHook(() => useSession(), { wrapper })
   const operation = vi.fn().mockResolvedValue('ok')
@@ -119,4 +120,69 @@ it('uses the live Bearer token and never demo identity headers for a real sub', 
   expect(new Headers(operation.mock.calls[0]![0].headers).get('Authorization')).toBe('Bearer fresh-access')
   expect(new Headers(operation.mock.calls[0]![0].headers).has('X-User-ID')).toBe(false)
   expect(new Headers(operation.mock.calls[0]![0].headers).has('X-User-Email')).toBe(false)
+})
+
+it('invalidates locally before remote logout and exposes a retry if it fails', async () => {
+  const qc = makeQueryClient()
+  const auth = { getToken: vi.fn().mockResolvedValue('access'), accepted: vi.fn(), logout: vi.fn().mockRejectedValue(new Error('offline')), login: vi.fn(), onExpiration: () => () => {} }
+  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}><SessionProvider initialUser={user} auth={auth as unknown as import('./keycloak-session').KeycloakSession}>{children}</SessionProvider></QueryClientProvider>
+  const { result } = renderHook(() => useSession(), { wrapper })
+  qc.setQueryData(['private'], ['secret'])
+  await act(async () => { result.current.logout() })
+  expect(result.current.user).toBeNull()
+  expect(qc.getQueryCache().getAll()).toHaveLength(0)
+  expect(auth.logout).toHaveBeenCalledOnce()
+  expect(result.current.phase).toBe('logout-error')
+  expect(auth.login).not.toHaveBeenCalled()
+})
+
+function realSession() {
+  const qc = makeQueryClient()
+  const auth = { getToken: vi.fn().mockResolvedValue('access'), accepted: vi.fn(), logout: vi.fn().mockResolvedValue(undefined), login: vi.fn().mockResolvedValue(undefined), onExpiration: vi.fn<(listener: () => void) => () => void>().mockReturnValue(vi.fn()) }
+  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}><SessionProvider initialUser={user} auth={auth as unknown as KeycloakSession}>{children}</SessionProvider></QueryClientProvider>
+  return { auth, qc, ...renderHook(() => useSession(), { wrapper }) }
+}
+it('reauthenticates once for concurrent 401s without replaying operations', async () => {
+  const { auth, result } = realSession()
+  const operation = vi.fn().mockRejectedValue(new APIError('expired', 401, 'http'))
+  await act(async () => { await Promise.allSettled([result.current.request(operation), result.current.request(operation)]) })
+  expect(result.current.user).toBeNull()
+  expect(auth.login).toHaveBeenCalledOnce()
+  expect(auth.logout).not.toHaveBeenCalled()
+  expect(operation).toHaveBeenCalledTimes(2)
+})
+it.each([403, 500, 0])('keeps the session for API error %s', async (status) => {
+  const { auth, result } = realSession()
+  await act(async () => { await expect(result.current.request(() => Promise.reject(new APIError('failed', status, 'http')))).rejects.toThrow() })
+  expect(result.current.user).not.toBeNull()
+  expect(auth.login).not.toHaveBeenCalled()
+  expect(auth.logout).not.toHaveBeenCalled()
+})
+it('does not send an operation when refresh fails and supports explicit recovery', async () => {
+  const { auth, result } = realSession()
+  auth.getToken.mockRejectedValueOnce(new Error('network'))
+  const operation = vi.fn()
+  await act(async () => { await expect(result.current.request(operation)).rejects.toThrow('network') })
+  expect(operation).not.toHaveBeenCalled()
+  expect(result.current.user).not.toBeNull()
+  expect(result.current.phase).toBe('refresh-error')
+  expect(auth.login).not.toHaveBeenCalled()
+  await act(async () => { result.current.retry() })
+  expect(result.current.phase).toBe('ready')
+})
+it('invalidates and logs in on definitive refresh failure', async () => {
+  const { auth, result } = realSession()
+  auth.getToken.mockRejectedValueOnce(new SessionExpiredError('expired'))
+  await act(async () => { await expect(result.current.request(vi.fn())).rejects.toThrow('expired') })
+  expect(result.current.user).toBeNull()
+  expect(auth.login).toHaveBeenCalledOnce()
+})
+it('refreshes on expiration and detaches the callback on unmount', async () => {
+  const { auth, unmount } = realSession()
+  const callback = auth.onExpiration.mock.calls[0]![0] as unknown as () => void
+  await act(async () => { callback() })
+  expect(auth.getToken).toHaveBeenCalledOnce()
+  const unsubscribe = auth.onExpiration.mock.results[0]!.value
+  unmount()
+  expect(unsubscribe).toHaveBeenCalledOnce()
 })

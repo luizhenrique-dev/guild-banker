@@ -13,7 +13,7 @@ beforeEach(async () => { await i18n.changeLanguage('pt-BR'); vi.clearAllMocks();
 afterEach(() => { act(() => root.unmount()) })
 it('does not mount shell or issue financial requests until OIDC resolves', async () => {
   let resolve!: (user: { id: string; name: string; email: string }) => void
-  const auth = { initialize: vi.fn(() => new Promise((r) => { resolve = r })), getToken: vi.fn().mockResolvedValue('access') }
+  const auth = { initialize: vi.fn(() => new Promise((r) => { resolve = r })), getToken: vi.fn().mockResolvedValue('access'), accepted: vi.fn(), onExpiration: () => () => {} }
   vi.mocked(createKeycloakSession).mockReturnValue(auth as unknown as ReturnType<typeof createKeycloakSession>)
   const fetchSpy = vi.spyOn(globalThis, 'fetch')
   let pending!: Promise<void>

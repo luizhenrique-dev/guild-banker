@@ -35,8 +35,9 @@ function AppRoutes() {
 }
 
 function AuthenticatedApp() {
-  const { user } = useSession()
+  const { user, phase, retry } = useSession()
   const { t } = useTranslation()
+  if (phase !== 'ready') return <main role={phase.endsWith('error') ? 'alert' : 'status'} className="p-8"><h1>{t(`session.${phase}`)}</h1>{phase.endsWith('error') && <button onClick={retry}>{t('common.retry')}</button>}</main>
   if (!user) return <main className="p-8"><h1>{t('session.missing')}</h1></main>
   return <>
     <Header />

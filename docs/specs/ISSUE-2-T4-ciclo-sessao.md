@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-2](./ISSUE-2-autenticacao-keycloak.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T3
 
 ## O que fazer
@@ -34,3 +34,7 @@ Seguir AGENTS.md e docs/go/{architecture,coding,naming}.md; preservar organizaç
 
 ## Evidências
 <!-- preenchido pelo dev-mage; testes acima são planejados, não executados -->
+
+Pre-flight: AC1 → refresh concorrente, token atual e expiração; AC2 → logout remoto/erro e cancelamento; AC3 → 401/403/rede, sem replay e callbacks tardios. Revisão independente obrigatória.
+
+AC1–AC3 aprovados: 102 Vitest na suíte completa; mais 2 testes posteriores (10/10 adaptador) cobrem storage indisponível e refresh tardio após logout. Tipos/lint/build, 10 E2E demo e 7 smoke passaram. RED: logout remoto não chamado antes da implementação. Revisão independente auth_review: corrigidos dispatcher pré-init, loop 401 entre documentos, token tardio e storage bloqueado. Limite: após location.replace, falha remota é exibida pelo navegador; preflight detecta indisponibilidade antes de sair e mantém retry na UI. Commit local nesta task.

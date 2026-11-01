@@ -10,7 +10,7 @@ beforeEach(async () => {
 it.each(['/', '/home', '/fixed-expenses', '/transactions', '/import', '/guild'])('gates %s without requests when session is absent', async (path) => {
   const fetchSpy = vi.spyOn(globalThis, 'fetch')
   render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>)
-  expect(await screen.findByRole('heading', { name: 'Sessão não integrada' })).toBeVisible()
+  expect(await screen.findByRole('heading', { name: 'Sessão encerrada' })).toBeVisible()
   expect(screen.queryByText('Aluguel')).not.toBeInTheDocument()
   expect(fetchSpy).not.toHaveBeenCalled()
   fetchSpy.mockRestore()

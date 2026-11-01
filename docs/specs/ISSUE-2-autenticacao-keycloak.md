@@ -132,7 +132,7 @@ Caminhos existentes confirmados durante investigação; novos marcados como [cri
 | T1 | Criar Home e navegação inicial | ✅ concluida | nenhuma | [T1](./ISSUE-2-T1-home.md) |
 | T2 | Preparar adaptador OIDC e configuração | ✅ concluida | T1 | [T2](./ISSUE-2-T2-adaptador-oidc.md) |
 | T3 | Conectar sessão real e guarda integral | ✅ concluida | T2 | [T3](./ISSUE-2-T3-guarda-sessao.md) |
-| T4 | Completar renovação, expiração e logout | ⬜ pendente | T3 | [T4](./ISSUE-2-T4-ciclo-sessao.md) |
+| T4 | Completar renovação, expiração e logout | ✅ concluida | T3 | [T4](./ISSUE-2-T4-ciclo-sessao.md) |
 | T5 | Validar jornada real com Keycloak | ⬜ pendente | T4 | [T5](./ISSUE-2-T5-integracao-real.md) |
 
 ## Verificação final

@@ -19,7 +19,12 @@ const resources = {
       'nav.import': 'Importar',
       'nav.guild': 'Guild / Membros',
       'header.logout': 'Sair',
-      'session.missing': 'Sessão não integrada',
+      'session.missing': 'Sessão encerrada',
+      'session.login': 'Autenticando…',
+      'session.logout': 'Encerrando sessão…',
+      'session.login-error': 'Não foi possível iniciar o login.',
+      'session.logout-error': 'Sessão local encerrada. Não foi possível encerrar a sessão no Keycloak.',
+      'session.refresh-error': 'Não foi possível renovar a sessão. Verifique a conexão.',
       'route.missing': 'Página não encontrada',
 
       // Fixed Expenses
@@ -174,7 +179,12 @@ const resources = {
       'nav.import': 'Import',
       'nav.guild': 'Guild / Members',
       'header.logout': 'Logout',
-      'session.missing': 'Session not integrated',
+      'session.missing': 'Session ended',
+      'session.login': 'Authenticating…',
+      'session.logout': 'Signing out…',
+      'session.login-error': 'Could not start login.',
+      'session.logout-error': 'Local session ended. Could not end the Keycloak session.',
+      'session.refresh-error': 'Could not refresh the session. Check your connection.',
       'route.missing': 'Page not found',
 
       'fx.title': 'My fixed expenses',
