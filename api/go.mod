@@ -1,6 +1,6 @@
 module github.com/luizhenrique-dev/guild-banker/api
 
-go 1.26.2
+go 1.27.3
 
 tool (
 	github.com/golang-migrate/migrate/v4/cmd/migrate

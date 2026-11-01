@@ -97,10 +97,8 @@ func NewBatch(guildID, userAccountID int64, fileName string, sourceBank SourceBa
 		FileName:      strings.TrimSpace(fileName),
 		SourceBank:    sourceBank,
 		Status:        BatchStatusPendingReview,
-		Entry: audit.Entry{
-			CreatedAt: time.Now(),
-			CreatedBy: createdBy,
-		},
+		CreatedAt:     time.Now(),
+		CreatedBy:     createdBy,
 	}
 
 	if err := batch.Validate(); err != nil {

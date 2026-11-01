@@ -43,15 +43,13 @@ type FixedExpense struct {
 
 func New(name string, amount decimal.Decimal, dueDay int, category Category, createdBy string) (*FixedExpense, error) {
 	fe := &FixedExpense{
-		Name:     name,
-		Amount:   amount,
-		DueDay:   dueDay,
-		Category: category,
-		Status:   StatusActive,
-		Entry: audit.Entry{
-			CreatedAt: time.Now(),
-			CreatedBy: createdBy,
-		},
+		Name:      name,
+		Amount:    amount,
+		DueDay:    dueDay,
+		Category:  category,
+		Status:    StatusActive,
+		CreatedAt: time.Now(),
+		CreatedBy: createdBy,
 	}
 
 	if err := fe.Validate(); err != nil {

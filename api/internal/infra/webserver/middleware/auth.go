@@ -48,8 +48,7 @@ func Auth(service Authenticator, logger *slog.Logger, timeout time.Duration) gin
 			if errors.Is(err, auth.ErrForbidden) {
 				status, reason = http.StatusForbidden, "access_denied"
 			}
-			var rejection *auth.RejectionError
-			if errors.As(err, &rejection) {
+			if rejection, ok := errors.AsType[*auth.RejectionError](err); ok {
 				reason = rejection.Reason.String()
 			}
 			reject(c, logger, status, reason)

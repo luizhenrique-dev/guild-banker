@@ -96,10 +96,8 @@ func New(
 		OccurredAt:    occurredAt,
 		UserAccountID: userAccountID,
 		GuildID:       guildID,
-		Entry: audit.Entry{
-			CreatedAt: time.Now(),
-			CreatedBy: createdBy,
-		},
+		CreatedAt:     time.Now(),
+		CreatedBy:     createdBy,
 	}
 
 	if err := t.Validate(); err != nil {

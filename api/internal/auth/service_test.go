@@ -51,7 +51,7 @@ func TestServiceAuthenticate(t *testing.T) {
 				assert.Equal(t, ctx, got)
 				assert.Equal(t, claims.UserID, sub)
 				order = append(order, "lookup")
-				return &user.User{ID: 42, Email: "local@example.test", DisableEntry: audit.DisableEntry{Enabled: !tt.disabled}}, tt.lookupErr
+				return &user.User{ID: 42, Email: "local@example.test", Enabled: !tt.disabled}, tt.lookupErr
 			})
 			principal, err := NewService(verify, lookup).Authenticate(ctx, "raw-token")
 			if tt.wantErr != nil {

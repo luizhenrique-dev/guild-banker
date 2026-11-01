@@ -9,8 +9,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/shopspring/decimal"
-
-	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
 
 type fixedExpenseEntity struct {
@@ -150,17 +148,15 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 
 func toDomain(entity fixedExpenseEntity) *FixedExpense {
 	return &FixedExpense{
-		ID:       entity.ID,
-		Name:     entity.Name,
-		Amount:   entity.Amount,
-		DueDay:   entity.DueDay,
-		Category: Category(entity.Category),
-		Status:   Status(entity.Status),
-		Entry: audit.Entry{
-			CreatedAt: entity.CreatedAt,
-			CreatedBy: entity.CreatedBy,
-			UpdatedAt: entity.UpdatedAt,
-			UpdatedBy: entity.UpdatedBy,
-		},
+		ID:        entity.ID,
+		Name:      entity.Name,
+		Amount:    entity.Amount,
+		DueDay:    entity.DueDay,
+		Category:  Category(entity.Category),
+		Status:    Status(entity.Status),
+		CreatedAt: entity.CreatedAt,
+		CreatedBy: entity.CreatedBy,
+		UpdatedAt: entity.UpdatedAt,
+		UpdatedBy: entity.UpdatedBy,
 	}
 }

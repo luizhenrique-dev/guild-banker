@@ -20,13 +20,9 @@ func New(name, email, externalID, createdBy string) (*User, error) {
 		ExternalID: externalID,
 		Name:       name,
 		Email:      email,
-		DisableEntry: audit.DisableEntry{
-			Enabled: true,
-			Entry: audit.Entry{
-				CreatedAt: time.Now(),
-				CreatedBy: createdBy,
-			},
-		},
+		Enabled:    true,
+		CreatedAt:  time.Now(),
+		CreatedBy:  createdBy,
 	}
 
 	if err := u.validate(); err != nil {

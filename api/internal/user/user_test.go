@@ -5,8 +5,6 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
 
 func TestUser_New(t *testing.T) {
@@ -33,11 +31,9 @@ func TestUser_New(t *testing.T) {
 
 func TestUser_Enable(t *testing.T) {
 	u := &User{
-		DisableEntry: audit.DisableEntry{
-			Enabled:    false,
-			DisabledAt: new(time.Now()),
-			DisabledBy: new("admin"),
-		},
+		Enabled:    false,
+		DisabledAt: new(time.Now()),
+		DisabledBy: new("admin"),
 	}
 
 	u.Enable("admin")
@@ -51,7 +47,7 @@ func TestUser_Enable(t *testing.T) {
 
 func TestUser_Disable(t *testing.T) {
 	u := &User{
-		DisableEntry: audit.DisableEntry{Enabled: true},
+		Enabled: true,
 	}
 	disabledBy := "admin-2"
 

@@ -10,8 +10,6 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
-
-	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
 
 type Storage interface {
@@ -288,17 +286,13 @@ func toDomain(e guildEntity) *Guild {
 		ID:          e.ID,
 		Name:        e.Name,
 		DisplayName: e.DisplayName,
-		DisableEntry: audit.DisableEntry{
-			Enabled: e.Enabled,
-			Entry: audit.Entry{
-				CreatedAt: e.CreatedAt,
-				CreatedBy: e.CreatedBy,
-				UpdatedAt: e.UpdatedAt,
-				UpdatedBy: e.UpdatedBy,
-			},
-			DisabledAt: e.DisabledAt,
-			DisabledBy: e.DisabledBy,
-		},
+		Enabled:     e.Enabled,
+		CreatedAt:   e.CreatedAt,
+		CreatedBy:   e.CreatedBy,
+		UpdatedAt:   e.UpdatedAt,
+		UpdatedBy:   e.UpdatedBy,
+		DisabledAt:  e.DisabledAt,
+		DisabledBy:  e.DisabledBy,
 	}
 }
 

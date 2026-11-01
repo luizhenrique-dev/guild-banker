@@ -11,8 +11,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
-
-	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
 
 type transactionEntity struct {
@@ -340,11 +338,9 @@ func toDomain(entity transactionEntity) *Transaction {
 		OccurredAt:    entity.OccurredAt,
 		UserAccountID: entity.UserAccountID,
 		GuildID:       entity.GuildID,
-		Entry: audit.Entry{
-			CreatedAt: entity.CreatedAt,
-			CreatedBy: entity.CreatedBy,
-			UpdatedAt: entity.UpdatedAt,
-			UpdatedBy: entity.UpdatedBy,
-		},
+		CreatedAt:     entity.CreatedAt,
+		CreatedBy:     entity.CreatedBy,
+		UpdatedAt:     entity.UpdatedAt,
+		UpdatedBy:     entity.UpdatedBy,
 	}
 }

@@ -60,8 +60,7 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (auth.Claims, error) 
 	token, err := v.verifier.Verify(ctx, raw)
 	if err != nil {
 		reason := auth.ReasonInvalidToken
-		var expired *oidc.TokenExpiredError
-		if errors.As(err, &expired) {
+		if _, ok := errors.AsType[*oidc.TokenExpiredError](err); ok {
 			reason = auth.ReasonTokenExpired
 		}
 		return auth.Claims{}, &auth.RejectionError{Reason: reason}

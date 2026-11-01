@@ -448,12 +448,10 @@ func toDomainBatch(entity importBatchEntity) *ImportBatch {
 		FileName:      entity.FileName,
 		SourceBank:    SourceBank(entity.SourceBank),
 		Status:        BatchStatus(entity.Status),
-		Entry: audit.Entry{
-			CreatedAt: entity.CreatedAt,
-			CreatedBy: entity.CreatedBy,
-			UpdatedAt: entity.UpdatedAt,
-			UpdatedBy: entity.UpdatedBy,
-		},
+		CreatedAt:     entity.CreatedAt,
+		CreatedBy:     entity.CreatedBy,
+		UpdatedAt:     entity.UpdatedAt,
+		UpdatedBy:     entity.UpdatedBy,
 	}
 }
 
@@ -473,11 +471,9 @@ func toDomainItem(entity importItemEntity) *ImportItem {
 		InstallmentTotal:   entity.InstallmentTotal,
 		Status:             ItemStatus(entity.Status),
 		TransactionID:      entity.TransactionID,
-		Entry: audit.Entry{
-			CreatedAt: entity.CreatedAt,
-			CreatedBy: entity.CreatedBy,
-			UpdatedAt: entity.UpdatedAt,
-			UpdatedBy: entity.UpdatedBy,
-		},
+		CreatedAt:          entity.CreatedAt,
+		CreatedBy:          entity.CreatedBy,
+		UpdatedAt:          entity.UpdatedAt,
+		UpdatedBy:          entity.UpdatedBy,
 	}
 }

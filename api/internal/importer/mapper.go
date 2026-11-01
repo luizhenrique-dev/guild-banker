@@ -8,7 +8,6 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/transaction"
 )
 
@@ -107,10 +106,8 @@ func mapParsedRowToItem(importBatchID int64, userAccountID int64, row ParsedRow,
 		InstallmentCurrent: installmentCurrent,
 		InstallmentTotal:   installmentTotal,
 		Status:             ItemStatusReady,
-		Entry: audit.Entry{
-			CreatedAt: now,
-			CreatedBy: createdBy,
-		},
+		CreatedAt:          now,
+		CreatedBy:          createdBy,
 	}
 
 	if err := item.Validate(); err != nil {

@@ -18,13 +18,9 @@ func New(name, displayName, createdBy string) (*Guild, error) {
 	g := &Guild{
 		Name:        name,
 		DisplayName: displayName,
-		DisableEntry: audit.DisableEntry{
-			Enabled: true,
-			Entry: audit.Entry{
-				CreatedAt: time.Now(),
-				CreatedBy: createdBy,
-			},
-		},
+		Enabled:     true,
+		CreatedAt:   time.Now(),
+		CreatedBy:   createdBy,
 	}
 
 	if err := g.validate(); err != nil {

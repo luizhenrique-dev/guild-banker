@@ -37,7 +37,7 @@ type fixtureUsers struct {
 func (u *fixtureUsers) GetByExternalID(_ context.Context, sub string) (*user.User, error) {
 	u.calls++
 	u.sub = sub
-	return &user.User{ID: 42, Email: "local@example.test", DisableEntry: audit.DisableEntry{Enabled: !u.disabled}}, u.err
+	return &user.User{ID: 42, Email: "local@example.test", Enabled: !u.disabled}, u.err
 }
 
 func TestAuthAcceptance(t *testing.T) {
