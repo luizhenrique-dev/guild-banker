@@ -1,9 +1,10 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { APIError, type RequestOptions } from '../shared/lib/api-client'
+import type { KeycloakSession } from './keycloak-session'
 import { safeID } from '../shared/api/id'
 
-export interface SessionUser { id: number; name: string; email: string; token?: string }
+export interface SessionUser { id: string | number; name: string; email: string; token?: string }
 interface Session {
   user: SessionUser | null
   demo: boolean
@@ -13,7 +14,7 @@ interface Session {
 }
 const SessionContext = createContext<Session | null>(null)
 
-export function SessionProvider({ children, initialUser = null, demo = false }: { children: ReactNode; initialUser?: SessionUser | null; demo?: boolean }) {
+export function SessionProvider({ children, initialUser = null, demo = false, auth }: { children: ReactNode; initialUser?: SessionUser | null; demo?: boolean; auth?: KeycloakSession }) {
   const qc = useQueryClient()
   const [user, setUser] = useState(initialUser)
   const [controller] = useState(() => new AbortController())
@@ -34,9 +35,11 @@ export function SessionProvider({ children, initialUser = null, demo = false }: 
     const signal = extraSignal ? AbortSignal.any([controller.signal, extraSignal]) : controller.signal
     signal.throwIfAborted()
     try {
+      const token = auth ? await auth.getToken() : undefined
+      signal.throwIfAborted()
       const result = await operation({
         signal,
-        headers: { 'X-User-ID': String(safeID(user.id)), 'X-User-Email': user.email, ...(user.token ? { Authorization: `Bearer ${user.token}` } : {}) },
+        headers: auth ? { Authorization: `Bearer ${token}` } : import.meta.env.DEV && demo && typeof user.id === 'number' ? { 'X-User-ID': String(safeID(user.id)), 'X-User-Email': user.email } : {},
       })
       signal.throwIfAborted()
       return result
@@ -44,7 +47,7 @@ export function SessionProvider({ children, initialUser = null, demo = false }: 
       if (error instanceof APIError && error.status === 401) logout()
       throw error
     }
-  }, [user, controller, logout])
+  }, [user, controller, logout, auth, demo])
   return <SessionContext.Provider value={{ user, demo, logout, active, request }}>{children}</SessionContext.Provider>
 }
 

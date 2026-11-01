@@ -6,8 +6,8 @@ import { toast } from 'sonner'
 import i18n from '@/src/shared/lib/i18n'
 
 export const transactionKeys = {
-  lists: (userID?: number, guildID?: number) => ['transactions', userID, guildID] as const,
-  list: (userID?: number, guildID?: number, filters: ListParams = {}) => ['transactions', userID, guildID, filters] as const,
+  lists: (userID?: string | number, guildID?: number) => ['transactions', userID, guildID] as const,
+  list: (userID?: string | number, guildID?: number, filters: ListParams = {}) => ['transactions', userID, guildID, filters] as const,
 }
 export function useTransactions(filters: ListParams = {}) {
   const session = useSession()

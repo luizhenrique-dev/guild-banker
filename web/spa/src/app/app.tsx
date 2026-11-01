@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import type { KeycloakSession } from './keycloak-session'
 import { useSession, type SessionUser } from './session-provider'
 import { useActiveGuild } from '../features/guilds/use-active-guild'
 import { GuildSelectionState } from '../features/guilds/components/guild-selection-state'
@@ -33,13 +34,22 @@ function AppRoutes() {
   </Routes>
 }
 
-export function App({ initialUser = null, demo = false }: { initialUser?: SessionUser | null; demo?: boolean }) {
-  return <ThemeProvider><Providers key={initialUser?.id} initialUser={initialUser} demo={demo}>
+function AuthenticatedApp() {
+  const { user } = useSession()
+  const { t } = useTranslation()
+  if (!user) return <main className="p-8"><h1>{t('session.missing')}</h1></main>
+  return <>
     <Header />
     <div className="flex flex-col md:flex-row">
       <Sidebar />
       <div className="min-w-0 flex-1 min-h-[calc(100vh-64px)]"><AppRoutes /></div>
     </div>
     <Toaster />
+  </>
+}
+
+export function App({ initialUser = null, demo = false, auth }: { initialUser?: SessionUser | null; demo?: boolean; auth?: KeycloakSession }) {
+  return <ThemeProvider><Providers key={initialUser?.id} initialUser={initialUser} demo={demo} auth={auth}>
+    <AuthenticatedApp />
   </Providers></ThemeProvider>
 }

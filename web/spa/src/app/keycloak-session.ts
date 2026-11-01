@@ -25,11 +25,12 @@ export function createKeycloakSession(env: PublicConfig) {
       return params.has('code') || params.has('error') || params.has('state')
     })
     const authenticated = await sdk.init({ onLoad: callback ? undefined : 'login-required', flow: 'standard', pkceMethod: 'S256', checkLoginIframe: false, redirectUri: redirectUri() })
-    if (!authenticated || !sdk.tokenParsed?.sub) throw new SessionExpiredError('Unauthenticated')
+    const sub = sdk.tokenParsed?.sub
+    if (!authenticated || !sub) throw new SessionExpiredError('Unauthenticated')
     // The provider owns reauthentication after initialization, including refresh rejection.
     sdk.loginRequired = false
-    const claims = sdk.tokenParsed
-    return { id: claims.sub, name: claims.name || claims.preferred_username || '', email: claims.email || '' }
+    const claims = sdk.tokenParsed!
+    return { id: sub, name: typeof claims.name === 'string' ? claims.name : typeof claims.preferred_username === 'string' ? claims.preferred_username : '', email: typeof claims.email === 'string' ? claims.email : '' }
   }
   return {
     initialize: () => initialization ??= initialize(),

@@ -7,7 +7,7 @@ import i18n from '../shared/lib/i18n'
 beforeEach(async () => {
   await i18n.changeLanguage('pt-BR')
 })
-it.each(['/', '/fixed-expenses', '/transactions', '/import', '/guild'])('gates %s without requests when session is absent', async (path) => {
+it.each(['/', '/home', '/fixed-expenses', '/transactions', '/import', '/guild'])('gates %s without requests when session is absent', async (path) => {
   const fetchSpy = vi.spyOn(globalThis, 'fetch')
   render(<MemoryRouter initialEntries={[path]}><App /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Sessão não integrada' })).toBeVisible()
@@ -16,7 +16,7 @@ it.each(['/', '/fixed-expenses', '/transactions', '/import', '/guild'])('gates %
   fetchSpy.mockRestore()
 })
 it('handles unknown routes', async () => {
-  render(<MemoryRouter initialEntries={['/missing']}><App /></MemoryRouter>)
+  render(<MemoryRouter initialEntries={['/missing']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.com' }} demo /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeVisible()
 })
 
@@ -27,4 +27,13 @@ it('opens Home from root and menu, preserving query without requiring a guild', 
   expect(home).toHaveAttribute('href', '/home?guild=999')
   fireEvent.click(home)
   expect(screen.getByRole('heading', { name: 'Bem-vindo(a) <b>Ana</b>' }).querySelector('b')).toBeNull()
+})
+
+it('does not mount the shell even on unknown routes without a session', async () => {
+  const fetchSpy = vi.spyOn(globalThis, 'fetch')
+  render(<MemoryRouter initialEntries={['/missing']}><App /></MemoryRouter>)
+  expect(screen.queryByRole('navigation')).not.toBeInTheDocument()
+  expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument()
+  expect(fetchSpy).not.toHaveBeenCalled()
+  fetchSpy.mockRestore()
 })

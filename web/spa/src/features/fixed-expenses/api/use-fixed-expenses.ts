@@ -6,7 +6,7 @@ import type { RequestOptions } from '@/src/shared/lib/api-client'
 import { toast } from 'sonner'
 import i18n from '@/src/shared/lib/i18n'
 
-export const fixedExpenseKeys = { list: (userID?: number) => ['fixed-expenses', userID] as const }
+export const fixedExpenseKeys = { list: (userID?: string | number) => ['fixed-expenses', userID] as const }
 export function useFixedExpenses() {
   const session = useSession()
   return useQuery({

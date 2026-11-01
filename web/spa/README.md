@@ -1,6 +1,6 @@
 # GuildBanker SPA
 
-React 18 + TypeScript estrito, Vite, React Router, Tailwind 3, TanStack Query e RHF/Zod. As quatro telas existentes são `/fixed-expenses`, `/transactions`, `/import` e `/guild`; `/` redireciona para despesas fixas. Idiomas: português e inglês. Fontes Inter/JetBrains Mono são servidas localmente.
+React 18 + TypeScript estrito, Vite, React Router, Tailwind 3, TanStack Query e RHF/Zod. A Home `/home` exibe a saudação da sessão. As demais telas são `/fixed-expenses`, `/transactions`, `/import` e `/guild`; `/` redireciona para `/home` após autenticação. Idiomas: português e inglês. Fontes Inter/JetBrains Mono são servidas localmente.
 
 ## Instalação e comandos
 
@@ -16,7 +16,7 @@ O lockfile npm é a fonte da instalação reproduzível; o frontend não utiliza
 
 | Comando na raiz | Uso |
 |---|---|
-| `npm --prefix web/spa run dev` / `make web/dev` | Vite em localhost:5173, sem mocks e sem sessão integrada |
+| `npm --prefix web/spa run dev` / `make web/dev` | Vite em localhost:5173, sem mocks, com login Keycloak |
 | `npm --prefix web/spa run dev:demo` / `make web/demo` | Demonstração explicitamente habilitada com MSW e identidade local |
 | `npm --prefix web/spa run api:types` | Gerar tipos de `docs/specs/openapi.yaml` em `src/shared/api/schema.d.ts` |
 | `npm --prefix web/spa run api:types:check` / `make web/types` | Verificar drift dos tipos versionados |
@@ -44,7 +44,7 @@ Os tipos são gerados do OpenAPI corrigido contra rotas/DTOs Go; a geração nã
 
 Variáveis `VITE_*` são públicas e substituídas no build. Não coloque tokens, senhas, chaves privadas ou outros segredos nelas; alterar a configuração de build exige recompilar o dist. Use `.env.example` como referência local.
 
-A integração real está pendente de outra issue: endpoints protegidos retornam **401 sem Bearer** e **501 com Bearer** no middleware atual. Headers `X-User-ID`/`X-User-Email` não liberam autenticação e não estão liberados no CORS atual. O proxy de desenvolvimento não resolve CORS de produção nem implementa IAM. OIDC/sessão real, autorização, CORS, persistência real e contrato de leitura de membros precisam de implementação/validação própria. O smoke mock não comprova operação com API Go.
+A API valida Bearer pelo Keycloak e resolve o `sub` em `user_account`; cadastro ausente/inativo retorna **403**. Headers `X-User-ID`/`X-User-Email` são exclusivos da demonstração. O proxy de desenvolvimento não resolve CORS de produção nem implementa IAM. O contrato de leitura de membros permanece fora desta integração; fixtures não são usadas no modo real. O smoke mock não comprova operação com API Go.
 
 ## Entrega estática e hosting futuro
 
@@ -75,3 +75,18 @@ Checklist **futuro**, a executar no provedor escolhido pelo responsável pela pu
 O preview local não comprova as regras de fallback/cache de um provedor ainda não escolhido. Publicação e validação de hosting permanecem futuras.
 
 A instalação final ainda reporta **10 avisos npm audit** (2 low, 2 moderate, 6 high), todos em dependências de desenvolvimento no lockfile: ESLint/plugin-kit, Vitest/mocker, PostCSS e a cadeia de glob/watch do Tailwind 3. Esse relatório não é um gate da GB-20; atualizações de segurança da toolchain exigem trabalho próprio, especialmente quando alteram majors. Não foi aplicado `npm audit fix --force`.
+
+## Configuração OIDC (ISSUE-2)
+Antes de `dev` ou do build, copie `.env.example` para `.env.local` em `web/spa`.
+As variáveis públicas `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM` e
+`VITE_KEYCLOAK_CLIENT_ID` são obrigatórias fora da demo DEV. Valores locais:
+`http://localhost:8080`, `guild-banker`, `guild-banker-ui`.
+Configuração ausente ou callback inválido mostra erro sem liberar o shell.
+A SPA inicializa OIDC antes do Router com Code + PKCE S256; o login ocorre
+na página do Keycloak. `/` leva a `/home`; um link interno conserva sua rota/query.
+Nome vem de `name`, depois `preferred_username`, com saudação sem nome como fallback.
+O ID de sessão real é o `sub` textual e não o ID numérico interno da API.
+Tokens permanecem na memória do SDK; recarga restaura sessão pelo SSO.
+O smoke de produção deve receber essas variáveis no build e intercepta apenas
+as requisições OIDC no navegador do teste. Ele não comprova login real.
+Para usar outra porta no E2E demo: `PLAYWRIGHT_PORT=5273 npm --prefix web/spa run test:e2e`.

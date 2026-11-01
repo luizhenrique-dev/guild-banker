@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-2](./ISSUE-2-autenticacao-keycloak.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T2
 
 ## O que fazer
@@ -40,3 +40,7 @@ Seguir AGENTS.md e docs/go/{architecture,coding,naming}.md; preservar organizaç
 
 ## Evidências
 <!-- preenchido pelo dev-mage; testes acima são planejados, não executados -->
+
+Pre-flight: AC1 → shell/IO ausentes sem sessão e bootstrap bloqueado até init; AC2 → Home/deep link autenticados; AC3 → Bearer sem headers demo; AC4 → gates demo e dist.
+
+AC1–AC4 aprovados: 92 Vitest, tipos/lint/build, 10 E2E demo e 7 smoke OIDC compilado passaram. RED do shell visível sem sessão observado antes da guarda. SDK callback testado sem reiniciar login. Revisão independente auth_review executou 18 testes e não encontrou impedimento T3. Prova real de login/SSO prevista T5. Commit local nesta task.

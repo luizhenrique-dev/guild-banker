@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import i18n from '@/src/shared/lib/i18n'
 
 export interface DemoMember { id: number; name: string; email: string; role: string }
-const memberKey = (userID?: number, guildID?: number) => ['demo-members', userID, guildID] as const
+const memberKey = (userID?: string | number, guildID?: number) => ['demo-members', userID, guildID] as const
 export function useDemoMembers(guildID: number) {
   const session = useSession()
   return useQuery({

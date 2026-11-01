@@ -108,3 +108,15 @@ it('retries only eligible GET failures once and never retries mutations', async 
   await expect(qc.getMutationCache().build(qc, { mutationFn: mutation }).execute(undefined)).rejects.toBeInstanceOf(APIError)
   expect(mutation).toHaveBeenCalledOnce()
 })
+
+it('uses the live Bearer token and never demo identity headers for a real sub', async () => {
+  const qc = makeQueryClient()
+  const auth = { getToken: vi.fn().mockResolvedValue('fresh-access') }
+  const wrapper = ({ children }: { children: React.ReactNode }) => <QueryClientProvider client={qc}><SessionProvider initialUser={{ id: 'keycloak-sub', name: 'Ana', email: 'ana@example.com' }} auth={auth as unknown as import('./keycloak-session').KeycloakSession}>{children}</SessionProvider></QueryClientProvider>
+  const { result } = renderHook(() => useSession(), { wrapper })
+  const operation = vi.fn().mockResolvedValue('ok')
+  await result.current.request(operation)
+  expect(new Headers(operation.mock.calls[0]![0].headers).get('Authorization')).toBe('Bearer fresh-access')
+  expect(new Headers(operation.mock.calls[0]![0].headers).has('X-User-ID')).toBe(false)
+  expect(new Headers(operation.mock.calls[0]![0].headers).has('X-User-Email')).toBe(false)
+})
