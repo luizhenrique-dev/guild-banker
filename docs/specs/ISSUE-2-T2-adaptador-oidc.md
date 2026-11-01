@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-2](./ISSUE-2-autenticacao-keycloak.md)
 
-- **Status:** ⬜ pendente
+- **Status:** ✅ concluida
 - **Depende de:** T1
 
 ## O que fazer
@@ -37,3 +37,7 @@ Seguir AGENTS.md e docs/go/{architecture,coding,naming}.md; preservar organizaç
 
 ## Evidências
 <!-- preenchido pelo dev-mage; testes acima são planejados, não executados -->
+
+Pre-flight: AC1 → testes SDK Code/PKCE/init/refresh; AC2 → config/logout + JSON; AC3 → gates frontend sem conexão do adaptador. RED observado: quatro testes falharam por sessão não implementada.
+
+AC1 aprovado: 6 testes do adaptador (PKCE, Code, init único, claims, refresh compartilhado e callback inválido). AC2 aprovado: config validada, logout raiz e make keycloak/validate. AC3 aprovado: tipos/lint/build e 86 Vitest passaram antes do teste adicional (6/6 adaptador após ajuste); 9/10 demo passaram na primeira execução, foco preexistente passou nos 2 casos isolados; 6 smoke passaram. Revisão independente auth_review: corrigido login automático do SDK após refresh e tratamento de callback sem onLoad. SDK ainda não conectado ao produto. Commit local nesta task.

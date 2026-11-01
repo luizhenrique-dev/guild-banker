@@ -112,3 +112,11 @@ porta de gerenciamento da instância isolada. O processo foi encerrado após os 
 passaram; senha de ambiente ausente impede a configuração do overlay. A subida
 com Docker não foi executada neste ambiente sem acesso ao daemon; os testes
 de execução usaram a distribuição standalone da mesma versão.
+
+## Logout da SPA (ISSUE-2)
+O client UI declara `post.logout.redirect.uris` com retornos exatos
+`http://localhost:5173/` e `http://127.0.0.1:5173/` (separador `##` no JSON).
+Em realms existentes, configure **Valid post logout redirect URIs** no client
+`guild-banker-ui` com essas duas URLs pelo console; importação SKIP não atualiza
+configurações existentes. Preserve as demais configurações. Não exclua o realm.
+O SDK envia o ID token hint ao encerramento SSO e retorna à raiz da UI.

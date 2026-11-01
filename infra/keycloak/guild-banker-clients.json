@@ -38,6 +38,7 @@
       "optionalClientScopes": [],
       "attributes": {
         "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/##http://127.0.0.1:5173/",
         "access.token.signed.response.alg": "RS256"
       },
       "protocolMappers": [
