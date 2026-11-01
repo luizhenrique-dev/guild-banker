@@ -14,6 +14,9 @@ DOCKER_COMPOSE  := docker compose
 # Make recipes also find asdf when the calling shell has not loaded its config.
 export PATH := $(HOME)/.local/bin:$(or $(ASDF_DATA_DIR),$(HOME)/.asdf)/bin:$(or $(ASDF_DATA_DIR),$(HOME)/.asdf)/shims:$(PATH)
 
+# Let Go/asdf select GOROOT instead of inheriting a previous toolchain from the shell.
+unexport GOROOT
+
 .DEFAULT_GOAL   := help
 
 
