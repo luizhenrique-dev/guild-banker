@@ -13,6 +13,8 @@ import { TransactionsPageClient } from '../features/transactions/components/tran
 import { ImportPageClient } from '../features/imports/components/import-page-client'
 import { GuildPageClient } from '../features/guilds/components/guild-page-client'
 
+import { HomePage } from '../features/home/components/home-page'
+
 function AppRoutes() {
   const { user } = useSession()
   const { activeGuild } = useActiveGuild()
@@ -21,7 +23,8 @@ function AppRoutes() {
   const protectedPage = (page: React.ReactNode) => user ? page : <main className="p-8"><h1>{t('session.missing')}</h1></main>
   const guildPage = (page: React.ReactNode) => protectedPage(activeGuild ? <div key={activeGuild.id}>{page}</div> : <GuildSelectionState />)
   return <Routes>
-    <Route path="/" element={<Navigate to={'/fixed-expenses' + search} replace />} />
+    <Route path="/" element={<Navigate to={'/home' + search} replace />} />
+    <Route path="/home" element={protectedPage(<HomePage />)} />
     <Route path="/fixed-expenses" element={protectedPage(<FixedExpensesPageClient />)} />
     <Route path="/transactions" element={guildPage(<TransactionsPageClient />)} />
     <Route path="/import" element={guildPage(<ImportPageClient />)} />

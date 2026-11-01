@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { App } from './app'
 import i18n from '../shared/lib/i18n'
@@ -18,4 +18,13 @@ it.each(['/', '/fixed-expenses', '/transactions', '/import', '/guild'])('gates %
 it('handles unknown routes', async () => {
   render(<MemoryRouter initialEntries={['/missing']}><App /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeVisible()
+})
+
+it('opens Home from root and menu, preserving query without requiring a guild', async () => {
+  render(<MemoryRouter initialEntries={['/?guild=999']}><App initialUser={{ id: 99, name: '<b>Ana</b>', email: 'ana@example.com' }} demo /></MemoryRouter>)
+  expect(await screen.findByRole('heading', { name: 'Bem-vindo(a) <b>Ana</b>' })).toBeVisible()
+  const home = screen.getByRole('link', { name: 'Início' })
+  expect(home).toHaveAttribute('href', '/home?guild=999')
+  fireEvent.click(home)
+  expect(screen.getByRole('heading', { name: 'Bem-vindo(a) <b>Ana</b>' }).querySelector('b')).toBeNull()
 })

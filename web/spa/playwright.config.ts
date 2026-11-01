@@ -1,12 +1,14 @@
 import { defineConfig } from '@playwright/test'
 
+const port = Number(process.env.PLAYWRIGHT_PORT || 5173)
+
 export default defineConfig({
   testDir: './e2e',
   testIgnore: '**/production.spec.ts',
-  use: { baseURL: 'http://127.0.0.1:5173', locale: 'pt-BR', trace: 'retain-on-failure' },
+  use: { baseURL: `http://127.0.0.1:${port}`, locale: 'pt-BR', trace: 'retain-on-failure' },
   webServer: {
-    command: 'npm run dev:test',
-    url: 'http://127.0.0.1:5173',
+    command: `npm run dev:test -- --port ${port}`,
+    url: `http://127.0.0.1:${port}`,
     reuseExistingServer: false,
   },
 })

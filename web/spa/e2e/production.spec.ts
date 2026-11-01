@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test'
 
-for (const route of ['/fixed-expenses', '/transactions', '/import', '/guild']) {
+for (const route of ['/home', '/fixed-expenses', '/transactions', '/import', '/guild']) {
   test(`compiled ${route} loads directly without demo, API calls or mock worker`, async ({ page, context }) => {
     const requests: string[] = []
     const failedAssets: string[] = []
@@ -27,7 +27,7 @@ for (const route of ['/fixed-expenses', '/transactions', '/import', '/guild']) {
 }
 test('compiled root redirects and unknown UI route is visible', async ({ page }) => {
   await page.goto('/')
-  await expect(page).toHaveURL(/\/fixed-expenses$/)
+  await expect(page).toHaveURL(/\/home$/)
   await expect(page.getByRole('heading', { name: 'Sessão não integrada' })).toBeVisible()
   await page.goto('/route-does-not-exist')
   await expect(page.getByRole('heading', { name: 'Página não encontrada' })).toBeVisible()

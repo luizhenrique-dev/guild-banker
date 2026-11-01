@@ -4,8 +4,8 @@ for (const width of [375, 1280]) {
   test(`four routes, history and keyboard at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
     await page.goto('/')
-    await expect(page).toHaveURL(/\/fixed-expenses/)
-    await expect(page.getByRole('heading', { name: 'Minhas despesas fixas' })).toBeVisible()
+    await expect(page).toHaveURL(/\/home/)
+    await expect(page.getByRole('heading', { name: 'Bem-vindo(a) Ana Silva' })).toBeVisible()
     await page.getByRole('button', { name: 'Família Silva', exact: true }).click()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     await page.getByRole('button', { name: 'República dos Amigos' }).focus()

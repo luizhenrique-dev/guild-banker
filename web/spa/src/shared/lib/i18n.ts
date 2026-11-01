@@ -12,6 +12,8 @@ const resources = {
     translation: {
       // Layout
       'nav.home': 'Início',
+      'home.welcome': 'Bem-vindo(a) {{name}}',
+      'home.welcomeAnonymous': 'Bem-vindo(a)',
       'nav.transactions': 'Transações',
       'nav.fixedExpenses': 'Despesas fixas',
       'nav.import': 'Importar',
@@ -165,6 +167,8 @@ const resources = {
   en: {
     translation: {
       'nav.home': 'Home',
+      'home.welcome': 'Welcome, {{name}}',
+      'home.welcomeAnonymous': 'Welcome',
       'nav.transactions': 'Transactions',
       'nav.fixedExpenses': 'Fixed Expenses',
       'nav.import': 'Import',

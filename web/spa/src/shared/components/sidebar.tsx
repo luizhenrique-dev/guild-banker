@@ -21,7 +21,7 @@ export function Sidebar() {
   const { t } = useTranslation()
 
   const navItems: NavItem[] = [
-    { href: '/', labelKey: 'nav.home', icon: <Home size={18} /> },
+    { href: '/home', labelKey: 'nav.home', icon: <Home size={18} /> },
     { href: '/transactions', labelKey: 'nav.transactions', icon: <ArrowLeftRight size={18} /> },
     { href: '/fixed-expenses', labelKey: 'nav.fixedExpenses', icon: <Repeat size={18} /> },
     { href: '/import', labelKey: 'nav.import', icon: <FileUp size={18} /> },
