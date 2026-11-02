@@ -76,7 +76,7 @@ O preview local não comprova as regras de fallback/cache de um provedor ainda n
 
 A instalação final ainda reporta **10 avisos npm audit** (2 low, 2 moderate, 6 high), todos em dependências de desenvolvimento no lockfile: ESLint/plugin-kit, Vitest/mocker, PostCSS e a cadeia de glob/watch do Tailwind 3. Esse relatório não é um gate da GB-20; atualizações de segurança da toolchain exigem trabalho próprio, especialmente quando alteram majors. Não foi aplicado `npm audit fix --force`.
 
-## Configuração OIDC (ISSUE-2)
+## Configuração OIDC
 Antes de `dev` ou do build, copie `.env.example` para `.env.local` em `web/spa`.
 As variáveis públicas `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM` e
 `VITE_KEYCLOAK_CLIENT_ID` são obrigatórias fora da demo DEV. Valores locais:

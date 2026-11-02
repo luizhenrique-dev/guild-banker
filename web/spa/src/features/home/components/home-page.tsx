@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { useSession } from '../../../app/session-provider'
+import { useSession } from '@/src/app/session-provider'
 
 export function HomePage() {
   const { user } = useSession()
