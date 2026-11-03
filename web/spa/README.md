@@ -34,7 +34,7 @@ O lockfile npm é a fonte da instalação reproduzível; o frontend não utiliza
 
 `VITE_USE_MOCKS=true` só habilita MSW quando `import.meta.env.DEV` também é verdadeiro. `.env.demo` e `.env.test` ativam esse opt-in. O bootstrap aguarda o worker antes de montar; falha de startup aparece na tela. Requests `/api` não reconhecidas falham nos mocks. Produção ignora o opt-in, não inicializa worker nem identidade demo.
 
-A sessão usa Context restrito, dados remotos usam Query, seleção de guild e filtros usam URL; formulários/arquivo selecionado ficam locais. Logout/401 aborta requests e limpa cache; logout voluntário encerra também o SSO, enquanto 401 inicia recuperação de login limitada. Keys incluem usuário/guild/filtros pertinentes; despesas fixas são pessoais. GET repete no máximo uma vez falhas de rede/5xx (exceto 501); mutations não têm retry automático nem atualização financeira otimista. A revisão de importação é descartada na troca de guild. Os membros exibidos são fixtures explicitamente demonstrativas, pois não existe GET de membros no backend.
+A sessão usa Context restrito, dados remotos usam Query, seleção de guild e filtros usam URL; formulários/arquivo selecionado ficam locais. Logout/401 aborta requests e limpa cache; logout voluntário encerra também o SSO, enquanto 401 inicia recuperação de login limitada. Keys incluem usuário/guild/filtros pertinentes; despesas fixas exigem seleção de guild. Em T1 da ISSUE-4, o contexto organiza guarda/cache/estado; o vínculo e o HTTP ainda são pessoais até T2. GET repete no máximo uma vez falhas de rede/5xx (exceto 501); mutations não têm retry automático nem atualização financeira otimista. A revisão de importação é descartada na troca de guild. Os membros exibidos são fixtures explicitamente demonstrativas, pois não existe GET de membros no backend.
 
 Os tipos são gerados do OpenAPI corrigido contra rotas/DTOs Go; a geração não substitui a conferência do contrato. [OPENAPI_GAPS](../../docs/specs/OPENAPI_GAPS.md) registra limites e divergências. Valores monetários são strings decimais no payload, com normalização de vírgula para ponto; não há cálculos financeiros no cliente. Nome da despesa é somente leitura na edição porque PATCH não aceita renomear. A política local de nome tem limite de 100 caracteres.
 
@@ -112,6 +112,9 @@ Na raiz: `npm --prefix web/spa run test:e2e:auth`. Requer UI 5173 livre,
 Keycloak local 8080 configurado, API atual na 8081 com banco isolado preparado e access token com nome/e-mail
 e verificação verdadeiros; não exige cadastro local prévio. A suíte inicia/encerra apenas o Vite e nunca faz seed, migrations
 ou mudanças de política no realm. Pré-requisitos ausentes resultam em falha, sem skip.
+A consulta de despesas requer membership: a suíte resolve a guild pela listagem pública.
+Em ambiente exclusivo de testes, `E2E_ALLOW_GUILD_CREATE=true` permite criar uma guild
+pelo POST público se a lista estiver vazia; não habilite em ambiente compartilhado.
 A API deve ser iniciada pelo responsável pelo ambiente, considerando que o startup
 atual executa automaticamente sua rotina de migrações.
 
@@ -146,8 +149,7 @@ permanece acessível e não exige guild ou sucesso nas consultas da API.
 403 em consultas necessárias de despesas, transações e rotas dependentes de guild
 mostra acesso negado no conteúdo da rota, com menu, Sair e link Home. O erro tem
 prioridade sobre cache anterior; guilds recusadas não ficam no seletor nem iniciam
-consultas dependentes. Falha de guilds não bloqueia Home nem despesas pessoais
-carregadas com sucesso; vazio e demais erros mantêm os fluxos anteriores.
+consultas dependentes. Falha de guilds não bloqueia Home; despesas exigem guild válida; vazio e demais erros mantêm os fluxos anteriores.
 403 não inicia login, logout, retry automático ou redirect global.
 
 403 de uma ação (criar/editar/desativar despesa, cancelar/alterar visibilidade,

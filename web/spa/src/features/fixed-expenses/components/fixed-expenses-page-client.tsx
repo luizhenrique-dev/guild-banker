@@ -1,4 +1,5 @@
 'use client'
+import { useActiveGuild } from '../../guilds/use-active-guild'
 import { AccessDeniedPage } from '@/src/shared/components/access-denied-page'
 import { APIError } from '@/src/shared/lib/api-client'
 // ============================================================
@@ -19,6 +20,7 @@ import type { FixedExpenseResponse } from '../types'
 
 export function FixedExpensesPageClient() {
   const { t } = useTranslation()
+  const { activeGuild } = useActiveGuild()
   const { data: expenses, isLoading, error, refetch, isFetching } = useFixedExpenses()
   const deactivateMutation = useDeactivateFixedExpense()
 
@@ -119,8 +121,8 @@ export function FixedExpensesPageClient() {
               <AlertDialogCancel disabled={deactivateMutation.isPending}>{t('fx.modal.cancel')}</AlertDialogCancel>
               <AlertDialogAction disabled={deactivateMutation.isPending} onClick={(event) => {
                 event.preventDefault()
-                if (!deactivating || deactivateMutation.isPending) return
-                deactivateMutation.mutate({ id: deactivating.id, status: 'PAUSED' }, { onSuccess: () => { setSaved(true); setDeactivating(null) } })
+                if (!activeGuild || !deactivating || deactivateMutation.isPending) return
+                deactivateMutation.mutate({ guildId: activeGuild.id, id: deactivating.id, status: 'PAUSED' }, { onSuccess: () => { setSaved(true); setDeactivating(null) } })
               }}>{t('fx.deactivate.confirm')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

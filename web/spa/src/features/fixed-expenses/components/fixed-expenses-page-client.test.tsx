@@ -1,8 +1,10 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router-dom'
+import { MemoryRouter, useNavigate } from 'react-router-dom'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { http, HttpResponse } from 'msw'
+import { guildsFixtures } from '@/src/mocks/fixtures/guilds'
+import { mockGuildMember } from '@/src/mocks/request-context'
 import { server } from '@/src/mocks/server'
 import { App } from '@/src/app/app'
 import i18n from '@/src/shared/lib/i18n'
@@ -18,7 +20,7 @@ function page() {
 }
 async function fill() {
   const user = userEvent.setup()
-  await user.click(screen.getByRole('button', { name: 'Nova despesa fixa' }))
+  await user.click(await screen.findByRole('button', { name: 'Nova despesa fixa' }))
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByRole('textbox', { name: 'Nome' }), 'Internet')
   await user.type(dialog.getByRole('textbox', { name: 'Valor (R$)' }), '123,45')
@@ -28,7 +30,7 @@ it('shows loading, a GET error with manual retry and an empty list', async () =>
   let finish!: (rows: FixedExpenseResponse[]) => void
   const list = vi.spyOn(fixedExpensesApi, 'list').mockImplementationOnce(() => new Promise((resolve) => { finish = resolve })).mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
   const view = page()
-  expect(screen.getByRole('status', { name: 'Carregando...' })).toBeVisible()
+  expect(await screen.findByRole('status', { name: 'Carregando...' })).toBeVisible()
   await waitFor(() => expect(finish).toBeTypeOf('function'))
   await act(async () => { finish([]) })
   expect(await screen.findByText('Nenhuma despesa fixa cadastrada.')).toBeVisible()
@@ -139,4 +141,39 @@ it.each(['create', 'edit', 'deactivate'])('preserves local state on forbidden ex
   expect(screen.queryByRole('heading', { name: 'Acesso negado' })).toBeNull()
   expect(screen.queryByText('private cause')).toBeNull()
   expect(success).not.toHaveBeenCalled()
+})
+
+beforeEach(() => server.use(http.get('*/api/v1/guilds', ({ request }) => HttpResponse.json(guildsFixtures.filter((guild) => mockGuildMember(request, guild.id))))))
+
+it('a late create from G1 leaves the new G2 draft intact and invalidates only G1', async () => {
+  const client = queryClients.makeQueryClient()
+  vi.spyOn(queryClients, 'makeQueryClient').mockReturnValue(client)
+  const invalidate = vi.spyOn(client, 'invalidateQueries')
+  const success = vi.spyOn(toast, 'success')
+  let navigate!: ReturnType<typeof useNavigate>
+  function Navigation() { navigate = useNavigate(); return null }
+  let finish!: (value: FixedExpenseResponse) => void
+  vi.spyOn(fixedExpensesApi, 'create').mockImplementation(() => new Promise((resolve) => { finish = resolve }))
+  render(<MemoryRouter initialEntries={['/fixed-expenses?guild=1']}><Navigation /><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.test' }} demo /></MemoryRouter>)
+  const { user, dialog } = await fill()
+  await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() => expect(finish).toBeTypeOf('function'))
+  act(() => navigate('/fixed-expenses?guild=2'))
+  expect(screen.queryByRole('dialog')).toBeNull()
+  const next = await fill()
+  await act(async () => { finish({ id: 100, name: 'Old', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }) })
+  expect(screen.getByRole('dialog')).toBeVisible()
+  expect(next.dialog.getByRole('textbox', { name: 'Nome' })).toHaveValue('Internet')
+  expect(invalidate).toHaveBeenCalledExactlyOnceWith({ queryKey: ['fixed-expenses', 1, 1] })
+  expect(success).not.toHaveBeenCalled()
+})
+it('changing guild closes the previous deactivation confirmation', async () => {
+  let navigate!: ReturnType<typeof useNavigate>
+  function Navigation() { navigate = useNavigate(); return null }
+  render(<MemoryRouter initialEntries={['/fixed-expenses?guild=1']}><Navigation /><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.test' }} demo /></MemoryRouter>)
+  await screen.findByRole('row', { name: /Aluguel/ })
+  await userEvent.click(screen.getByRole('button', { name: 'Desativar Aluguel' }))
+  expect(screen.getByRole('alertdialog')).toBeVisible()
+  act(() => navigate('/fixed-expenses?guild=2'))
+  expect(screen.queryByRole('alertdialog')).toBeNull()
 })

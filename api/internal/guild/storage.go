@@ -55,22 +55,17 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 
 	const createGuildQuery = `
 		INSERT INTO guild (name, display_name, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
-		VALUES (:name, :display_name, :created_at, :created_by, :enabled, :updated_at, :updated_by, :disabled_at, :disabled_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id
 	`
-	rows, err := tx.NamedQuery(createGuildQuery, toEntity(g))
-	if err != nil {
+	if err := tx.GetContext(ctx, &g.ID, createGuildQuery,
+		g.Name, g.DisplayName, g.CreatedAt, g.CreatedBy, g.Enabled,
+		g.UpdatedAt, g.UpdatedBy, g.DisabledAt, g.DisabledBy,
+	); err != nil {
 		if isUniqueViolation(err) {
 			return ErrGuildNameAlreadyUsed
 		}
 		return fmt.Errorf("create guild: %w", err)
-	}
-	defer func() { _ = rows.Close() }()
-
-	if rows.Next() {
-		if err := rows.Scan(&g.ID); err != nil {
-			return fmt.Errorf("scan guild id: %w", err)
-		}
 	}
 
 	const addCreatorAsMemberQuery = `

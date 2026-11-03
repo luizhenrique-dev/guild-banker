@@ -27,7 +27,7 @@ function AppRoutes() {
   return <Routes>
     <Route path="/" element={<Navigate to={'/home' + search} replace />} />
     <Route path="/home" element={protectedPage(<HomePage />)} />
-    <Route path="/fixed-expenses" element={protectedPage(<FixedExpensesPageClient />)} />
+    <Route path="/fixed-expenses" element={guildPage(<FixedExpensesPageClient />)} />
     <Route path="/transactions" element={guildPage(<TransactionsPageClient />)} />
     <Route path="/import" element={guildPage(<ImportPageClient />)} />
     <Route path="/guild" element={guildPage(<GuildPageClient />)} />

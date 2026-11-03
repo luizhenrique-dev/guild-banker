@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-4 — Despesas fixas compartilhadas por guild](./ISSUE-4-despesas-fixas-por-guild.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** nenhuma task interna; ISSUE-3 concluída, incluindo T4/T5 de página 403 e ações negadas.
 
 ## O que fazer
@@ -52,4 +52,24 @@ D1/D4: destino final é guild compartilhada após ISSUE-3. Referências existent
 
 ## Evidências
 
-<!-- Preenchido pelo dev-mage: testes de guarda/cache/contexto, regressões 403/sessão, gates aplicáveis e commit local. -->
+### Checkpoint — 2026-11-03
+
+Working tree inicial limpo. ISSUE-3 concluída conforme seu índice; implementação autorizada pelo pedido da ISSUE-4. Nenhuma mudança Go/SQL/HTTP pessoal nesta task.
+
+| Critério | Evidência observada | Estado |
+|---|---|---|
+| T1-AC1 | `app.test.tsx`: ausência de sessão e 403 guilds não consultam despesas; shell/Home/Sair preservados. Hook: seleção inválida não consulta. | aprovado |
+| T1-AC2 | Keys por usuário/guild; teste de página fecha confirmação na troca; E2E fecha modal e restaura histórico. | aprovado |
+| T1-AC3 | Teste de página resolve create G1 com rascunho G2 aberto: mantém dialog/rascunho, sem toast, invalida somente G1. Hook idem após desmontagem; sessão bloqueia resposta após logout e troca de usuário limpa dados. | aprovado |
+| T1-AC4 | Vitest 131, E2E demo 15, smoke produção 8 e login real 6 passaram. | aprovado |
+
+Comandos na raiz: `npm --prefix web/spa run api:types:check` passou sem drift; `lint` passou; build com OIDC público passou (aviso de chunk >500 kB); `test` passou, 17 arquivos/131 testes; `test:e2e` passou, 15 testes; `test:e2e:prod` passou, 8 testes. Baseline direcionado: 40 testes passaram. RED observado: dois novos casos 403 guilds falharam antes da guarda. Primeira execução E2E nova falhou porque modal impede interação com fundo; corrigido sensor para navegação via histórico, sem alterar produto.
+
+Login real: Keycloak local disponível; API iniciada exclusivamente no container descartável `guildbanker-issue4-test`, porta 55434, sem volumes. `E2E_ALLOW_GUILD_CREATE=true npm --prefix web/spa run test:e2e:auth`: 5 passaram, 1 falhou no POST público de guild (400). Investigação independente em andamento. Usuário autorizou explicitamente correção mínima com teste do fluxo de guild em 2026-11-03. Não iniciar T2 antes de resolver este gate.
+
+Revisão independente `review_t1`: sem defeito funcional de produção confirmado; lacunas de testes de resposta tardia/confirmação e documentação foram atendidas; rechecagem solicitada. Commit pendente até validar login real e correção autorizada.
+
+
+Fechamento T1: correção D5 autorizada incorporada ao adapter de guild: `GetContext` consome o RETURNING antes da próxima instrução, preservando SQL parametrizado, contexto e transação. Teste real `TestStorageCreatePostgres` observou RED por erro de protocolo e GREEN após correção; verifica guild/membership e rollback em falha de FK. Gate exclusivo: em `api/`, `GUILD_TEST_DATABASE_URL=<URL de teste> go test ./internal/guild -run TestStorageCreatePostgres -race -v -count=1 -tags=integration,postgres` passou; variável ausente falha explicitamente. Esta variável complementa os gates PostgreSQL globais.
+
+`make api/vet`, `api/lint` (0 issues), `api/test`, `api/test/integration`, `api/build` passaram. Linter no sandbox inicialmente não carregou módulo; reexecução com acesso à toolchain passou. `E2E_ALLOW_GUILD_CREATE=true npm --prefix web/spa run test:e2e:auth` passou, 6 testes, API corrigida no banco exclusivo. Revisão independente de T1/D5 aprovou produção; ajuste de URL do DSN solicitado foi aplicado e seu GREEN observado. Nenhuma falha detectada nas verificações executadas. Implementação validada; commit local integra este fechamento.

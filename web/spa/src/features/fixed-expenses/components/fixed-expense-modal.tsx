@@ -1,3 +1,4 @@
+import { useActiveGuild } from '../../guilds/use-active-guild'
 import { APIError } from '@/src/shared/lib/api-client'
 import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
@@ -21,6 +22,9 @@ type FormValues = UpdateFixedExpenseInput & { name?: string }
 
 export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Props) {
   const { t } = useTranslation()
+  const { activeGuild } = useActiveGuild()
+  const mounted = useRef(true)
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const createMutation = useCreateFixedExpense()
   const updateMutation = useUpdateFixedExpense()
   const isEditing = !!editingExpense
@@ -40,11 +44,12 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
   }, [open, editingExpense, reset, resetCreate, resetUpdate])
 
   const onSubmit = handleSubmit(async (data) => {
-    if (sending.current) return
+    if (sending.current || !activeGuild) return
     sending.current = true
     try {
-      if (editingExpense) await updateMutation.mutateAsync({ id: editingExpense.id, input: data })
-      else await createMutation.mutateAsync(createFixedExpenseSchema.parse(data))
+      if (editingExpense) await updateMutation.mutateAsync({ guildId: activeGuild.id, id: editingExpense.id, input: data })
+      else await createMutation.mutateAsync({ guildId: activeGuild.id, input: createFixedExpenseSchema.parse(data) })
+      if (!mounted.current) return
       onSaved()
       onClose()
     } catch {

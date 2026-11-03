@@ -1,7 +1,7 @@
 import { act, renderHook, render, screen, waitFor } from '@testing-library/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
-import { expect, it, vi, afterEach } from 'vitest'
+import { expect, it, vi, afterEach, beforeEach } from 'vitest'
 import { http, HttpResponse } from 'msw'
 import { toast } from 'sonner'
 import { SessionExpiredError, type KeycloakSession } from './keycloak-session'
@@ -10,6 +10,8 @@ import { makeQueryClient } from '../shared/lib/query-client'
 import { APIError, apiClient } from '../shared/lib/api-client'
 import { useCreateFixedExpense } from '../features/fixed-expenses/api/use-fixed-expenses'
 import { fixedExpensesApi } from '../features/fixed-expenses/api/fixed-expenses.api'
+import { guildsFixtures } from '@/src/mocks/fixtures/guilds'
+import { mockGuildMember } from '@/src/mocks/request-context'
 import { server } from '../mocks/server'
 import { App } from './app'
 import i18n from '../shared/lib/i18n'
@@ -59,7 +61,7 @@ it('late mutation after logout cannot recreate cache or show notifications', asy
   const failure = vi.spyOn(toast, 'error')
   const { result } = renderHook(() => ({ session: useSession(), create: useCreateFixedExpense() }), { wrapper })
   let pending!: Promise<unknown>
-  act(() => { pending = result.current.create.mutateAsync({ name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING' }) })
+  act(() => { pending = result.current.create.mutateAsync({ guildId: 1, input: { name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING' } }) })
   const rejection = expect(pending).rejects.toMatchObject({ name: 'AbortError' })
   await waitFor(() => expect(finish).toBeTypeOf('function'))
   act(() => result.current.session.logout())
@@ -89,9 +91,9 @@ it('combines query cancellation with the session lifetime', async () => {
 })
 it('switching users cannot display the previous personal list', async () => {
   await i18n.changeLanguage('pt-BR')
-  const { rerender } = render(<MemoryRouter initialEntries={['/fixed-expenses']}><App initialUser={user} demo /></MemoryRouter>)
+  const { rerender } = render(<MemoryRouter initialEntries={['/fixed-expenses?guild=2']}><App initialUser={user} demo /></MemoryRouter>)
   await screen.findByText('Aluguel')
-  rerender(<MemoryRouter initialEntries={['/fixed-expenses']}><App initialUser={{ id: 2, name: 'Other', email: 'other@example.com' }} demo /></MemoryRouter>)
+  rerender(<MemoryRouter initialEntries={['/fixed-expenses?guild=2']}><App initialUser={{ id: 2, name: 'Other', email: 'other@example.com' }} demo /></MemoryRouter>)
   await screen.findByText('Nenhuma despesa fixa cadastrada.')
   expect(screen.queryByText('Aluguel')).not.toBeInTheDocument()
 })
@@ -186,3 +188,5 @@ it('refreshes on expiration and detaches the callback on unmount', async () => {
   unmount()
   expect(unsubscribe).toHaveBeenCalledOnce()
 })
+
+beforeEach(() => server.use(http.get('*/api/v1/guilds', ({ request }) => HttpResponse.json(guildsFixtures.filter((guild) => mockGuildMember(request, guild.id))))))

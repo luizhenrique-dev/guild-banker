@@ -44,11 +44,27 @@ test('real deep link preserves business query and sends only Bearer to the API',
 })
 
 test('real API provisions and authorizes a verified identity', async ({ page }) => {
-  await page.goto('/fixed-expenses')
-  const api = page.waitForResponse((r) => r.url().includes('/api/v1/fixed-expenses'))
+  await page.goto('/home')
+  const guildResponse = page.waitForResponse((r) => r.url().endsWith('/api/v1/guilds') && r.request().method() === 'GET')
   await login(page)
-  const response = await api
-  expect(response.status(), 'Requires complete verified access-token profile and the current API; no prior user seed').toBe(200)
+  const guilds = await (await guildResponse).json() as { id: number; display_name: string }[]
+  let guild = guilds[0]
+  if (!guild) {
+    if (process.env.E2E_ALLOW_GUILD_CREATE !== 'true') throw new Error('Provide test membership or E2E_ALLOW_GUILD_CREATE=true in a dedicated environment')
+    // Reuse the authenticated public request headers only inside the browser.
+    const request = (await guildResponse).request()
+    const headers = { authorization: (await request.allHeaders()).authorization! }
+    guild = await page.evaluate(async ({ headers }) => {
+      const response = await fetch('/api/v1/guilds', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'issue4-test-' + Date.now(), display_name: 'Issue 4 test' }) })
+      if (!response.ok) throw new Error('Unable to create dedicated test guild: HTTP ' + response.status)
+      return response.json()
+    }, { headers })
+  }
+  expect(guild && Number.isSafeInteger(guild.id) && guild.id > 0).toBe(true)
+  const api = page.waitForResponse((r) => r.url().includes('/api/v1/fixed-expenses'))
+  await page.goto('/fixed-expenses?guild=' + guild!.id)
+  await expect(page).toHaveURL(new RegExp('guild=' + guild!.id + '(?:&|$)'))
+  expect((await api).status()).toBe(200)
   await expect(page.getByRole('heading', { name: 'Minhas despesas fixas', exact: true })).toBeVisible()
 })
 

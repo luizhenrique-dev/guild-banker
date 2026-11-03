@@ -59,7 +59,7 @@ it.each(['/fixed-expenses', '/transactions?guild=1', '/import?guild=1', '/guild?
   fireEvent.click(screen.getByRole('button', { name: 'Sair' }))
   expect(await screen.findByRole('heading', { name: 'Sessão encerrada' })).toBeVisible()
 })
-it.each(['/home', '/fixed-expenses'])('does not block independent %s when guilds are forbidden', async (path) => {
+it.each(['/home'])('does not block independent %s when guilds are forbidden', async (path) => {
   server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })))
   render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
   const title = path === '/home' ? 'Bem-vindo(a) Ana' : 'Minhas despesas fixas'
@@ -83,4 +83,12 @@ it('removes refused guild cache and stops dependent loading after refetch', asyn
   expect(screen.queryByRole('table')).toBeNull()
   expect(financialCalls).toBe(previousCalls)
   server.events.removeAllListeners('request:start')
+})
+
+it.each(['/fixed-expenses', '/fixed-expenses?guild=999'])('blocks expenses without authorized guild on %s', async (path) => {
+  let calls = 0
+  server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })), http.get('*/api/v1/fixed-expenses', () => { calls++; return HttpResponse.json([]) }))
+  render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
+  expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
+  expect(calls).toBe(0)
 })

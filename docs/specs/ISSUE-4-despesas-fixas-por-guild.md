@@ -204,7 +204,7 @@ Pré-requisito externo para todas: **ISSUE-3 concluída**, conforme D4. Todas as
 
 | Task | Título | Status | Depende de | Arquivo |
 |---|---|---|---|---|
-| T1 | Preparar contexto de guild nas despesas da SPA | ⬜ pendente | nenhuma task interna; ISSUE-3 concluída | [T1](./ISSUE-4-T1-contexto-guild-spa.md) |
+| T1 | Preparar contexto de guild nas despesas da SPA | concluida | nenhuma task interna; ISSUE-3 concluída | [T1](./ISSUE-4-T1-contexto-guild-spa.md) |
 | T2 | Substituir despesas pessoais por despesas da guild | ⬜ pendente | T1 | [T2](./ISSUE-4-T2-despesas-compartilhadas.md) |
 
 **Justificativa da decomposição:** T1 entrega guarda/reset/cache verificáveis sobre a API atual. T2 é um commit coeso de troca do vínculo, reunindo schema, todas as camadas da feature, cliente, mocks e contrato para não deixar consumidor apontando para rota removida. Cada task inclui seus testes e termina com gates aplicáveis passando; não há task genérica de testes finais nem código intencionalmente quebrado para a próxima. Não executar ou publicar metade de T2.
@@ -248,4 +248,5 @@ Disponibilidade de infraestrutura não foi testada nesta fase. Não declarar CA3
 
 ## Decisões
 
-<!-- Preenchido pelo dev-mage durante a implementação. Spec aprovada em 2026-11-02; tasks permanecem pendentes e a implementação requer autorização própria. -->
+- **D5 — Decisão aprovada em 2026-11-03:** usuário autorizou “Autorizado correção” após pergunta explícita sobre correção mínima com teste no fluxo existente de criação de guild. Justificativa: gate de login real de T1 falha ao preparar membership no banco exclusivo (POST /guilds 400). Alteração limitada à causa comprovada e regressão; sem ampliar regras de guild.
+- Execução autorizada pelo pedido “implemente a ISSUE-4 com qualidade de produção”. T1 concluída e validada, incluindo D5; T2 elegível. Evidências e gates no arquivo da task.
