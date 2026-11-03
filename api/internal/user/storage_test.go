@@ -5,10 +5,13 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"io"
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
+	"github.com/lib/pq/pqerror"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -65,6 +68,28 @@ func TestStorageGetByExternalID(t *testing.T) {
 				return
 			}
 			assert.NotErrorIs(t, err, ErrNotFound)
+		})
+	}
+}
+
+func TestStorageProfileErrors(t *testing.T) {
+	for _, tt := range []struct {
+		name, code, constraint string
+		conflict               bool
+	}{
+		{name: "email conflict", code: "23505", constraint: "user_account_email_key", conflict: true},
+		{name: "external id is not email", code: "23505", constraint: "user_account_external_id_key"},
+		{name: "technical", code: "08006", constraint: "user_account_email_key"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			original := &pq.Error{Code: pqerror.Code(tt.code), Constraint: tt.constraint}
+			err := profileError(fmt.Errorf("driver: %w", original))
+			if tt.conflict {
+				assert.ErrorIs(t, err, ErrEmailConflict)
+				return
+			}
+			assert.ErrorIs(t, err, original)
+			assert.NotErrorIs(t, err, ErrEmailConflict)
 		})
 	}
 }

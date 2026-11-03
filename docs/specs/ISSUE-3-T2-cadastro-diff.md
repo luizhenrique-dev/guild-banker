@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-3](./ISSUE-3-cadastro-sincronizacao-usuarios.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** T1
 
 ## O que fazer
@@ -47,3 +47,29 @@ D2/D3/D4: diff de nome/e-mail, vínculo apenas por sub e nenhum histórico. Vali
 ## Evidências
 
 <!-- Preenchido pelo dev-mage: testes unitários e PostgreSQL reais separados; concorrência, auditoria, ambiente isolado, comandos/resultados e commit. -->
+
+### Preparação — 2026-11-02
+
+Baseline: `go test -v ./internal/user` em api/ passou. PostgreSQL 17.9 isolado em container próprio, loopback 55433; migration será aplicada exclusivamente em schemas exclusivos. Implementação aguarda conclusão dos gates T1.
+
+| Critério | Evidência planejada | Resultado |
+|---|---|---|
+| T2-AC1 | Serviço ausente/vencedor + PostgreSQL concorrência de criação e ID único | pendente |
+| T2-AC2 | Mock sem update em igualdade e diffs isolados/conjuntos; PostgreSQL xmin/auditoria | pendente |
+| T2-AC3 | UNIQUE real em criação/update; classificação pq.Error; perfis intactos | pendente |
+| T2-AC4 | Desativado; candidatos concorrentes do mesmo snapshot e corrida de desativação | pendente |
+| T2-AC5 | Round-trip autores distintos; contexto/cancelamento nos IOs | pendente |
+
+### Evidências observadas
+
+- RED: `TestServiceEnsureAccount` com simples lookup falhou por usuário ausente, diff não aplicado e desativado não recusado; validação whitespace chamou indevidamente o mock. APIs ausentes inicialmente também impediram compilação, antes do RED comportamental.
+- GREEN: `go test -v ./internal/user` passou, incluindo igualdade sem UpdateProfile, diffs isolados/conjunto/case, erros e propagação de contexto.
+- T2-AC1: `TestStorageEnsureAccountConcurrent` passou com 8 chamadas simultâneas, ID único e uma linha; `TestStorageEnsureAccountPostgres` provou cadastro/auditoria inicial.
+- T2-AC2: tabela de serviço e PostgreSQL provaram diff textual e preservação de ID/vínculo/criação; igualdade preservou xmin/auditoria.
+- T2-AC3: PostgreSQL real provou UNIQUE em criação/update com dois cadastros intactos; `TestStorageProfileErrors` distingue constraint/código de falha técnica.
+- T2-AC4: corrida controlada por bloqueio real de linha e pg_stat_activity passou; usuário desativado não recebe perfil. Candidatos concorrentes usam timestamps deliberadamente diferentes; retornos/auditoria iguais provam supressão do segundo UPDATE; terceira chamada também preserva xmin.
+- T2-AC5: autores updated_by/disabled_by distintos fizeram round-trip; contextos observados no mock e cancelamento real antes do IO.
+- `make api/lint api/vet api/build api/test api/test/integration` → lint 0 issues; vet/build e ambas as suítes race passaram. Dois avisos de teste corrigidos (chave de contexto e alias deprecated do driver), sem supressões.
+- Gate em api/: `USER_TEST_DATABASE_URL=<container isolado> go test ./... -race -count=1 -tags=integration,postgres` → todos os pacotes passaram, inclusive os três testes reais. Cada suíte criou/removeu somente seu schema, migration original e search_path no DSN do pool.
+- Revisão independente `query_patterns`: SQL/serviço sem defeito funcional; apontou timestamps potencialmente iguais na prova concorrente. Ajustado para 60 segundos de diferença e reexecutado gate completo com sucesso.
+- Todos os cinco critérios aprovados. Implementação validada: sim. Commit local preparado; T1: `3a9b07e`.

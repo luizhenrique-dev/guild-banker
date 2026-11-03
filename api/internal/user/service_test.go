@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 )
 
 type storageMock struct {
@@ -330,4 +331,103 @@ func TestService_Disable(t *testing.T) {
 		assert.Error(t, err)
 		storage.AssertExpectations(t)
 	})
+}
+
+func (m *storageMock) CreateIfAbsent(ctx context.Context, u *User) (*User, error) {
+	args := m.Called(ctx, u)
+	return args.Get(0).(*User), args.Error(1)
+}
+
+func (m *storageMock) UpdateProfile(ctx context.Context, u *User) (*User, error) {
+	args := m.Called(ctx, u)
+	return args.Get(0).(*User), args.Error(1)
+}
+
+func TestServiceEnsureAccount(t *testing.T) {
+	for _, tt := range []struct {
+		name, profileName, email        string
+		missing, disabled               bool
+		lookupErr, createErr, updateErr error
+	}{
+		{name: "create", missing: true},
+		{name: "equal"},
+		{name: "name", profileName: "New Name"},
+		{name: "email", email: "NEW@example.test"},
+		{name: "both", profileName: " New Name ", email: "new@example.test"},
+		{name: "case diff", email: "JOHN@example.com"},
+		{name: "disabled", disabled: true, profileName: "New Name"},
+		{name: "lookup canceled", lookupErr: context.Canceled},
+		{name: "create conflict", missing: true, createErr: ErrEmailConflict},
+		{name: "update conflict", profileName: "New Name", updateErr: ErrEmailConflict},
+		{name: "update canceled", profileName: "New Name", updateErr: context.Canceled},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			svc, storage := newService(t)
+			t.Cleanup(func() { storage.AssertExpectations(t) })
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			existing := stubUser()
+			existing.ID = 42
+			existing.Enabled = !tt.disabled
+			name, email := existing.Name, existing.Email
+			if tt.profileName != "" {
+				name = tt.profileName
+			}
+			if tt.email != "" {
+				email = tt.email
+			}
+			before := *existing
+			lookupErr := tt.lookupErr
+			if tt.missing {
+				lookupErr = ErrNotFound
+			}
+			storage.On("GetByExternalID", ctx, "ext-123").Return(existing, lookupErr).Once()
+			if tt.missing {
+				storage.On("CreateIfAbsent", ctx, mock.MatchedBy(func(u *User) bool {
+					return u.ExternalID == "ext-123" && u.Name == name && u.Email == email && u.CreatedBy == email && u.Enabled && u.UpdatedAt == nil
+				})).Return(existing, tt.createErr).Once()
+			}
+			changed := name != existing.Name || email != existing.Email
+			persisted := *existing
+			persisted.Name = name
+			persisted.Email = email
+			if lookupErr == nil && !tt.disabled && changed {
+				storage.On("UpdateProfile", ctx, mock.MatchedBy(func(u *User) bool {
+					return u.ID == 42 && u.ExternalID == before.ExternalID && u.CreatedAt.Equal(before.CreatedAt) && u.CreatedBy == before.CreatedBy && u.Name == name && u.Email == email && u.UpdatedBy != nil && *u.UpdatedBy == email
+				})).Return(&persisted, tt.updateErr).Once()
+			}
+			got, err := svc.EnsureAccount(ctx, "ext-123", name, email)
+			expected := tt.lookupErr
+			if tt.createErr != nil {
+				expected = tt.createErr
+			}
+			if tt.updateErr != nil {
+				expected = tt.updateErr
+			}
+			if tt.disabled {
+				expected = ErrDisabled
+			}
+			if expected != nil {
+				require.ErrorIs(t, err, expected)
+				assert.Nil(t, got)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, int64(42), got.ID)
+			if !changed {
+				assert.Equal(t, before, *got)
+				storage.AssertNotCalled(t, "UpdateProfile", mock.Anything, mock.Anything)
+			}
+			if changed {
+				assert.Same(t, &persisted, got)
+			}
+		})
+	}
+	for _, values := range [][3]string{{"", "Name", "a@b.test"}, {" ", "Name", "a@b.test"}, {"sub", " ", "a@b.test"}, {"sub", "Name", "\t"}} {
+		svc, storage := newService(t)
+		got, err := svc.EnsureAccount(context.Background(), values[0], values[1], values[2])
+		require.Error(t, err)
+		assert.Nil(t, got)
+		storage.AssertExpectations(t)
+	}
 }

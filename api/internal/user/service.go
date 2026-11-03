@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type Service struct {
@@ -104,4 +105,39 @@ func (s *Service) Disable(ctx context.Context, id int64, disabledBy string) erro
 	}
 
 	return nil
+}
+
+func (s *Service) EnsureAccount(ctx context.Context, externalID, name, email string) (*User, error) {
+	if strings.TrimSpace(externalID) == "" {
+		return nil, errors.New("ensure account: externalID is required")
+	}
+	if strings.TrimSpace(name) == "" {
+		return nil, errors.New("ensure account: name is required")
+	}
+	if strings.TrimSpace(email) == "" {
+		return nil, errors.New("ensure account: email is required")
+	}
+	u, err := s.storage.GetByExternalID(ctx, externalID)
+	if errors.Is(err, ErrNotFound) {
+		candidate, createErr := New(name, email, externalID, email)
+		if createErr != nil {
+			return nil, fmt.Errorf("ensure account: %w", createErr)
+		}
+		u, err = s.storage.CreateIfAbsent(ctx, candidate)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("ensure account: %w", err)
+	}
+	if !u.Enabled {
+		return nil, ErrDisabled
+	}
+	if u.Name == name && u.Email == email {
+		return u, nil
+	}
+	u.Sync(name, email, email)
+	persisted, err := s.storage.UpdateProfile(ctx, u)
+	if err != nil {
+		return nil, fmt.Errorf("sync account profile: %w", err)
+	}
+	return persisted, nil
 }

@@ -8,9 +8,12 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 )
 
 type Storage interface {
+	CreateIfAbsent(ctx context.Context, u *User) (*User, error)
+	UpdateProfile(ctx context.Context, u *User) (*User, error)
 	Create(ctx context.Context, u *User) error
 	Update(ctx context.Context, u *User) error
 	GetByID(ctx context.Context, id int64) (*User, error)
@@ -29,6 +32,7 @@ type userEntity struct {
 	CreatedBy  string     `db:"created_by"`
 	Enabled    bool       `db:"enabled"`
 	UpdatedAt  *time.Time `db:"updated_at"`
+	UpdatedBy  *string    `db:"updated_by"`
 	DisabledAt *time.Time `db:"disabled_at"`
 	DisabledBy *string    `db:"disabled_by"`
 }
@@ -43,8 +47,8 @@ func NewStorage(db *sqlx.DB) Storage {
 
 func (s *postgresStorage) Create(ctx context.Context, u *User) error {
 	const query = `
-		INSERT INTO user_account (external_id, name, email, created_at, created_by, enabled, updated_at, disabled_at, disabled_by)
-		VALUES (:external_id, :name, :email, :created_at, :created_by, :enabled, :updated_at, :disabled_at, :disabled_by)
+		INSERT INTO user_account (external_id, name, email, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
+		VALUES (:external_id, :name, :email, :created_at, :created_by, :enabled, :updated_at, :updated_by, :disabled_at, :disabled_by)
 		RETURNING id
 	`
 	entity := toEntity(u)
@@ -69,6 +73,7 @@ func (s *postgresStorage) Update(ctx context.Context, u *User) error {
 		    email       = :email,
 		    enabled     = :enabled,
 		    updated_at  = :updated_at,
+ updated_by = :updated_by,
 		    disabled_at = :disabled_at,
 		    disabled_by = :disabled_by
 		WHERE id = :id
@@ -81,7 +86,7 @@ func (s *postgresStorage) Update(ctx context.Context, u *User) error {
 
 func (s *postgresStorage) GetByID(ctx context.Context, id int64) (*User, error) {
 	const query = `
-		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, disabled_at, disabled_by
+		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by
 		FROM user_account
 		WHERE id = $1
 	`
@@ -90,7 +95,7 @@ func (s *postgresStorage) GetByID(ctx context.Context, id int64) (*User, error) 
 
 func (s *postgresStorage) GetByExternalID(ctx context.Context, externalID string) (*User, error) {
 	const query = `
-		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, disabled_at, disabled_by
+		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by
 		FROM user_account
 		WHERE external_id = $1
 	`
@@ -99,7 +104,7 @@ func (s *postgresStorage) GetByExternalID(ctx context.Context, externalID string
 
 func (s *postgresStorage) GetByEmail(ctx context.Context, email string) (*User, error) {
 	const query = `
-		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, disabled_at, disabled_by
+		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by
 		FROM user_account
 		WHERE email = $1
 	`
@@ -151,6 +156,7 @@ func toEntity(u *User) userEntity {
 		CreatedBy:  u.CreatedBy,
 		Enabled:    u.Enabled,
 		UpdatedAt:  u.UpdatedAt,
+		UpdatedBy:  u.UpdatedBy,
 		DisabledAt: u.DisabledAt,
 		DisabledBy: u.DisabledBy,
 	}
@@ -166,8 +172,57 @@ func toDomain(e userEntity) *User {
 		CreatedAt:  e.CreatedAt,
 		CreatedBy:  e.CreatedBy,
 		UpdatedAt:  e.UpdatedAt,
-		UpdatedBy:  e.DisabledBy,
+		UpdatedBy:  e.UpdatedBy,
 		DisabledAt: e.DisabledAt,
 		DisabledBy: e.DisabledBy,
 	}
+}
+
+func (s *postgresStorage) CreateIfAbsent(ctx context.Context, u *User) (*User, error) {
+	const query = `INSERT INTO user_account (external_id, name, email, created_at, created_by, enabled)
+ VALUES ($1, $2, $3, $4, $5, $6)
+ ON CONFLICT (external_id) DO NOTHING
+ RETURNING id, external_id, name, email, created_at, created_by, enabled,
+ updated_at, updated_by, disabled_at, disabled_by`
+	var entity userEntity
+	err := s.db.GetContext(ctx, &entity, query, u.ExternalID, u.Name, u.Email, u.CreatedAt, u.CreatedBy, u.Enabled)
+	if errors.Is(err, sql.ErrNoRows) {
+		// A separate statement sees the committed winner of the unique-key race.
+		return s.GetByExternalID(ctx, u.ExternalID)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("create account if absent: %w", profileError(err))
+	}
+	return toDomain(entity), nil
+}
+
+func (s *postgresStorage) UpdateProfile(ctx context.Context, u *User) (*User, error) {
+	const query = `UPDATE user_account
+ SET name=$1, email=$2, updated_at=$3, updated_by=$4
+ WHERE id=$5 AND enabled AND (name IS DISTINCT FROM $1 OR email IS DISTINCT FROM $2)
+ RETURNING id, external_id, name, email, created_at, created_by, enabled,
+ updated_at, updated_by, disabled_at, disabled_by`
+	var entity userEntity
+	err := s.db.GetContext(ctx, &entity, query, u.Name, u.Email, u.UpdatedAt, u.UpdatedBy, u.ID)
+	if errors.Is(err, sql.ErrNoRows) {
+		persisted, readErr := s.GetByID(ctx, u.ID)
+		if readErr != nil {
+			return nil, fmt.Errorf("read unchanged account: %w", readErr)
+		}
+		if !persisted.Enabled {
+			return nil, ErrDisabled
+		}
+		return persisted, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("update account profile: %w", profileError(err))
+	}
+	return toDomain(entity), nil
+}
+
+func profileError(err error) error {
+	if pgErr, ok := errors.AsType[*pq.Error](err); ok && pgErr.Code == "23505" && pgErr.Constraint == "user_account_email_key" {
+		return ErrEmailConflict
+	}
+	return err
 }

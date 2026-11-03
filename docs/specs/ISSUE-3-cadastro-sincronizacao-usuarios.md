@@ -220,7 +220,7 @@ Paths `[alterar]` foram verificados; `[criar]` são propostos em diretórios exi
 | Task | Título | Status | Depende de | Arquivo |
 |---|---|---|---|---|
 | T1 | Extrair claims de perfil validado | concluida | nenhuma | [T1](./ISSUE-3-T1-claims-perfil.md) |
-| T2 | Resolver cadastro e diff com persistência segura | ⬜ pendente | T1 | [T2](./ISSUE-3-T2-cadastro-diff.md) |
+| T2 | Resolver cadastro e diff com persistência segura | concluida | T1 | [T2](./ISSUE-3-T2-cadastro-diff.md) |
 | T3 | Integrar cadastro ao fluxo de autenticação | ⬜ pendente | T2 | [T3](./ISSUE-3-T3-autenticacao-cadastro.md) |
 | T4 | Exibir página de acesso negado em consultas | ⬜ pendente | T3 | [T4](./ISSUE-3-T4-pagina-acesso-negado.md) |
 | T5 | Tratar permissão negada nas ações existentes | ⬜ pendente | T4 | [T5](./ISSUE-3-T5-acoes-acesso-negado.md) |
@@ -273,3 +273,5 @@ Testes planejados listados nas tasks não são resultados observados. Gate de mi
 - **Decisão aprovada, 2026-11-02:** usuário autorizou “Sim, ajustar o tooling”. Atualizar golangci-lint para versão compatível com Go 1.27.3 e dependências transitivas necessárias; manter gates obrigatórios. Changelog oficial: https://golangci-lint.run/docs/product/changelog/ (suporte Go 1.27 introduzido em v2.13; v2.15.0 publicada em 2026-10-16). Validação da atualização em andamento.
 
 Checkpoint atualizado: bloqueio T1 resolvido por atualização autorizada do linter; todos os gates API passaram, lint 0 issues. T1 concluída.
+
+Checkpoint T2: concluída com testes PostgreSQL reais de constraints/concorrência/desativação, revisão independente e todos os gates API aprovados. T1 commit `3a9b07e`.
