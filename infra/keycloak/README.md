@@ -90,9 +90,14 @@ API_AUDIENCE=guild-banker-api
 CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-Criar o usuário no Keycloak não provisiona `user_account` na API. O registro
-local deve estar ativo e ter `external_id` igual ao UUID/sub acima; sem esse
-vínculo a API retorna 403. Nenhum alvo executa migration ou seed do banco da API.
+A primeira chamada autenticada à API cadastra automaticamente `user_account`
+com `external_id=sub`, se ausente; chamadas seguintes sincronizam apenas nome/e-mail
+diferentes. O access token validado deve conter `name`/`email` não brancos e
+`email_verified=true`. Perfil incompleto, colisão de e-mail com outro sub e
+usuário local desativado recebem 403 genérico, sem associação ou reativação.
+O perfil é snapshot do token: mudanças exigem emissão/renovação e tokens válidos
+antigos podem reaplicar valores antigos; não há ordenação de versões. Cadastro
+não concede membership nem garante autorização da rota.
 
 Esses arquivos e o usuário são para desenvolvimento/teste local. Para implantação
 fora desse ambiente, configure hostname HTTPS, redirects/origens da UI e
@@ -123,6 +128,6 @@ O SDK envia o ID token hint ao encerramento SSO e retorna à raiz da UI.
 
 A suíte real é `npm --prefix web/spa run test:e2e:auth` na raiz. Ela lê a senha
 do ambiente ou de infra/.env, desabilita artefatos de autenticação e não provisiona
-cadastros. Requer API atual disponível e user_account vinculado/ativo para a prova
-positiva de autorização. Refresh/expiração usam relógio virtual só no browser;
+cadastros por seed. Requer API atual com banco de teste preparado e perfil
+completo/verificado no access token para a prova positiva de autorização. Refresh/expiração usam relógio virtual só no browser;
 nenhum tempo de sessão do realm compartilhado é alterado.

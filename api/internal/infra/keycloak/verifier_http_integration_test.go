@@ -34,7 +34,7 @@ type fixtureUsers struct {
 	disabled bool
 }
 
-func (u *fixtureUsers) GetByExternalID(_ context.Context, sub string) (*user.User, error) {
+func (u *fixtureUsers) EnsureAccount(_ context.Context, sub, _, _ string) (*user.User, error) {
 	u.calls++
 	u.sub = sub
 	return &user.User{ID: 42, Email: "local@example.test", Enabled: !u.disabled}, u.err
@@ -67,7 +67,7 @@ func TestAuthAcceptance(t *testing.T) {
 		{name: "CA8 none", none: true, status: 401},
 		{name: "CA8 HS256", alg: jose.HS256, status: 401},
 		{name: "CA8 RS512", alg: jose.RS512, status: 401},
-		{name: "CA10 no local user", lookupErr: user.ErrNotFound, status: 403},
+		{name: "email conflict", lookupErr: user.ErrEmailConflict, status: 403},
 		{name: "CA10 disabled local user", disabled: true, status: 403},
 		{name: "CA10 lookup failure", lookupErr: errors.New("raw lookup failure fixture-sub"), status: 500},
 		{name: "CA14 ID token", change: func(c map[string]any) { c["typ"] = "ID" }, status: 401},

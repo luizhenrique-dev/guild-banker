@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-3](./ISSUE-3-cadastro-sincronizacao-usuarios.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** T2
 
 ## O que fazer
@@ -53,3 +53,22 @@ D1–D5, P1/P2/P6: cada chamada usa snapshot do access token; dados novos só ch
 ## Evidências
 
 <!-- Preenchido pelo dev-mage: tabela entrada → persistência → principal/status, sigilo, tipos/gates e commit. Separar fixtures/verifier controlado de login real. -->
+
+| Critério | Evidência planejada | Resultado |
+|---|---|---|
+| T3-AC1 | Integração HTTP/PostgreSQL cadastro/diff/principal | pendente |
+| T3-AC2 | Tabela perfil insuficiente sem user e regressão criptográfica | pendente |
+| T3-AC3 | Conflitos/desativado reais; erro/cancelamento sanitizados | pendente |
+| T3-AC4 | Logs/respostas e contexto/header spoof nos testes HTTP | pendente |
+| T3-AC5 | Docs, geração/check de tipos e login real | pendente |
+
+### Evidências observadas — 2026-11-02
+
+- RED: `TestServiceAuthenticateRequiresProfile` falhou (erro nil) no fluxo anterior; GREEN após implementação: tabela de perfil insuficiente não consulta user, argumentos/ctx completos são propagados, ator vem do resultado persistido e erros distinguem 403 de técnico.
+- T3-AC1/AC3: `TestProvisioningHTTPPostgres` passou com middleware/auth/user/storage reais e verifier controlado: cadastro, igualdade, diff, ID/e-mail do principal, colisão em criação/update com estado intacto, desativado, 401, cancelamento/DB fechado 500 sem handler. Fixture inicial foi corrigida de /probe para prefixo /api; não foi alteração de expectativa.
+- T3-AC2/AC4: regressão criptográfica e testes HTTP/middleware passaram, incluindo perfil incompleto, e-mail não verificado, conflito, headers falsos, contexto/timeout e logs genéricos. JWT antigo original continua verificável; autenticação agora 403 sem lookup, expiração 401.
+- T3-AC5: OpenAPI/READMEs atualizados; `api:types` regenerou schema.d.ts, `api:types:check` passou; contratos financeiros/envelopes preservados.
+- Gates API: `make api/lint api/vet api/build api/test api/test/integration` passou; lint 0 issues. Gate PostgreSQL completo com `-race -count=1 -tags=integration,postgres` passou em todos os pacotes. Lint adicional com tags integration,postgres também reportou 0 issues (fora sandbox; dentro, carregamento de pacotes impedido).
+- Gates web: api:types:check, lint, build OIDC público e 104 testes/14 arquivos passaram. Avisos existentes: shim npm relata asdf ausente mas executa runtime correto; Vite bundle >500kB.
+- Login real: primeira execução 5 passaram/1 falhou, API500. Regressão `TestMigratePreservesApplicationPool` confirmou pool fechado após migrations (RED). Correção mínima para conexão dedicada, justificativa na principal, revisão independente e gate PostgreSQL completo GREEN. Repetido `npm --prefix web/spa run test:e2e:auth`: **6 passaram**. API temporária usa exclusivamente banco descartável 55433; realm existente não alterado, sem seed de usuário local ou artefatos de autenticação.
+- Revisão independente `query_patterns`: auth, docs e pool de migrations sem achados; agente executou testes auth unitários. Todos os cinco critérios aprovados; implementação validada. Commits anteriores: T1 3a9b07e, T2 0e19eb4. Commit local desta task preparado.

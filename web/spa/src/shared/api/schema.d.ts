@@ -539,7 +539,7 @@ export interface components {
                 "application/json": components["schemas"]["ErrorResponse"];
             };
         };
-        /** @description Usuário local inexistente/inativo ou acesso negado por regra existente. */
+        /** @description Perfil obrigatório ausente/não verificado, colisão de e-mail, usuário local inativo ou acesso negado por regra existente; resposta genérica. */
         Forbidden: {
             headers: {
                 [name: string]: unknown;

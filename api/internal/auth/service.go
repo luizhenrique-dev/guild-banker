@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/user"
@@ -13,16 +14,16 @@ type tokenVerifier interface {
 	Verify(ctx context.Context, raw string) (Claims, error)
 }
 
-type userLookup interface {
-	GetByExternalID(ctx context.Context, externalID string) (*user.User, error)
+type accountResolver interface {
+	EnsureAccount(ctx context.Context, externalID, name, email string) (*user.User, error)
 }
 
 type Service struct {
 	verifier tokenVerifier
-	users    userLookup
+	users    accountResolver
 }
 
-func NewService(verifier tokenVerifier, users userLookup) *Service {
+func NewService(verifier tokenVerifier, users accountResolver) *Service {
 	return &Service{verifier: verifier, users: users}
 }
 
@@ -31,10 +32,19 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (Principal, erro
 	if err != nil {
 		return Principal{}, fmt.Errorf("verify access token: %w", err)
 	}
-	u, err := s.users.GetByExternalID(ctx, claims.UserID)
+	if strings.TrimSpace(claims.Name) == "" || strings.TrimSpace(claims.Email) == "" {
+		return Principal{}, &RejectionError{Reason: ReasonIncompleteProfile}
+	}
+	if !claims.EmailVerified {
+		return Principal{}, &RejectionError{Reason: ReasonEmailUnverified}
+	}
+	u, err := s.users.EnsureAccount(ctx, claims.UserID, claims.Name, claims.Email)
 	if err != nil {
-		if errors.Is(err, user.ErrNotFound) {
-			return Principal{}, &RejectionError{Reason: ReasonUserNotFound}
+		if errors.Is(err, user.ErrDisabled) {
+			return Principal{}, &RejectionError{Reason: ReasonUserDisabled}
+		}
+		if errors.Is(err, user.ErrEmailConflict) {
+			return Principal{}, &RejectionError{Reason: ReasonEmailConflict}
 		}
 		return Principal{}, fmt.Errorf("resolve authenticated user: %w", err)
 	}

@@ -19,6 +19,9 @@ func TestRejectionError(t *testing.T) {
 		{name: "missing subject", reason: ReasonMissingSubject, kind: ErrInvalidToken},
 		{name: "invalid token type", reason: ReasonInvalidTokenType, kind: ErrInvalidToken},
 		{name: "missing local user", reason: ReasonUserNotFound, kind: ErrForbidden},
+		{name: "incomplete profile", reason: ReasonIncompleteProfile, kind: ErrForbidden},
+		{name: "unverified email", reason: ReasonEmailUnverified, kind: ErrForbidden},
+		{name: "email conflict", reason: ReasonEmailConflict, kind: ErrForbidden},
 		{name: "disabled local user", reason: ReasonUserDisabled, kind: ErrForbidden},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -34,13 +37,16 @@ func TestRejectionError(t *testing.T) {
 
 func TestReasonString(t *testing.T) {
 	for reason, want := range map[Reason]string{
-		ReasonInvalidToken:     "invalid_token",
-		ReasonTokenExpired:     "token_expired",
-		ReasonMissingSubject:   "missing_subject",
-		ReasonInvalidTokenType: "invalid_token_type",
-		ReasonUserNotFound:     "user_not_found",
-		ReasonUserDisabled:     "user_disabled",
-		Reason(255):            "invalid_token",
+		ReasonInvalidToken:      "invalid_token",
+		ReasonTokenExpired:      "token_expired",
+		ReasonMissingSubject:    "missing_subject",
+		ReasonInvalidTokenType:  "invalid_token_type",
+		ReasonUserNotFound:      "user_not_found",
+		ReasonUserDisabled:      "user_disabled",
+		ReasonIncompleteProfile: "incomplete_profile",
+		ReasonEmailUnverified:   "email_unverified",
+		ReasonEmailConflict:     "email_conflict",
+		Reason(255):             "invalid_token",
 	} {
 		assert.Equal(t, want, reason.String())
 	}

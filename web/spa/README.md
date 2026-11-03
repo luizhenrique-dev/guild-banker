@@ -44,7 +44,7 @@ Os tipos são gerados do OpenAPI corrigido contra rotas/DTOs Go; a geração nã
 
 Variáveis `VITE_*` são públicas e substituídas no build. Não coloque tokens, senhas, chaves privadas ou outros segredos nelas; alterar a configuração de build exige recompilar o dist. Use `.env.example` como referência local.
 
-A API valida Bearer pelo Keycloak e resolve o `sub` em `user_account`; cadastro ausente/inativo retorna **403**. Headers `X-User-ID`/`X-User-Email` são exclusivos da demonstração. O proxy de desenvolvimento não resolve CORS de produção nem implementa IAM. O contrato de leitura de membros permanece fora desta integração; fixtures não são usadas no modo real. O smoke mock não comprova operação com API Go.
+A API valida Bearer pelo Keycloak e resolve o `sub` em `user_account`; cadastro ausente é criado automaticamente, perfil diferente é sincronizado e usuário inativo permanece em **403**. Exige `name`/`email` não brancos e `email_verified=true` no access token; perfil insuficiente e colisão de e-mail também geram 403 genérico. O ator usa ID/e-mail persistidos. Perfil é snapshot sem ordenação entre tokens válidos; login não garante autorização da rota. Headers `X-User-ID`/`X-User-Email` são exclusivos da demonstração. O proxy de desenvolvimento não resolve CORS de produção nem implementa IAM. O contrato de leitura de membros permanece fora desta integração; fixtures não são usadas no modo real. O smoke mock não comprova operação com API Go.
 
 ## Entrega estática e hosting futuro
 
@@ -109,8 +109,8 @@ Configurar retornos de logout conforme [Keycloak local](../../infra/keycloak/REA
 
 ### Testes reais de autenticação
 Na raiz: `npm --prefix web/spa run test:e2e:auth`. Requer UI 5173 livre,
-Keycloak local 8080 configurado, API atual na 8081 e usuário da API ativo/vinculado
-ao sub do Keycloak. A suíte inicia/encerra apenas o Vite e nunca faz seed, migrations
+Keycloak local 8080 configurado, API atual na 8081 com banco isolado preparado e access token com nome/e-mail
+e verificação verdadeiros; não exige cadastro local prévio. A suíte inicia/encerra apenas o Vite e nunca faz seed, migrations
 ou mudanças de política no realm. Pré-requisitos ausentes resultam em falha, sem skip.
 A API deve ser iniciada pelo responsável pelo ambiente, considerando que o startup
 atual executa automaticamente sua rotina de migrações.
@@ -139,6 +139,6 @@ npm --prefix web/spa run test:e2e:prod
 npm --prefix web/spa run test:e2e:auth
 ```
 
-Follow-up: cadastro automático/provisionamento de `user_account` após autenticação.
-Sem esse vínculo, login OIDC pode funcionar enquanto a API rejeita o acesso. A Home
+Cadastro automático e sincronização de `user_account` acontecem nas chamadas
+autenticadas à API, usando apenas o access token validado. A Home
 permanece acessível e não exige guild ou sucesso nas consultas da API.

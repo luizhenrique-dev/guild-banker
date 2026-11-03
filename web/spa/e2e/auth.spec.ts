@@ -43,12 +43,12 @@ test('real deep link preserves business query and sends only Bearer to the API',
   await expect(page).toHaveURL(/\/transactions\?guild=999&category=OTHER$/)
 })
 
-test('real API authorizes the linked identity', async ({ page }) => {
+test('real API provisions and authorizes a verified identity', async ({ page }) => {
   await page.goto('/fixed-expenses')
   const api = page.waitForResponse((r) => r.url().includes('/api/v1/fixed-expenses'))
   await login(page)
   const response = await api
-  expect(response.status(), 'Requires an active user_account linked to the Keycloak sub; this suite never seeds data').toBe(200)
+  expect(response.status(), 'Requires complete verified access-token profile and the current API; no prior user seed').toBe(200)
   await expect(page.getByRole('heading', { name: 'Minhas despesas fixas', exact: true })).toBeVisible()
 })
 

@@ -832,9 +832,13 @@ components:
       description: |
         Access token Keycloak RS256 exigido em `/api` e `/api/*`.
         Assinatura via JWKS, issuer, expiração e audience API_AUDIENCE validados.
-        O sub resolve um usuário local ativo; ID/e-mail de auditoria vêm desse
-        cadastro. Usuário ausente/inativo recebe 403; erro técnico de lookup,
-        500. Headers X-User-ID e X-User-Email não definem identidade.
+        O sub é o external_id do cadastro local, criado automaticamente quando
+        ausente. Exige name/email não brancos e email_verified=true no access
+        token validado; sincroniza apenas nome/e-mail diferentes e auditoria.
+        ID/e-mail do ator vêm do cadastro persistido na mesma chamada.
+        Perfil insuficiente, colisão de e-mail e usuário inativo recebem 403
+        genérico; falha técnica de persistência, 500. Perfil é snapshot do token,
+        sem ordenação entre tokens válidos; login não garante autorização de rota. Headers X-User-ID e X-User-Email não definem identidade.
         Roles member/admin são claims disponíveis, sem novo guard nas rotas.
   parameters:
     GuildIDPath:
@@ -893,7 +897,7 @@ components:
           schema:
             $ref: "#/components/schemas/ErrorResponse"
     Forbidden:
-      description: Usuário local inexistente/inativo ou acesso negado por regra existente.
+      description: Perfil obrigatório ausente/não verificado, colisão de e-mail, usuário local inativo ou acesso negado por regra existente; resposta genérica.
       content:
         application/json:
           schema:

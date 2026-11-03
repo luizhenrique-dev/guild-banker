@@ -31,6 +31,7 @@ func testKey(t *testing.T) *rsa.PrivateKey {
 func testClaims(issuer string, now time.Time) map[string]any {
 	return map[string]any{
 		"iss": issuer, "aud": "guild-banker-api", "exp": now.Add(time.Minute).Unix(),
+		"name": "Fixture Member", "email": "member@example.test", "email_verified": true,
 		"sub": "fixture-sub", "typ": "Bearer", "preferred_username": "fixture-user",
 		"realm_access": map[string]any{"roles": []string{"member"}},
 	}
@@ -181,6 +182,9 @@ func TestVerifierProfileClaims(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			claims := testClaims(issuer, now)
+			delete(claims, "name")
+			delete(claims, "email")
+			delete(claims, "email_verified")
 			for k, value := range tt.profile {
 				claims[k] = value
 			}

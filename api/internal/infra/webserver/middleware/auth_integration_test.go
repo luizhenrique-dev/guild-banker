@@ -40,6 +40,9 @@ func TestAuth(t *testing.T) {
 		{name: "invalid", headers: []string{"Bearer secret-token"}, err: &auth.RejectionError{Reason: auth.ReasonInvalidToken}, status: 401, reason: "invalid_token"},
 		{name: "expired", headers: []string{"Bearer secret-token"}, err: &auth.RejectionError{Reason: auth.ReasonTokenExpired}, status: 401, reason: "token_expired"},
 		{name: "forbidden", headers: []string{"Bearer secret-token"}, err: &auth.RejectionError{Reason: auth.ReasonUserDisabled}, status: 403, reason: "user_disabled"},
+		{name: "incomplete profile", headers: []string{"Bearer secret-token"}, err: &auth.RejectionError{Reason: auth.ReasonIncompleteProfile}, status: 403, reason: "incomplete_profile"},
+		{name: "unverified email", headers: []string{"Bearer secret-token"}, err: &auth.RejectionError{Reason: auth.ReasonEmailUnverified}, status: 403, reason: "email_unverified"},
+		{name: "email conflict", headers: []string{"Bearer secret-token"}, err: &auth.RejectionError{Reason: auth.ReasonEmailConflict}, status: 403, reason: "email_conflict"},
 		{name: "technical", headers: []string{"Bearer secret-token"}, err: errors.New("raw failure secret-email@example.test secret-sub"), status: 500, reason: "lookup_failed"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {

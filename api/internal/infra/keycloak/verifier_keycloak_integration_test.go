@@ -114,7 +114,7 @@ func TestAuthKeycloakFixture(t *testing.T) {
 		now    int64
 		status int
 	}{
-		{name: "valid", now: meta.ValidAt, status: 200},
+		{name: "valid signature incomplete profile", now: meta.ValidAt, status: 403},
 		{name: "expired", now: meta.ExpiresAt + 1, status: 401},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -145,7 +145,11 @@ func TestAuthKeycloakFixture(t *testing.T) {
 				assert.Equal(t, meta.Subject, users.sub)
 			} else {
 				assert.Zero(t, users.calls)
-				assert.JSONEq(t, `{"error":"unauthorized"}`, w.Body.String())
+				if tt.status == 403 {
+					assert.JSONEq(t, `{"error":"forbidden"}`, w.Body.String())
+				} else {
+					assert.JSONEq(t, `{"error":"unauthorized"}`, w.Body.String())
+				}
 			}
 		})
 	}

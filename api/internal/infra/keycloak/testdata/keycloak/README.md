@@ -20,7 +20,10 @@ make api/test/integration
 ```
 
 `TestVerifierKeycloakFixture` e `TestAuthKeycloakFixture` usam as chaves públicas,
-issuer original e relógio privado de teste em `valid_at`; após `expires_at + 1`
+issuer original e relógio privado de teste em `valid_at`. A fixture original
+não contém perfil; o verifier aceita sua assinatura e auth recusa com 403 por
+perfil incompleto, sem consultar usuários. Sucesso HTTP usa JWTs sintéticos
+assinados com perfil completo. Após `expires_at + 1`
 a mesma fixture é rejeitada com 401. Issuer, audience, exp e assinatura continuam
 validados. Os testes exigem os arquivos e não usam skips ou Keycloak/PostgreSQL
 ativos. Provider discovery e rotação de JWKS possuem testes separados.

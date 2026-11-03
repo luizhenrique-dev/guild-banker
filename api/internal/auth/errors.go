@@ -16,6 +16,9 @@ const (
 	ReasonInvalidTokenType
 	ReasonUserNotFound
 	ReasonUserDisabled
+	ReasonIncompleteProfile
+	ReasonEmailUnverified
+	ReasonEmailConflict
 )
 
 func (r Reason) String() string {
@@ -28,6 +31,12 @@ func (r Reason) String() string {
 		return "invalid_token_type"
 	case ReasonUserNotFound:
 		return "user_not_found"
+	case ReasonIncompleteProfile:
+		return "incomplete_profile"
+	case ReasonEmailUnverified:
+		return "email_unverified"
+	case ReasonEmailConflict:
+		return "email_conflict"
 	case ReasonUserDisabled:
 		return "user_disabled"
 	default:
@@ -44,7 +53,8 @@ func (e *RejectionError) Error() string {
 }
 
 func (e *RejectionError) Unwrap() error {
-	if e.Reason == ReasonUserNotFound || e.Reason == ReasonUserDisabled {
+	switch e.Reason {
+	case ReasonUserNotFound, ReasonUserDisabled, ReasonIncompleteProfile, ReasonEmailUnverified, ReasonEmailConflict:
 		return ErrForbidden
 	}
 	return ErrInvalidToken
