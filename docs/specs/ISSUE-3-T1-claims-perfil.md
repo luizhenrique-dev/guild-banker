@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-3](./ISSUE-3-cadastro-sincronizacao-usuarios.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** nenhuma
 
 ## O que fazer
@@ -39,3 +39,34 @@ D1/D3/D5: fonte é access token validado; obrigatoriedade é da aplicação, nã
 ## Evidências
 
 <!-- Preenchido pelo dev-mage: RED/GREEN, comandos/resultados e commit local. Nenhuma execução realizada no planejamento. -->
+
+| Critério | Evidência planejada | Resultado |
+|---|---|---|
+| T1-AC1 | `go test -v ./internal/infra/keycloak -run 'TestVerifier(ProfileClaims\|Verify)'` em api/: ambas as funções passaram | aprovado |
+| T1-AC2 | `TestVerifierProfileClaims`: 10 casos executados e aprovados, incluindo ausência, falso, tipos incompatíveis e null | aprovado |
+| T1-AC3 | vet, build, unitários race e integração race passaram; lint falha por incompatibilidade do importer com Go 1.27.3 | aprovado |
+
+Baseline: `go test -v ./internal/auth ./internal/infra/keycloak` em api/: ambas as suítes passaram; árvore inicial limpa.
+
+### Checkpoint — 2026-11-02
+
+- RED: com campos internos adicionados e parser ainda original, `TestVerifierProfileClaims` falhou por perfil vazio e aceitação de tipos incompatíveis/null; ausência e false já passavam. A primeira tentativa na raiz falhou por diretório incorreto; execução efetiva foi em `api/`.
+- GREEN: `go test -v ./internal/infra/keycloak -run 'TestVerifier(ProfileClaims|Verify)'` em `api/`: extração e regressão criptográfica passaram. Fixture Keycloak original preservada; autenticação não alterada.
+- Gates na raiz: `make api/vet` passou; `make api/build` gerou `api/bin/guildbanker`; `make api/test` passou em todos os pacotes, com race; `make api/test/integration` passou em todos os pacotes com race após escalonamento para permitir listeners locais (primeira execução no sandbox falhou por `socket: operation not permitted`).
+- `make api/lint`: primeiro impedido pelo cache Go somente leitura; repetido fora do sandbox, instalou o linter fixado, mas falhou no typecheck. `go tool golangci-lint version` confirmou 2.11.4 compilado com Go 1.27.3. `go tool golangci-lint run ./database` reproduziu a mesma falha num pacote não alterado: `export data version 5 is greater than maximum supported version 2` ao importar biblioteca padrão. Nenhuma mudança de dependência realizada.
+- Revisão independente: agente `query_patterns` examinou diff/contrato/segurança e executou os dois testes com `-count=1`; nenhum achado. Segunda revisão própria também não encontrou desvio de escopo. `git diff --check` passou.
+- Implementação validada: parcialmente (AC1/AC2); AC3 pendente pelo lint. Commit pendente até resolução do gate; staging vazio.
+
+### Bloqueio — T1
+
+**Problema:** tooling de lint fixado não consegue ler dados de tipos emitidos pelo Go 1.27.3 exigido no projeto.
+**Evidência:** erro reproduzido no pacote inalterado `api/database`; versão do linter 2.11.4 e x/tools v0.43.0 em `api/go.mod`.
+**Impacto:** T1-AC3 obrigatório não encerrado; T2–T5 dependem sequencialmente de T1.
+**Proposta:** investigar e ajustar a compatibilidade do tooling em escopo explicitamente autorizado, mantendo os gates; depois repetir lint e verificações afetadas.
+**Confirmação necessária:** autorização solicitada para ampliar escopo de tooling, ainda pendente neste checkpoint.
+
+### Resolução do bloqueio
+
+Usuário autorizou ajuste de tooling. Atualizados golangci-lint v2.15.0 e dependências exigidas, `go mod tidy` sincronizou o grafo/sums. Fonte oficial: https://golangci-lint.run/docs/product/changelog/. A remoção de sums antigos é efeito do tidy; nenhuma dependência de funcionalidade foi introduzida.
+
+Execução após atualização: `make api/lint api/vet api/build api/test api/test/integration` fora do sandbox → lint **0 issues**, vet passou, build gerado, todos os pacotes das duas suítes com race passaram. T1-AC3 aprovado; bloqueio resolvido. Implementação validada: sim. Commit local desta task inclui o ajuste autorizado do tooling; hash será observado após commit.

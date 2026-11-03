@@ -157,3 +157,55 @@ func TestVerifierVerify(t *testing.T) {
 		})
 	}
 }
+
+func TestVerifierProfileClaims(t *testing.T) {
+	now := time.Unix(1800000000, 0)
+	issuer := "https://identity.example.test/realms/fixture"
+	key := testKey(t)
+	v := fixedVerifier(issuer, &oidc.StaticKeySet{PublicKeys: []crypto.PublicKey{&key.PublicKey}}, now)
+	for _, tt := range []struct {
+		name    string
+		profile map[string]any
+		invalid bool
+	}{
+		{name: "complete", profile: map[string]any{"name": "Fixture Member", "email": "member@example.test", "email_verified": true}},
+		{name: "absent"},
+		{name: "false", profile: map[string]any{"email_verified": false}},
+		{name: "name number", profile: map[string]any{"name": 123}, invalid: true},
+		{name: "name null", profile: map[string]any{"name": nil}, invalid: true},
+		{name: "email bool", profile: map[string]any{"email": true}, invalid: true},
+		{name: "email null", profile: map[string]any{"email": nil}, invalid: true},
+		{name: "verified string", profile: map[string]any{"email_verified": "true"}, invalid: true},
+		{name: "verified number", profile: map[string]any{"email_verified": 1}, invalid: true},
+		{name: "verified null", profile: map[string]any{"email_verified": nil}, invalid: true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			claims := testClaims(issuer, now)
+			for k, value := range tt.profile {
+				claims[k] = value
+			}
+			raw := signToken(t, claims, key, "A", jose.RS256)
+			got, err := v.Verify(context.Background(), raw)
+			if tt.invalid {
+				require.ErrorIs(t, err, auth.ErrInvalidToken)
+				assert.Empty(t, got)
+				assert.NotContains(t, err.Error(), raw)
+				assert.NotContains(t, err.Error(), "member@example.test")
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, "fixture-sub", got.UserID)
+			assert.Equal(t, "fixture-user", got.PreferredUsername)
+			assert.Equal(t, []string{"member"}, got.RealmRoles)
+			if tt.name == "complete" {
+				assert.Equal(t, "Fixture Member", got.Name)
+				assert.Equal(t, "member@example.test", got.Email)
+				assert.True(t, got.EmailVerified)
+			} else {
+				assert.Empty(t, got.Name)
+				assert.Empty(t, got.Email)
+				assert.False(t, got.EmailVerified)
+			}
+		})
+	}
+}

@@ -6,7 +6,7 @@ Cadastrar automaticamente em `user_account` quem ainda não possui vínculo loca
 
 ## Contexto e decisões
 
-Origem: descrição fornecida pelo usuário nesta conversa, sem versão, links ou comentários externos informados. Refinamento em 2026-11-01. **Estado: proposta pronta para aprovação; implementação não iniciada.** A aprovação do recorte da entrevista não substitui a aprovação deste documento.
+Origem: descrição fornecida pelo usuário nesta conversa, sem versão, links ou comentários externos informados. Refinamento em 2026-11-01. **Estado: implementação autorizada pelo usuário em 2026-11-02.**
 
 ### Fatos verificados
 
@@ -219,7 +219,7 @@ Paths `[alterar]` foram verificados; `[criar]` são propostos em diretórios exi
 
 | Task | Título | Status | Depende de | Arquivo |
 |---|---|---|---|---|
-| T1 | Extrair claims de perfil validado | ⬜ pendente | nenhuma | [T1](./ISSUE-3-T1-claims-perfil.md) |
+| T1 | Extrair claims de perfil validado | concluida | nenhuma | [T1](./ISSUE-3-T1-claims-perfil.md) |
 | T2 | Resolver cadastro e diff com persistência segura | ⬜ pendente | T1 | [T2](./ISSUE-3-T2-cadastro-diff.md) |
 | T3 | Integrar cadastro ao fluxo de autenticação | ⬜ pendente | T2 | [T3](./ISSUE-3-T3-autenticacao-cadastro.md) |
 | T4 | Exibir página de acesso negado em consultas | ⬜ pendente | T3 | [T4](./ISSUE-3-T4-pagina-acesso-negado.md) |
@@ -266,4 +266,10 @@ Testes planejados listados nas tasks não são resultados observados. Gate de mi
 
 ## Decisões
 
-<!-- Preenchido pelo dev-mage durante a implementação. Aprovação final da spec ainda pendente; todas as tasks permanecem pendentes. -->
+- **Decisão aprovada, 2026-11-02:** usuário solicitou implementar ISSUE-3 com dev-mage e qualidade de produção. Isso autoriza execução desta spec e seus commits locais; sem push/PR.
+- **Fato verificado:** árvore inicial limpa; Go 1.27.3 e Node 24.6.0 disponíveis. Baseline auth/Keycloak passou.
+- **Checkpoint:** T1 implementada com AC1/AC2 provados e revisão independente sem achados; AC3 bloqueado por lint incompatível com export data de Go 1.27.3. Vet/build/unitários race/integração race passaram. Ver detalhes na T1. T2–T5 não iniciadas, respeitando dependências.
+- **Ambiente:** criado container isolado `guild-banker-issue3-test` (PostgreSQL 17.9, loopback 55433) para futura validação, sem alterar banco/realm do projeto. Nenhum teste PostgreSQL executado ainda.
+- **Decisão aprovada, 2026-11-02:** usuário autorizou “Sim, ajustar o tooling”. Atualizar golangci-lint para versão compatível com Go 1.27.3 e dependências transitivas necessárias; manter gates obrigatórios. Changelog oficial: https://golangci-lint.run/docs/product/changelog/ (suporte Go 1.27 introduzido em v2.13; v2.15.0 publicada em 2026-10-16). Validação da atualização em andamento.
+
+Checkpoint atualizado: bloqueio T1 resolvido por atualização autorizada do linter; todos os gates API passaram, lint 0 issues. T1 concluída.

@@ -34,6 +34,9 @@ func verifierConfig(audience string) *oidc.Config {
 }
 
 type tokenClaims struct {
+	Name              claimString `json:"name"`
+	Email             claimString `json:"email"`
+	EmailVerified     claimBool   `json:"email_verified"`
 	Type              string      `json:"typ"`
 	PreferredUsername claimString `json:"preferred_username"`
 	RealmAccess       struct {
@@ -53,6 +56,21 @@ func (s *claimString) UnmarshalJSON(data []byte) error {
 		return errors.New("string claim must not be null")
 	}
 	*s = claimString(*value)
+	return nil
+}
+
+// claimBool distinguishes an absent claim from a present JSON null.
+type claimBool bool
+
+func (b *claimBool) UnmarshalJSON(data []byte) error {
+	var value *bool
+	if err := json.Unmarshal(data, &value); err != nil {
+		return fmt.Errorf("decode boolean claim: %w", err)
+	}
+	if value == nil {
+		return errors.New("boolean claim must not be null")
+	}
+	*b = claimBool(*value)
 	return nil
 }
 
@@ -81,6 +99,9 @@ func (v *Verifier) Verify(ctx context.Context, raw string) (auth.Claims, error) 
 	}
 	return auth.Claims{
 		UserID:            token.Subject,
+		Name:              string(claims.Name),
+		Email:             string(claims.Email),
+		EmailVerified:     bool(claims.EmailVerified),
 		PreferredUsername: string(claims.PreferredUsername),
 		RealmRoles:        roles,
 	}, nil

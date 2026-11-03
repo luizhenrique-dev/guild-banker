@@ -7,6 +7,9 @@ import (
 )
 
 type Claims struct {
+	Name              string
+	Email             string
+	EmailVerified     bool
 	UserID            string
 	PreferredUsername string
 	RealmRoles        []string
