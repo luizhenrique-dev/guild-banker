@@ -7,6 +7,7 @@ import { GuildSelectionState } from '../features/guilds/components/guild-selecti
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
 import { Providers } from '../shared/components/providers'
+import { AccessDeniedPage } from '../shared/components/access-denied-page'
 import { Header } from '../shared/components/header'
 import { Sidebar } from '../shared/components/sidebar'
 import { FixedExpensesPageClient } from '../features/fixed-expenses/components/fixed-expenses-page-client'
@@ -18,11 +19,11 @@ import { HomePage } from '../features/home/components/home-page'
 
 function AppRoutes() {
   const { user } = useSession()
-  const { activeGuild } = useActiveGuild()
+  const { activeGuild, isForbidden } = useActiveGuild()
   const { search } = useLocation()
   const { t } = useTranslation()
   const protectedPage = (page: React.ReactNode) => user ? page : <main className="p-8"><h1>{t('session.missing')}</h1></main>
-  const guildPage = (page: React.ReactNode) => protectedPage(activeGuild ? <div key={activeGuild.id}>{page}</div> : <GuildSelectionState />)
+  const guildPage = (page: React.ReactNode) => protectedPage(isForbidden ? <AccessDeniedPage /> : activeGuild ? <div key={activeGuild.id}>{page}</div> : <GuildSelectionState />)
   return <Routes>
     <Route path="/" element={<Navigate to={'/home' + search} replace />} />
     <Route path="/home" element={protectedPage(<HomePage />)} />

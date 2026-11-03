@@ -1,5 +1,5 @@
-import { beforeEach, expect, it, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { afterEach, beforeEach, expect, it, vi } from 'vitest'
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { App } from './app'
 import i18n from '../shared/lib/i18n'
@@ -36,4 +36,51 @@ it('does not mount the shell even on unknown routes without a session', async ()
   expect(screen.queryByRole('button', { name: 'Sair' })).not.toBeInTheDocument()
   expect(fetchSpy).not.toHaveBeenCalled()
   fetchSpy.mockRestore()
+})
+
+import { http, HttpResponse } from 'msw'
+import { server } from '../mocks/server'
+import * as queryClients from '../shared/lib/query-client'
+
+afterEach(() => vi.restoreAllMocks())
+const demoUser = { id: 1, name: 'Ana', email: 'ana@example.test' }
+it.each(['/fixed-expenses', '/transactions?guild=1', '/import?guild=1', '/guild?guild=1'])('keeps shell and Home for forbidden loading on %s', async (path) => {
+  let calls = 0
+  const endpoint = path.startsWith('/fixed-expenses') ? '*/api/v1/fixed-expenses' : '*/api/v1/guilds'
+  server.use(http.get(endpoint, () => { calls++; return HttpResponse.json({ error: 'secret internal cause' }, { status: 403 }) }))
+  render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
+  expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
+  expect(screen.getByRole('navigation')).toBeVisible()
+  expect(screen.getByRole('button', { name: 'Sair' })).toBeEnabled()
+  expect(screen.queryByText('secret internal cause')).toBeNull()
+  expect(calls).toBe(1)
+  fireEvent.click(screen.getByRole('link', { name: 'Voltar ao início' }))
+  expect(await screen.findByRole('heading', { name: 'Bem-vindo(a) Ana' })).toBeVisible()
+  fireEvent.click(screen.getByRole('button', { name: 'Sair' }))
+  expect(await screen.findByRole('heading', { name: 'Sessão encerrada' })).toBeVisible()
+})
+it.each(['/home', '/fixed-expenses'])('does not block independent %s when guilds are forbidden', async (path) => {
+  server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })))
+  render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
+  const title = path === '/home' ? 'Bem-vindo(a) Ana' : 'Minhas despesas fixas'
+  expect(await screen.findByRole('heading', { name: title })).toBeVisible()
+  if (path === '/fixed-expenses') expect(await screen.findByRole('row', { name: /Aluguel/ })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: 'Acesso negado' })).toBeNull()
+})
+it('removes refused guild cache and stops dependent loading after refetch', async () => {
+  const client = queryClients.makeQueryClient()
+  vi.spyOn(queryClients, 'makeQueryClient').mockReturnValue(client)
+  let financialCalls = 0
+  server.events.on('request:start', ({ request }) => { if (request.url.includes('/transactions')) financialCalls++ })
+  render(<MemoryRouter initialEntries={['/transactions?guild=1']}><App initialUser={demoUser} demo /></MemoryRouter>)
+  expect(await screen.findByRole('button', { name: 'Família Silva' })).toBeVisible()
+  await waitFor(() => expect(financialCalls).toBeGreaterThan(0))
+  const previousCalls = financialCalls
+  server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })))
+  await act(async () => { await client.invalidateQueries({ queryKey: ['guilds'] }) })
+  expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Família Silva' })).toBeNull()
+  expect(screen.queryByRole('table')).toBeNull()
+  expect(financialCalls).toBe(previousCalls)
+  server.events.removeAllListeners('request:start')
 })

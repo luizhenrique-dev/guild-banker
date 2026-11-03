@@ -88,3 +88,18 @@ it('associates validation errors and updates them with selected language', async
   await act(async () => { await i18n.changeLanguage('en') })
   expect(amount).toHaveAccessibleDescription('Enter an amount greater than zero with up to two decimal places.')
 })
+
+it('replaces cached personal expenses with access denied after forbidden refetch', async () => {
+  const client = queryClients.makeQueryClient()
+  vi.spyOn(queryClients, 'makeQueryClient').mockReturnValue(client)
+  page()
+  expect(await screen.findByRole('row', { name: /Aluguel/ })).toBeVisible()
+  let calls = 0
+  server.use(http.get('*/api/v1/fixed-expenses', () => { calls++; return new HttpResponse(null, { status: 403 }) }))
+  await act(async () => { await client.invalidateQueries({ queryKey: ['fixed-expenses'] }) })
+  expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
+  expect(screen.queryByRole('table')).toBeNull()
+  expect(calls).toBe(1)
+})
+
+import * as queryClients from '@/src/shared/lib/query-client'

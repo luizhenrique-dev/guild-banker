@@ -222,7 +222,7 @@ Paths `[alterar]` foram verificados; `[criar]` são propostos em diretórios exi
 | T1 | Extrair claims de perfil validado | concluida | nenhuma | [T1](./ISSUE-3-T1-claims-perfil.md) |
 | T2 | Resolver cadastro e diff com persistência segura | concluida | T1 | [T2](./ISSUE-3-T2-cadastro-diff.md) |
 | T3 | Integrar cadastro ao fluxo de autenticação | concluida | T2 | [T3](./ISSUE-3-T3-autenticacao-cadastro.md) |
-| T4 | Exibir página de acesso negado em consultas | ⬜ pendente | T3 | [T4](./ISSUE-3-T4-pagina-acesso-negado.md) |
+| T4 | Exibir página de acesso negado em consultas | concluida | T3 | [T4](./ISSUE-3-T4-pagina-acesso-negado.md) |
 | T5 | Tratar permissão negada nas ações existentes | ⬜ pendente | T4 | [T5](./ISSUE-3-T5-acoes-acesso-negado.md) |
 
 Cada task inclui seus testes e termina compilável, com os checks aplicáveis passando. T1/T2 introduzem capacidades sem conectá-las à autenticação; o comportamento passa a mudar em T3. Não há task genérica de testes finais.
@@ -279,3 +279,5 @@ Checkpoint T2: concluída com testes PostgreSQL reais de constraints/concorrênc
 Justificativa T3 — lifecycle de migrations: o gate OIDC real recebeu 500; `TestMigratePreservesApplicationPool` reproduziu `sql: database is closed` após Migrate. O driver `postgres.WithInstance` assume ownership do pool e `m.Close` o fecha. Ajustar apenas para conexão dedicada com `postgres.WithConnection` e testar pool aberto/idempotência. Necessário ao fluxo real aprovado; sem mudança de schema ou wiring.
 
 Checkpoint T3 concluída: API/PostgreSQL e web gates aprovados; OIDC real 6/6. Corrigido pool de migrations com regressão RED/GREEN e revisão independente. T2 commit 0e19eb4.
+
+Checkpoint T4 concluída: 116 testes web, 12 E2E demo e 8 smoke compilado passaram; lint/build/tipos aprovados, revisão independente sem achados. T3 commit 4064bce.

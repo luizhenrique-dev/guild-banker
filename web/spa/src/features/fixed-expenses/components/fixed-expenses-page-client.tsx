@@ -1,4 +1,6 @@
 'use client'
+import { AccessDeniedPage } from '@/src/shared/components/access-denied-page'
+import { APIError } from '@/src/shared/lib/api-client'
 // ============================================================
 // FixedExpensesPageClient — Client component da página principal
 // Contém toda a interatividade (hooks, estado local, modais).
@@ -43,6 +45,8 @@ export function FixedExpensesPageClient() {
     setModalOpen(false)
     setEditingExpense(null)
   }
+
+  if (error instanceof APIError && error.status === 403) return <AccessDeniedPage />
 
   return (
     <ErrorBoundary>

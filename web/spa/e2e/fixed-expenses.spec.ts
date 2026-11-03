@@ -40,6 +40,7 @@ for (const width of [375, 1280]) {
     await page.keyboard.press('Enter')
     const confirmation = page.getByRole('alertdialog')
     await expect(confirmation.getByRole('button', { name: 'Cancelar' })).toBeFocused()
+    await confirmation.evaluate((element) => Promise.all(element.getAnimations().map((animation) => animation.finished)))
     await page.keyboard.press('Escape')
     await expect(deactivate).toBeFocused()
     await page.keyboard.press('Enter')

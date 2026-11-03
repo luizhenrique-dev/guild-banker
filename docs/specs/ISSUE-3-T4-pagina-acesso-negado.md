@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-3](./ISSUE-3-cadastro-sincronizacao-usuarios.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** T3
 
 ## O que fazer
@@ -48,3 +48,22 @@ D6 confirmado: página para carregamento, erro local para ação, Home disponív
 ## Evidências
 
 <!-- Preenchido pelo dev-mage: tabela rota/consulta/cache → resultado, navegação, acessibilidade, gates e commit local. -->
+
+| Critério | Evidência planejada | Resultado |
+|---|---|---|
+| T4-AC1 | MSW 403 por rota e refetch com cache financeiro anterior | pendente |
+| T4-AC2 | Shell/Home/Sair e contagem GET sem retry; sessão existente | pendente |
+| T4-AC3 | Cache guilds negado não entrega seleção/lista nem inicia dados dependentes | pendente |
+| T4-AC4 | PT/EN, heading/link acessíveis e E2E 375/1280 | pendente |
+
+### Evidências observadas — 2026-11-02
+
+- RED: app.test.tsx teve 5 falhas por ausência da página/guarda de cache; 11 passaram. GREEN: 26 testes focados/4 arquivos passaram, depois suíte completa **116 testes/16 arquivos**.
+- T4-AC1: quatro rotas diretas em app.test; transactions-page-client.test cobre 403 inicial/refetch com cache; despesas refetch remove tabela antiga; erro tem prioridade.
+- T4-AC2: casos de app verificam menu/Sair e link Home funcionando com sessão mantida e GET único; testes session-provider existentes preservados. E2E confirma navegação por teclado e logout.
+- T4-AC3: Home/despesas independentes passam; guilds recusadas removem seleção/lista antiga, não iniciam requests financeiras dependentes; vazio/erro400 continuam passando nas suítes existentes.
+- T4-AC4: componente testado PT/EN com main nomeado, h1 e link Home; E2E 375/1280 passou, sem overflow.
+- Gates: api:types:check, lint sem warnings, build OIDC e testes web passaram. Lint inicialmente encontrou diretiva use client deslocada por imports, corrigida sem supressão. Build mantém aviso preexistente de chunk >500kB.
+- E2E demo completo: **12 passaram**. page.route não interceptava resposta do Service Worker; fixture corrigida para interceptação fetch somente no teste, sem alteração produção. Falha de foco foi investigada em trace: Escape chegava ~5ms após foco durante entrada do modal. Cópia 4064bce em /tmp passou (fontes indisponíveis nessa cópia, limitação registrada); teste agora aguarda animação DOM terminar, mantendo Escape e todas as asserções. Casos focados **2 passaram** e suíte completa passou.
+- Smoke compilado `test:e2e:prod`: **8 passaram**.
+- Revisão independente query_patterns: sem achado funcional; executou 26 testes focados aprovados. Todos os quatro critérios aprovados, implementação validada. Commit preparado; T3 4064bce.

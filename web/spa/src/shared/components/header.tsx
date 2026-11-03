@@ -8,7 +8,7 @@ import { useState, useRef, useEffect } from 'react'
 export function Header() {
   const { t, i18n } = useTranslation()
   const { user, logout } = useSession()
-  const { activeGuild, guilds, setActiveGuild } = useActiveGuild()
+  const { activeGuild, guilds, setActiveGuild, isForbidden } = useActiveGuild()
   const [guildOpen, setGuildOpen] = useState(false)
   const guildRef = useRef<HTMLDivElement>(null)
 
@@ -47,7 +47,8 @@ export function Header() {
         <div className="relative" ref={guildRef} onKeyDown={(e) => e.key === 'Escape' && setGuildOpen(false)}>
           <button
             type="button"
-            aria-expanded={guildOpen}
+            aria-expanded={guildOpen && !isForbidden}
+            disabled={isForbidden}
             onClick={() => setGuildOpen(!guildOpen)}
             className="flex items-center gap-2 rounded-full bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#dee1e6]"
           >
@@ -56,7 +57,7 @@ export function Header() {
             <ChevronDown size={12} className="text-[#7c828a]" />
           </button>
 
-          {guildOpen && (
+          {guildOpen && !isForbidden && (
             <div className="absolute right-0 top-full mt-1 w-56 rounded-xl border border-[#dee1e6] bg-white py-1 shadow-lg">
               {guilds.map((g) => (
                 <button

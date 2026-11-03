@@ -26,6 +26,9 @@ const resources = {
       'session.logout-error': 'Sessão local encerrada. Não foi possível encerrar a sessão no Keycloak.',
       'session.refresh-error': 'Não foi possível renovar a sessão. Verifique a conexão.',
       'route.missing': 'Página não encontrada',
+      'accessDenied.title': 'Acesso negado',
+      'accessDenied.message': 'Você não tem permissão para acessar este conteúdo.',
+      'accessDenied.home': 'Voltar ao início',
 
       // Fixed Expenses
       'fx.title': 'Minhas despesas fixas',
@@ -186,6 +189,9 @@ const resources = {
       'session.logout-error': 'Local session ended. Could not end the Keycloak session.',
       'session.refresh-error': 'Could not refresh the session. Check your connection.',
       'route.missing': 'Page not found',
+      'accessDenied.title': 'Access denied',
+      'accessDenied.message': 'You do not have permission to access this content.',
+      'accessDenied.home': 'Back to Home',
 
       'fx.title': 'My fixed expenses',
       'fx.badge': 'personal',

@@ -142,3 +142,10 @@ npm --prefix web/spa run test:e2e:auth
 Cadastro automático e sincronização de `user_account` acontecem nas chamadas
 autenticadas à API, usando apenas o access token validado. A Home
 permanece acessível e não exige guild ou sucesso nas consultas da API.
+
+403 em consultas necessárias de despesas, transações e rotas dependentes de guild
+mostra acesso negado no conteúdo da rota, com menu, Sair e link Home. O erro tem
+prioridade sobre cache anterior; guilds recusadas não ficam no seletor nem iniciam
+consultas dependentes. Falha de guilds não bloqueia Home nem despesas pessoais
+carregadas com sucesso; vazio e demais erros mantêm os fluxos anteriores.
+403 não inicia login, logout, retry automático ou redirect global.

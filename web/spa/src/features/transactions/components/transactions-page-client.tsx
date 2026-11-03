@@ -1,4 +1,6 @@
 'use client'
+import { AccessDeniedPage } from '@/src/shared/components/access-denied-page'
+import { APIError } from '@/src/shared/lib/api-client'
 import { useSearchParams } from 'react-router-dom'
 import { useActiveGuild } from '../../guilds/use-active-guild'
 import { useTranslation } from 'react-i18next'
@@ -47,6 +49,8 @@ export function TransactionsPageClient() {
   const visibilityMutation = useToggleVisibility()
 
   const transactions = data?.items ?? []
+
+  if (error instanceof APIError && error.status === 403) return <AccessDeniedPage />
 
   return (
     <main className="flex-1 px-8 py-8">
