@@ -149,3 +149,10 @@ prioridade sobre cache anterior; guilds recusadas não ficam no seletor nem inic
 consultas dependentes. Falha de guilds não bloqueia Home nem despesas pessoais
 carregadas com sucesso; vazio e demais erros mantêm os fluxos anteriores.
 403 não inicia login, logout, retry automático ou redirect global.
+
+403 de uma ação (criar/editar/desativar despesa, cancelar/alterar visibilidade,
+convidar/remover membro, upload/confirmar importação) mostra mensagem de permissão
+no feedback local existente, sem navegar ou encerrar sessão. Formulário, arquivo
+e revisão ficam preservados; não há sucesso, replay ou limpeza de rascunho.
+Confirmação explicitamente negada não invalida transações; cancelamento sem
+resposta mantém a invalidação do contexto original para consistência.

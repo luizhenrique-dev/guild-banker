@@ -49,12 +49,12 @@ D6 confirmado: página para carregamento, erro local para ação, Home disponív
 
 <!-- Preenchido pelo dev-mage: tabela rota/consulta/cache → resultado, navegação, acessibilidade, gates e commit local. -->
 
-| Critério | Evidência planejada | Resultado |
+| Critério | Evidência (execuções abaixo) | Resultado |
 |---|---|---|
-| T4-AC1 | MSW 403 por rota e refetch com cache financeiro anterior | pendente |
-| T4-AC2 | Shell/Home/Sair e contagem GET sem retry; sessão existente | pendente |
-| T4-AC3 | Cache guilds negado não entrega seleção/lista nem inicia dados dependentes | pendente |
-| T4-AC4 | PT/EN, heading/link acessíveis e E2E 375/1280 | pendente |
+| T4-AC1 | MSW 403 por rota e refetch com cache financeiro anterior | aprovado — evidências observadas abaixo |
+| T4-AC2 | Shell/Home/Sair e contagem GET sem retry; sessão existente | aprovado — evidências observadas abaixo |
+| T4-AC3 | Cache guilds negado não entrega seleção/lista nem inicia dados dependentes | aprovado — evidências observadas abaixo |
+| T4-AC4 | PT/EN, heading/link acessíveis e E2E 375/1280 | aprovado — evidências observadas abaixo |
 
 ### Evidências observadas — 2026-11-02
 
@@ -67,3 +67,5 @@ D6 confirmado: página para carregamento, erro local para ação, Home disponív
 - E2E demo completo: **12 passaram**. page.route não interceptava resposta do Service Worker; fixture corrigida para interceptação fetch somente no teste, sem alteração produção. Falha de foco foi investigada em trace: Escape chegava ~5ms após foco durante entrada do modal. Cópia 4064bce em /tmp passou (fontes indisponíveis nessa cópia, limitação registrada); teste agora aguarda animação DOM terminar, mantendo Escape e todas as asserções. Casos focados **2 passaram** e suíte completa passou.
 - Smoke compilado `test:e2e:prod`: **8 passaram**.
 - Revisão independente query_patterns: sem achado funcional; executou 26 testes focados aprovados. Todos os quatro critérios aprovados, implementação validada. Commit preparado; T3 4064bce.
+
+Estado final de commit: confirmado `b409c3e`. Registros anteriores de bloqueio/preparação são históricos e estão resolvidos pelas evidências de fechamento.

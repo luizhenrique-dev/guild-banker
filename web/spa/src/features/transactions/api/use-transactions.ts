@@ -1,3 +1,4 @@
+import { APIError } from '@/src/shared/lib/api-client'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { transactionsApi, type ListParams } from './transactions.api'
 import { useSession } from '@/src/app/session-provider'
@@ -29,7 +30,7 @@ export function useCancelTransaction() {
       void qc.invalidateQueries({ queryKey: transactionKeys.lists(session.user?.id, guildId) })
       toast.success(i18n.t('tx.toast.cancelled'))
     },
-    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
+    onError: (error) => { if (session.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
   })
 }
 export function useToggleVisibility() {
@@ -42,6 +43,6 @@ export function useToggleVisibility() {
       void qc.invalidateQueries({ queryKey: transactionKeys.lists(session.user?.id, guildId) })
       toast.success(i18n.t('tx.toast.visibilityChanged'))
     },
-    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
+    onError: (error) => { if (session.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
   })
 }

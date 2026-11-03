@@ -1,3 +1,4 @@
+import { APIError } from '@/src/shared/lib/api-client'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { guildsApi } from './guilds.api'
 import { useSession } from '@/src/app/session-provider'
@@ -23,7 +24,7 @@ export function useInviteMember() {
   return useMutation({
     mutationFn: ({ guildId, email }: { guildId: number; email: string }) => session.request((options) => guildsApi.invite(guildId, email, options)),
     onSuccess: () => { if (session.active()) toast.success(i18n.t('guild.toast.invited')) },
-    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
+    onError: (error) => { if (session.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
   })
 }
 export function useRemoveMember() {
@@ -36,6 +37,6 @@ export function useRemoveMember() {
       qc.setQueryData<DemoMember[]>(memberKey(session.user?.id, guildId), (members) => members?.filter((member) => member.id !== userId))
       toast.success(i18n.t('guild.toast.removed'))
     },
-    onError: () => { if (session.active()) toast.error(i18n.t('fx.toast.error')) },
+    onError: (error) => { if (session.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
   })
 }

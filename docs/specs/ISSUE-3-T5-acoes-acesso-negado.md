@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-3](./ISSUE-3-cadastro-sincronizacao-usuarios.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** T4
 
 ## O que fazer
@@ -44,3 +44,25 @@ D6: erro local em ações. T4 já define página apenas para consultas de carreg
 ## Evidências
 
 <!-- Preenchido pelo dev-mage: matriz ação → mensagem → estado preservado, testes/gates, verificação integrada e commit local. -->
+
+| Critério | Evidência (execuções abaixo) | Resultado |
+|---|---|---|
+| T5-AC1 | Despesas criar/editar/desativar, cancelar/visibilidade, convite/remoção, upload/confirmação: mensagem local | aprovado — evidências observadas abaixo |
+| T5-AC2 | Draft/arquivo/revisão, cache, sessão e rota preservados sem sucesso/replay | aprovado — evidências observadas abaixo |
+| T5-AC3 | Regressões 401/cancelamento/troca de guild; README, E2E e gates integrados | aprovado — evidências observadas abaixo |
+
+### Evidências observadas — fechamento 2026-11-03
+
+- RED por contrato: todas as famílias apresentavam mensagem de erro genérica no lugar de permissão; o teste do hook de confirmação constatou cache financeiro invalidado no 403 explícito. Falhas de preparação dos novos testes foram corrigidas antes de observar RED comportamental: arquivo de teste composto incorretamente por script (restaurado de HEAD mantendo os testes anteriores), opções exact próprias de Playwright removidas de Testing Library (name string já é exato), timeout de leitura de transações passou a respeitar delays sequenciais das fixtures de guild+transações. Nenhuma asserção de comportamento foi relaxada.
+- T5-AC1: casos create/edit/deactivate de despesas, cancel/visibility de transações, invite/remove de guilds e upload/confirm de importações passaram com mensagem genérica local. Modal também comprova tradução PT→EN; erro bruto não exibido.
+- T5-AC2: formularios, valor alterado, diálogo de confirmação, arquivo e revisão permanecem; testes observam uma chamada por ação, ausência de sucesso e página/estado de sessão preservados. Hook confirma cache/revisão intactos após 403 explícito, sem invalidation/replay.
+- T5-AC3: testes existentes de 401/403/isolamento/logout e cancelamento/troca de guild passaram. onSettled continua invalidando a guild original quando não há resposta definitiva; não foi apagado. Revisão independente pediu conservar cenário anterior upload500/confirm400; mantido junto ao novo upload403/confirm403, ambos passaram.
+- GREEN focado: **25 testes/5 arquivos** passaram. Revisão independente `query_patterns` executou **40 testes/6 arquivos** incluindo sessão e não encontrou defeito funcional; recomendação de cobertura atendida.
+- Gates web finais: api:types:check passou; lint sem warnings; build OIDC/TypeScript passou; **125 testes/16 arquivos** passaram. Primeiro build identificou opções exact inválidas nos testes, corrigidas, depois build/lint/suíte repetidos com sucesso. Avisos preexistentes de shim asdf e tamanho de bundle não impediram execução.
+- E2E demo completo: **14 passaram**, incluindo rascunho de despesa e revisão de importação preservados em 403; smoke compilado **8 passaram**; OIDC real final **6 passaram**, sem artefatos de autenticação. API temporária apontou exclusivamente para PostgreSQL descartável, sem seed prévio de usuário local.
+- Gates integrados finais API: `make api/vet api/lint api/build api/test api/test/integration` passou, lint **0 issues**, duas suítes race aprovadas. `go test ./... -race -count=1 -tags=integration,postgres` com URL do banco isolado passou em todos os pacotes, incluindo constraints/concorrência, composição HTTP e lifecycle de migrations.
+- Revisão própria final de escopo, erros, dependências e preservação do preexistente: nenhuma falha detectada nas verificações executadas. Critérios AC1–AC3 aprovados; sem bloqueios ou critérios manuais pendentes. Commit local deste fechamento preparado; push/PR a cargo do usuário.
+
+Ambiente final: API temporária encerrada graciosamente e container PostgreSQL exclusivo parado; ambiente preexistente preservado.
+
+Revisão final organizou imports dos testes tocados; lint e 21 testes/4 arquivos afetados passaram novamente. Sem mudança de comportamento após os gates integrados.

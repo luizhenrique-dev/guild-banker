@@ -9,6 +9,8 @@ import { useImports } from './use-imports'
 import { useToggleVisibility } from '../../transactions/api/use-transactions'
 import { transactionsApi } from '../../transactions/api/transactions.api'
 import type { UploadImportResponse } from '../types'
+import { APIError } from '@/src/shared/lib/api-client'
+import i18n from '@/src/shared/lib/i18n'
 
 afterEach(() => { vi.restoreAllMocks() })
 function setup() {
@@ -78,4 +80,20 @@ it('confirmation finishing after a guild switch invalidates the original list wi
   expect(qc.getQueryState(['transactions', 1, 2, {}])?.isInvalidated).toBe(false)
   expect(qc.getQueryData(['imports', 1, 1])).toBeUndefined()
   expect(success).not.toHaveBeenCalled()
+})
+
+it('explicit forbidden confirmation keeps revision and financial cache unchanged', async () => {
+  const { qc, wrapper } = setup()
+  const denied = new APIError('private server cause', 403, 'http')
+  const confirm = vi.spyOn(importsApi, 'confirm').mockRejectedValue(denied)
+  const success = vi.spyOn(toast, 'success'), error = vi.spyOn(toast, 'error')
+  const { result } = renderHook(() => useImports(1), { wrapper })
+  act(() => { qc.setQueryData(['imports', 1, 1], batch) })
+  qc.setQueryData(['transactions', 1, 1, {}], ['unchanged'])
+  await act(async () => { await expect(result.current.confirm.mutateAsync(1)).rejects.toBe(denied) })
+  expect(qc.getQueryData(['imports', 1, 1])).toEqual(batch)
+  expect(qc.getQueryState(['transactions', 1, 1, {}])?.isInvalidated).toBe(false)
+  expect(confirm).toHaveBeenCalledTimes(1)
+  expect(success).not.toHaveBeenCalled()
+  expect(error).toHaveBeenCalledWith(i18n.t('permission.denied'))
 })

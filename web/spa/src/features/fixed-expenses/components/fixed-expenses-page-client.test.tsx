@@ -7,7 +7,9 @@ import { server } from '@/src/mocks/server'
 import { App } from '@/src/app/app'
 import i18n from '@/src/shared/lib/i18n'
 import { fixedExpensesApi } from '../api/fixed-expenses.api'
+import { toast } from 'sonner'
 import type { FixedExpenseResponse } from '../types'
+import * as queryClients from '@/src/shared/lib/query-client'
 
 beforeEach(async () => { await i18n.changeLanguage('pt-BR') })
 afterEach(() => vi.restoreAllMocks())
@@ -102,4 +104,39 @@ it('replaces cached personal expenses with access denied after forbidden refetch
   expect(calls).toBe(1)
 })
 
-import * as queryClients from '@/src/shared/lib/query-client'
+
+it.each(['create', 'edit', 'deactivate'])('preserves local state on forbidden expense %s', async (action) => {
+  const success = vi.spyOn(toast, 'success')
+  let calls = 0
+  const denied = () => { calls++; return HttpResponse.json({ error: 'private cause' }, { status: 403 }) }
+  server.use(http.post('*/api/v1/fixed-expenses', denied), http.patch('*/api/v1/fixed-expenses/:id', denied), http.patch('*/api/v1/fixed-expenses/:id/deactivate', denied))
+  page()
+  const user = userEvent.setup()
+  if (action === 'create') {
+    const { dialog } = await fill()
+    await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+    expect(await dialog.findByRole('alert')).toHaveTextContent('Você não tem permissão para realizar esta ação.')
+    expect(dialog.getByRole('textbox', { name: 'Nome' })).toHaveValue('Internet')
+    await act(async () => { await i18n.changeLanguage('en') })
+    expect(dialog.getByRole('alert')).toHaveTextContent('You do not have permission to perform this action.')
+  } else {
+    await screen.findByRole('row', { name: /Aluguel/ })
+    await user.click(screen.getByRole('button', { name: `${action === 'edit' ? 'Editar' : 'Desativar'} Aluguel` }))
+    const dialog = within(screen.getByRole(action === 'edit' ? 'dialog' : 'alertdialog'))
+    if (action === 'edit') {
+      const amount = dialog.getByRole('textbox', { name: 'Valor (R$)' })
+      await user.clear(amount); await user.type(amount, '321,00')
+      await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+      expect(await dialog.findByRole('alert')).toHaveTextContent('Você não tem permissão para realizar esta ação.')
+      expect(amount).toHaveValue('321,00')
+    } else {
+      await user.click(dialog.getByRole('button', { name: 'Desativar' }))
+      expect(await dialog.findByRole('alert')).toHaveTextContent('Você não tem permissão para realizar esta ação.')
+      expect(screen.getByRole('alertdialog')).toBeVisible()
+    }
+  }
+  expect(calls).toBe(1)
+  expect(screen.queryByRole('heading', { name: 'Acesso negado' })).toBeNull()
+  expect(screen.queryByText('private cause')).toBeNull()
+  expect(success).not.toHaveBeenCalled()
+})

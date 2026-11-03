@@ -1,3 +1,4 @@
+import { APIError } from '@/src/shared/lib/api-client'
 import { useEffect, useRef } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -58,6 +59,8 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
     'aria-describedby': errors[name] ? `expense-${name}-error` : undefined,
   })
   const error = (name: keyof FormValues) => errors[name] && <p id={`expense-${name}-error`} className="mt-1 text-[12px] text-destructive">{t(errors[name]?.message ?? '')}</p>
+  const mutationError = isEditing ? updateMutation.error : createMutation.error
+  const permissionDenied = mutationError instanceof APIError && mutationError.status === 403
   const inputClass = 'h-auto rounded-xl px-4 py-2.5 text-[14px]'
   return <Modal open={open} onOpenChange={(value) => { if (!value && !isSubmitting) onClose() }} title={t(isEditing ? 'fx.modal.editTitle' : 'fx.modal.createTitle')}>
     <form onSubmit={onSubmit} noValidate className="space-y-4">
@@ -85,7 +88,7 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
           {error('category')}
         </div>
       </fieldset>
-      {(isEditing ? updateMutation.error : createMutation.error) && <p role="alert" className="text-sm text-destructive">{t('fx.toast.error')}</p>}
+      {mutationError && <p role="alert" className="text-sm text-destructive">{t(permissionDenied ? 'permission.denied' : 'fx.toast.error')}</p>}
       <div className="flex justify-end gap-3 pt-2">
         <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5">{t('fx.modal.cancel')}</Button>
         <Button type="submit" disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5">{t(isSubmitting ? isEditing ? 'fx.modal.saving' : 'fx.modal.creating' : 'fx.modal.save')}</Button>

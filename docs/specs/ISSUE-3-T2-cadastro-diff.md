@@ -52,13 +52,13 @@ D2/D3/D4: diff de nome/e-mail, vínculo apenas por sub e nenhum histórico. Vali
 
 Baseline: `go test -v ./internal/user` em api/ passou. PostgreSQL 17.9 isolado em container próprio, loopback 55433; migration será aplicada exclusivamente em schemas exclusivos. Implementação aguarda conclusão dos gates T1.
 
-| Critério | Evidência planejada | Resultado |
+| Critério | Evidência (execuções abaixo) | Resultado |
 |---|---|---|
-| T2-AC1 | Serviço ausente/vencedor + PostgreSQL concorrência de criação e ID único | pendente |
-| T2-AC2 | Mock sem update em igualdade e diffs isolados/conjuntos; PostgreSQL xmin/auditoria | pendente |
-| T2-AC3 | UNIQUE real em criação/update; classificação pq.Error; perfis intactos | pendente |
-| T2-AC4 | Desativado; candidatos concorrentes do mesmo snapshot e corrida de desativação | pendente |
-| T2-AC5 | Round-trip autores distintos; contexto/cancelamento nos IOs | pendente |
+| T2-AC1 | Serviço ausente/vencedor + PostgreSQL concorrência de criação e ID único | aprovado — evidências observadas abaixo |
+| T2-AC2 | Mock sem update em igualdade e diffs isolados/conjuntos; PostgreSQL xmin/auditoria | aprovado — evidências observadas abaixo |
+| T2-AC3 | UNIQUE real em criação/update; classificação pq.Error; perfis intactos | aprovado — evidências observadas abaixo |
+| T2-AC4 | Desativado; candidatos concorrentes do mesmo snapshot e corrida de desativação | aprovado — evidências observadas abaixo |
+| T2-AC5 | Round-trip autores distintos; contexto/cancelamento nos IOs | aprovado — evidências observadas abaixo |
 
 ### Evidências observadas
 
@@ -73,3 +73,5 @@ Baseline: `go test -v ./internal/user` em api/ passou. PostgreSQL 17.9 isolado e
 - Gate em api/: `USER_TEST_DATABASE_URL=<container isolado> go test ./... -race -count=1 -tags=integration,postgres` → todos os pacotes passaram, inclusive os três testes reais. Cada suíte criou/removeu somente seu schema, migration original e search_path no DSN do pool.
 - Revisão independente `query_patterns`: SQL/serviço sem defeito funcional; apontou timestamps potencialmente iguais na prova concorrente. Ajustado para 60 segundos de diferença e reexecutado gate completo com sucesso.
 - Todos os cinco critérios aprovados. Implementação validada: sim. Commit local preparado; T1: `3a9b07e`.
+
+Estado final de commit: confirmado `0e19eb4`. Registros anteriores de bloqueio/preparação são históricos e estão resolvidos pelas evidências de fechamento.

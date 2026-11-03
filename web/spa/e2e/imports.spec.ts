@@ -32,3 +32,24 @@ test('changing guild discards review and selected file', async ({ page }) => {
   await page.getByRole('button', { name: 'Família Silva', exact: true }).click()
   await expect(page.getByRole('heading', { name: 'Revisar itens importados' })).toHaveCount(0)
 })
+
+test('forbidden confirmation keeps the import review', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.fetch.bind(window)
+    window.fetch = (input, options) => {
+      const path = new URL(input instanceof Request ? input.url : String(input), location.origin).pathname
+      if (/\/imports\/\d+\/confirm$/.test(path)) return Promise.resolve(new Response('{"error":"forbidden"}', { status: 403, headers: { 'Content-Type': 'application/json' } }))
+      return original(input, options)
+    }
+  })
+  await page.goto('/import?guild=1')
+  await page.locator('input[type=file]').setInputFiles({ name: 'draft.csv', mimeType: 'text/csv', buffer: Buffer.from('csv') })
+  await page.getByRole('button', { name: 'Enviar arquivo' }).click()
+  await expect(page.getByRole('heading', { name: 'Revisar itens importados' })).toBeVisible()
+  await page.getByRole('button', { name: 'Confirmar importação' }).click()
+  await expect(page.getByText('Você não tem permissão para realizar esta ação.')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Revisar itens importados' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Confirmar importação' })).toBeEnabled()
+  await expect(page).toHaveURL(/\/import\?guild=1$/)
+  await expect(page.getByRole('button', { name: 'Sair' })).toBeEnabled()
+})

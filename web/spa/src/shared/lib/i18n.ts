@@ -29,6 +29,7 @@ const resources = {
       'accessDenied.title': 'Acesso negado',
       'accessDenied.message': 'Você não tem permissão para acessar este conteúdo.',
       'accessDenied.home': 'Voltar ao início',
+      'permission.denied': 'Você não tem permissão para realizar esta ação.',
 
       // Fixed Expenses
       'fx.title': 'Minhas despesas fixas',
@@ -192,6 +193,7 @@ const resources = {
       'accessDenied.title': 'Access denied',
       'accessDenied.message': 'You do not have permission to access this content.',
       'accessDenied.home': 'Back to Home',
+      'permission.denied': 'You do not have permission to perform this action.',
 
       'fx.title': 'My fixed expenses',
       'fx.badge': 'personal',

@@ -61,3 +61,28 @@ for (const width of [375, 1280]) {
     await page.screenshot({ path: `test-results/fixed-expenses-${width}.png`, fullPage: true })
   })
 }
+
+test('forbidden expense action preserves the draft and session', async ({ page }) => {
+  await page.addInitScript(() => {
+    const original = window.fetch.bind(window)
+    window.fetch = (input, options) => {
+      const path = new URL(input instanceof Request ? input.url : String(input), location.origin).pathname
+      const method = options?.method ?? (input instanceof Request ? input.method : 'GET')
+      if (path === '/api/v1/fixed-expenses' && method === 'POST') return Promise.resolve(new Response('{"error":"forbidden"}', { status: 403, headers: { 'Content-Type': 'application/json' } }))
+      return original(input, options)
+    }
+  })
+  await page.goto('/fixed-expenses')
+  await page.getByRole('button', { name: 'Nova despesa fixa' }).click()
+  const dialog = page.getByRole('dialog')
+  await dialog.getByRole('textbox', { name: 'Nome', exact: true }).fill('Draft preserved')
+  await dialog.getByRole('textbox', { name: 'Valor (R$)' }).fill('123,45')
+  await dialog.getByRole('button', { name: 'Salvar', exact: true }).click()
+  await expect(dialog.getByRole('alert')).toHaveText('Você não tem permissão para realizar esta ação.')
+  await expect(dialog.getByRole('textbox', { name: 'Nome', exact: true })).toHaveValue('Draft preserved')
+  await expect(dialog.getByRole('textbox', { name: 'Valor (R$)' })).toHaveValue('123,45')
+  await expect(page).toHaveURL(/\/fixed-expenses/)
+  await expect(page.getByRole('heading', { name: 'Acesso negado' })).toHaveCount(0)
+  await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Sair' })).toBeEnabled()
+})

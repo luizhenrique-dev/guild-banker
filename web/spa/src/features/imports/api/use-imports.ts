@@ -1,3 +1,4 @@
+import { APIError } from '@/src/shared/lib/api-client'
 import { useEffect, useMemo } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useSession } from '@/src/app/session-provider'
@@ -28,7 +29,7 @@ export function useImports(guildID: number) {
       qc.setQueryData(scope.key, result)
       toast.success(i18n.t('import.toast.uploaded'))
     },
-    onError: (_error, _input, scope) => { if (scope?.active()) toast.error(i18n.t('fx.toast.error')) },
+    onError: (error, _input, scope) => { if (scope?.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
   })
   const confirm = useMutation({
     onMutate: capture,
@@ -38,8 +39,9 @@ export function useImports(guildID: number) {
       qc.setQueryData(scope.key, null)
       toast.success(i18n.t('import.toast.confirmed', { created: result.created }))
     },
-    onError: (_error, _input, scope) => { if (scope?.active()) toast.error(i18n.t('fx.toast.error')) },
-    onSettled: (_result, _error, _id, scope) => {
+    onError: (error, _input, scope) => { if (scope?.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
+    onSettled: (_result, error, _id, scope) => {
+      if (error instanceof APIError && error.status === 403) return
       // Cancellation cannot undo a confirmation already committed by the server.
       if (scope?.sessionActive()) void qc.invalidateQueries({ queryKey: transactionKeys.lists(scope.userID, scope.guildID) })
     },

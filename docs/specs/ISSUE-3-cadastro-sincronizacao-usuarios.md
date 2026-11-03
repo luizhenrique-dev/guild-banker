@@ -6,7 +6,7 @@ Cadastrar automaticamente em `user_account` quem ainda não possui vínculo loca
 
 ## Contexto e decisões
 
-Origem: descrição fornecida pelo usuário nesta conversa, sem versão, links ou comentários externos informados. Refinamento em 2026-11-01. **Estado: implementação autorizada pelo usuário em 2026-11-02.**
+Origem: descrição fornecida pelo usuário nesta conversa, sem versão, links ou comentários externos informados. Refinamento em 2026-11-01. **Estado: concluída em 2026-11-03; implementação autorizada pelo usuário em 2026-11-02.**
 
 ### Fatos verificados
 
@@ -223,7 +223,7 @@ Paths `[alterar]` foram verificados; `[criar]` são propostos em diretórios exi
 | T2 | Resolver cadastro e diff com persistência segura | concluida | T1 | [T2](./ISSUE-3-T2-cadastro-diff.md) |
 | T3 | Integrar cadastro ao fluxo de autenticação | concluida | T2 | [T3](./ISSUE-3-T3-autenticacao-cadastro.md) |
 | T4 | Exibir página de acesso negado em consultas | concluida | T3 | [T4](./ISSUE-3-T4-pagina-acesso-negado.md) |
-| T5 | Tratar permissão negada nas ações existentes | ⬜ pendente | T4 | [T5](./ISSUE-3-T5-acoes-acesso-negado.md) |
+| T5 | Tratar permissão negada nas ações existentes | concluida | T4 | [T5](./ISSUE-3-T5-acoes-acesso-negado.md) |
 
 Cada task inclui seus testes e termina compilável, com os checks aplicáveis passando. T1/T2 introduzem capacidades sem conectá-las à autenticação; o comportamento passa a mudar em T3. Não há task genérica de testes finais.
 
@@ -264,20 +264,42 @@ Testes planejados listados nas tasks não são resultados observados. Gate de mi
 - **Qualidade:** cinco tasks, dependências apenas anteriores, testes em cada uma, gate PostgreSQL explícito e separado do offline; comandos futuros não apresentados como resultados.
 - **Convenções:** seguir `AGENTS.md` e `docs/go/{architecture,coding,naming}.md`; sem DTO/SQL em domínio, sem globais mutáveis, context nas fronteiras, testify nos testes Go, i18n na UI e logs sem PII. `.standards/go` referida no AGENTS não existe neste checkout; documentos confirmados estão em `docs/go`.
 
-## Decisões
+## Decisões e fechamento
 
-- **Decisão aprovada, 2026-11-02:** usuário solicitou implementar ISSUE-3 com dev-mage e qualidade de produção. Isso autoriza execução desta spec e seus commits locais; sem push/PR.
-- **Fato verificado:** árvore inicial limpa; Go 1.27.3 e Node 24.6.0 disponíveis. Baseline auth/Keycloak passou.
-- **Checkpoint:** T1 implementada com AC1/AC2 provados e revisão independente sem achados; AC3 bloqueado por lint incompatível com export data de Go 1.27.3. Vet/build/unitários race/integração race passaram. Ver detalhes na T1. T2–T5 não iniciadas, respeitando dependências.
-- **Ambiente:** criado container isolado `guild-banker-issue3-test` (PostgreSQL 17.9, loopback 55433) para futura validação, sem alterar banco/realm do projeto. Nenhum teste PostgreSQL executado ainda.
-- **Decisão aprovada, 2026-11-02:** usuário autorizou “Sim, ajustar o tooling”. Atualizar golangci-lint para versão compatível com Go 1.27.3 e dependências transitivas necessárias; manter gates obrigatórios. Changelog oficial: https://golangci-lint.run/docs/product/changelog/ (suporte Go 1.27 introduzido em v2.13; v2.15.0 publicada em 2026-10-16). Validação da atualização em andamento.
+- **Decisão aprovada, 2026-11-02:** usuário solicitou implementar a spec completa com dev-mage e qualidade de produção. Isso autoriza execução e commits locais; sem push/PR.
+- **Decisão aprovada:** diante da incompatibilidade de export data Go1.27.3 com golangci-lint2.11.4, usuário respondeu “Sim, ajustar o tooling”. Atualizados o linter para v2.15.0 e dependências transitivas exigidas, com go mod tidy. Fonte oficial: [changelog](https://golangci-lint.run/docs/product/changelog/). Gate resultante: 0 issues; sem supressões nem redução de gates.
+- **Fato verificado / correção necessária à T3:** OIDC real inicialmente recebeu 500; teste isolado reproduziu pool fechado após Migrate. postgres.WithInstance assume ownership do pool e m.Close o fecha. Ajustado somente para conexão dedicada postgres.WithConnection; erros de cleanup propagados. Teste cobre primeira migração, caminho sem mudanças e pool utilizável/sem conexões em uso. Revisão independente e gate PostgreSQL passaram. Nenhuma mudança de schema ou wiring.
+- **Decisão local de testes T4:** Service Worker não permite interceptar as respostas demo por page.route; interceptação fetch existe apenas nas fixtures Playwright. Sensor de teclado aguarda a animação DOM de entrada antes de Escape, mantendo todas as asserções de foco/fechamento. Sem mudança de produção nesse fluxo.
+- **Preservação:** árvore inicial limpa; specs históricas ISSUE-1/2, schema, realm, cadastro compartilhado e regras financeiras não alterados. Não foram introduzidas dependências de funcionalidade. Limites P1/P6 de snapshots/revogação em voo permanecem.
 
-Checkpoint atualizado: bloqueio T1 resolvido por atualização autorizada do linter; todos os gates API passaram, lint 0 issues. T1 concluída.
+### Evidências globais finais
 
-Checkpoint T2: concluída com testes PostgreSQL reais de constraints/concorrência/desativação, revisão independente e todos os gates API aprovados. T1 commit `3a9b07e`.
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| CA1 | Serviço e composição HTTP/PostgreSQL criam usuário habilitado e seguem com mesmo ID; OIDC real sem seed prévio | aprovado |
+| CA2 | Tabela de diff, igualdade sem UpdateProfile, xmin/auditoria preservados em igualdade e updates isolados/conjuntos | aprovado |
+| CA3 | Claims tipados, tabela de perfil insuficiente sem chamadas a user e fixture incompleta 403 | aprovado |
+| CA4 | UNIQUE real em criação/update preserva cadastros; erro de domínio e HTTP403 | aprovado |
+| CA5 | Desativado e corrida com bloqueio real de linha não recebem perfil/reativação; HTTP403 | aprovado |
+| CA6 | Oito criações concorrentes convergem para um ID/linha; candidatos de update com auditorias distintas convergem sem reescrita redundante | aprovado |
+| CA7 | Round-trip updated_by distinto de disabled_by; criação e IDs estáveis; ator persistido na mesma chamada | aprovado |
+| CA8 | Criptografia/regressões, 401 sem user, cancelamento/500 sanitizados, testes sessão401/403 e login real | aprovado |
+| CA9 | Quatro rotas, consultas403 iniciais/refetch com cache, sem dados recusados; navegação Home/Sair | aprovado |
+| CA10 | Guilds recusadas removem lista/seleção antiga e consultas dependentes; Home/despesas independentes e vazio/outros erros preservados | aprovado |
+| CA11 | Todas as famílias de mutation com mensagem local, drafts preservados, sem sucesso/replay; E2E despesa/importação | aprovado |
 
-Justificativa T3 — lifecycle de migrations: o gate OIDC real recebeu 500; `TestMigratePreservesApplicationPool` reproduziu `sql: database is closed` após Migrate. O driver `postgres.WithInstance` assume ownership do pool e `m.Close` o fecha. Ajustar apenas para conexão dedicada com `postgres.WithConnection` e testar pool aberto/idempotência. Necessário ao fluxo real aprovado; sem mudança de schema ou wiring.
+### Gates observados no fechamento
 
-Checkpoint T3 concluída: API/PostgreSQL e web gates aprovados; OIDC real 6/6. Corrigido pool de migrations com regressão RED/GREEN e revisão independente. T2 commit 0e19eb4.
+- API: make api/vet, api/lint, api/build, api/test e api/test/integration passaram; lint **0 issues**, suítes com race.
+- PostgreSQL17.9: go test ./... -race -count=1 -tags=integration,postgres passou em todos os pacotes. URL fornecida por ambiente para container exclusivo, schemas únicos com search_path no DSN do pool, migration original e limpeza restrita aos schemas de teste.
+- Web: api:types:check, lint e build OIDC/TypeScript passaram; **125 testes em 16 arquivos** passaram.
+- Playwright: demo **14 passaram**; compilado **8 passaram**; OIDC real **6 passaram**. Sem seed de usuário local; login/refresh/logout com Keycloak configurado, API temporária no banco descartável. Artefatos de autenticação desabilitados.
+- Não aplicáveis: migração de schema, novas dependências funcionais, aprovação manual, deploy, push e PR.
+- Avisos preexistentes: shim npm relata asdf ausente mas executa Node24.6.0; Vite alerta bundle >500kB. Nenhuma falha detectada nas verificações executadas.
+- Revisões independentes: agente query_patterns revisou T1–T5, incluindo SQL, integridade, auth, pool e frontend; ajustes de prova concorrente e preservação do caso confirm400 aplicados e revalidados.
 
-Checkpoint T4 concluída: 116 testes web, 12 E2E demo e 8 smoke compilado passaram; lint/build/tipos aprovados, revisão independente sem achados. T3 commit 4064bce.
+### Estado dos commits
+
+T1 `3a9b07e`; T2 `0e19eb4`; T3 `4064bce`; T4 `b409c3e`; T5 e consolidação das evidências integram o commit deste fechamento. Todas as tasks e critérios aprovados; sem bloqueios. Push/PR permanecem a cargo do usuário.
+
+Ambiente final: API temporária encerrou graciosamente; container exclusivo guild-banker-issue3-test foi parado. Containers PostgreSQL/Keycloak preexistentes não foram interrompidos nem reconfigurados.

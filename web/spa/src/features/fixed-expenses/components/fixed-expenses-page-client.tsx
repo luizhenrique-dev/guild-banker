@@ -114,7 +114,7 @@ export function FixedExpensesPageClient() {
           }}>
             <AlertDialogTitle>{t('fx.deactivate.title')}</AlertDialogTitle>
             <AlertDialogDescription>{t('fx.deactivate.message', { name: deactivating?.name })}</AlertDialogDescription>
-            {deactivateMutation.error && <p role="alert" className="text-sm text-destructive">{t('fx.toast.error')}</p>}
+            {deactivateMutation.error && <p role="alert" className="text-sm text-destructive">{t(deactivateMutation.error instanceof APIError && deactivateMutation.error.status === 403 ? 'permission.denied' : 'fx.toast.error')}</p>}
             <AlertDialogFooter>
               <AlertDialogCancel disabled={deactivateMutation.isPending}>{t('fx.modal.cancel')}</AlertDialogCancel>
               <AlertDialogAction disabled={deactivateMutation.isPending} onClick={(event) => {

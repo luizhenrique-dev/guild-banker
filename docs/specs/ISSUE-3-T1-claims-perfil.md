@@ -40,11 +40,11 @@ D1/D3/D5: fonte é access token validado; obrigatoriedade é da aplicação, nã
 
 <!-- Preenchido pelo dev-mage: RED/GREEN, comandos/resultados e commit local. Nenhuma execução realizada no planejamento. -->
 
-| Critério | Evidência planejada | Resultado |
+| Critério | Evidência (execuções abaixo) | Resultado |
 |---|---|---|
 | T1-AC1 | `go test -v ./internal/infra/keycloak -run 'TestVerifier(ProfileClaims\|Verify)'` em api/: ambas as funções passaram | aprovado |
 | T1-AC2 | `TestVerifierProfileClaims`: 10 casos executados e aprovados, incluindo ausência, falso, tipos incompatíveis e null | aprovado |
-| T1-AC3 | vet, build, unitários race e integração race passaram; lint falha por incompatibilidade do importer com Go 1.27.3 | aprovado |
+| T1-AC3 | vet, lint 0 issues, build, unitários race e integração race passaram após ajuste autorizado do tooling | aprovado |
 
 Baseline: `go test -v ./internal/auth ./internal/infra/keycloak` em api/: ambas as suítes passaram; árvore inicial limpa.
 
@@ -70,3 +70,5 @@ Baseline: `go test -v ./internal/auth ./internal/infra/keycloak` em api/: ambas 
 Usuário autorizou ajuste de tooling. Atualizados golangci-lint v2.15.0 e dependências exigidas, `go mod tidy` sincronizou o grafo/sums. Fonte oficial: https://golangci-lint.run/docs/product/changelog/. A remoção de sums antigos é efeito do tidy; nenhuma dependência de funcionalidade foi introduzida.
 
 Execução após atualização: `make api/lint api/vet api/build api/test api/test/integration` fora do sandbox → lint **0 issues**, vet passou, build gerado, todos os pacotes das duas suítes com race passaram. T1-AC3 aprovado; bloqueio resolvido. Implementação validada: sim. Commit local desta task inclui o ajuste autorizado do tooling; hash será observado após commit.
+
+Estado final de commit: confirmado `3a9b07e`. Registros anteriores de bloqueio/preparação são históricos e estão resolvidos pelas evidências de fechamento.
