@@ -2,7 +2,6 @@ package fixedexpense
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/shopspring/decimal"
@@ -11,10 +10,11 @@ import (
 )
 
 type Storage interface {
-	Create(ctx context.Context, fixedExpense *FixedExpense, userID int64) error
-	GetByIDAndUser(ctx context.Context, id, userID int64) (*FixedExpense, error)
-	ListActiveByUser(ctx context.Context, userID int64) ([]*FixedExpense, error)
-	Update(ctx context.Context, fixedExpense *FixedExpense, userID int64) error
+	IsGuildMember(ctx context.Context, guildID, userID int64) (bool, error)
+	Create(ctx context.Context, fixedExpense *FixedExpense) error
+	GetByIDAndGuild(ctx context.Context, id, guildID int64) (*FixedExpense, error)
+	ListActiveByGuild(ctx context.Context, guildID int64) ([]*FixedExpense, error)
+	Update(ctx context.Context, fixedExpense *FixedExpense) error
 }
 
 type Service struct {
@@ -34,34 +34,35 @@ func NewService(storage Storage) *Service {
 
 func (s *Service) Create(
 	ctx context.Context,
+	guildID int64,
 	name string,
 	amount decimal.Decimal,
 	dueDay int,
 	category Category,
 	actor audit.Actor,
 ) (*FixedExpense, error) {
-	if err := actor.Validate(); err != nil {
+	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", err)
 	}
 
-	fixedExpense, err := New(name, amount, dueDay, category, actor.Email)
+	fixedExpense, err := New(guildID, name, amount, dueDay, category, actor.Email)
 	if err != nil {
-		return nil, fmt.Errorf("create fixed expense: %w", err)
+		return nil, fmt.Errorf("create fixed expense: %w", invalidInput(err))
 	}
 
-	if err := s.storage.Create(ctx, fixedExpense, actor.UserID); err != nil {
+	if err := s.storage.Create(ctx, fixedExpense); err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", err)
 	}
 
 	return fixedExpense, nil
 }
 
-func (s *Service) ListActiveByUser(ctx context.Context, userID int64) ([]*FixedExpense, error) {
-	if userID == 0 {
-		return nil, errors.New("list fixed expenses: userID is required")
+func (s *Service) ListActiveByGuild(ctx context.Context, guildID int64, actor audit.Actor) ([]*FixedExpense, error) {
+	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
+		return nil, fmt.Errorf("list fixed expenses: %w", err)
 	}
 
-	fixedExpenses, err := s.storage.ListActiveByUser(ctx, userID)
+	fixedExpenses, err := s.storage.ListActiveByGuild(ctx, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("list fixed expenses: %w", err)
 	}
@@ -69,15 +70,15 @@ func (s *Service) ListActiveByUser(ctx context.Context, userID int64) ([]*FixedE
 	return fixedExpenses, nil
 }
 
-func (s *Service) Update(ctx context.Context, id int64, input UpdateInput, actor audit.Actor) (*FixedExpense, error) {
-	if err := actor.Validate(); err != nil {
+func (s *Service) Update(ctx context.Context, guildID, id int64, input UpdateInput, actor audit.Actor) (*FixedExpense, error) {
+	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
 		return nil, fmt.Errorf("update fixed expense: %w", err)
 	}
-	if id == 0 {
-		return nil, errors.New("update fixed expense: id is required")
+	if id <= 0 {
+		return nil, fmt.Errorf("%w: id must be positive", ErrInvalidInput)
 	}
 
-	fixedExpense, err := s.storage.GetByIDAndUser(ctx, id, actor.UserID)
+	fixedExpense, err := s.storage.GetByIDAndGuild(ctx, id, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("update fixed expense: get by id: %w", err)
 	}
@@ -103,36 +104,55 @@ func (s *Service) Update(ctx context.Context, id int64, input UpdateInput, actor
 	}
 
 	if err := fixedExpense.Update(amount, dueDay, category, status, actor.Email); err != nil {
-		return nil, fmt.Errorf("update fixed expense: %w", err)
+		return nil, fmt.Errorf("update fixed expense: %w", invalidInput(err))
 	}
 
-	if err := s.storage.Update(ctx, fixedExpense, actor.UserID); err != nil {
+	if err := s.storage.Update(ctx, fixedExpense); err != nil {
 		return nil, fmt.Errorf("update fixed expense: persist update: %w", err)
 	}
 
 	return fixedExpense, nil
 }
 
-func (s *Service) Deactivate(ctx context.Context, id int64, status Status, actor audit.Actor) error {
-	if err := actor.Validate(); err != nil {
+func (s *Service) Deactivate(ctx context.Context, guildID, id int64, status Status, actor audit.Actor) error {
+	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
 		return fmt.Errorf("deactivate fixed expense: %w", err)
 	}
-	if id == 0 {
-		return errors.New("deactivate fixed expense: id is required")
+	if id <= 0 {
+		return fmt.Errorf("%w: id must be positive", ErrInvalidInput)
 	}
 
-	fixedExpense, err := s.storage.GetByIDAndUser(ctx, id, actor.UserID)
+	fixedExpense, err := s.storage.GetByIDAndGuild(ctx, id, guildID)
 	if err != nil {
 		return fmt.Errorf("deactivate fixed expense: get by id: %w", err)
 	}
 
 	if err := fixedExpense.Deactivate(status, actor.Email); err != nil {
-		return fmt.Errorf("deactivate fixed expense: %w", err)
+		return fmt.Errorf("deactivate fixed expense: %w", invalidInput(err))
 	}
 
-	if err := s.storage.Update(ctx, fixedExpense, actor.UserID); err != nil {
+	if err := s.storage.Update(ctx, fixedExpense); err != nil {
 		return fmt.Errorf("deactivate fixed expense: persist update: %w", err)
 	}
 
+	return nil
+}
+
+func invalidInput(err error) error { return fmt.Errorf("%w: %w", ErrInvalidInput, err) }
+
+func (s *Service) authorizeGuildMember(ctx context.Context, guildID int64, actor audit.Actor) error {
+	if err := actor.Validate(); err != nil {
+		return invalidInput(err)
+	}
+	if guildID <= 0 {
+		return fmt.Errorf("%w: guildID must be positive", ErrInvalidInput)
+	}
+	isMember, err := s.storage.IsGuildMember(ctx, guildID, actor.UserID)
+	if err != nil {
+		return fmt.Errorf("check guild membership: %w", err)
+	}
+	if !isMember {
+		return ErrRequesterIsNotMember
+	}
 	return nil
 }

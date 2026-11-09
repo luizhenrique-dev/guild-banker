@@ -33,6 +33,7 @@ const (
 
 type FixedExpense struct {
 	ID       int64
+	GuildID  int64
 	Name     string
 	Amount   decimal.Decimal
 	DueDay   int
@@ -41,8 +42,9 @@ type FixedExpense struct {
 	audit.Entry
 }
 
-func New(name string, amount decimal.Decimal, dueDay int, category Category, createdBy string) (*FixedExpense, error) {
+func New(guildID int64, name string, amount decimal.Decimal, dueDay int, category Category, createdBy string) (*FixedExpense, error) {
 	fe := &FixedExpense{
+		GuildID:   guildID,
 		Name:      name,
 		Amount:    amount,
 		DueDay:    dueDay,
@@ -90,6 +92,9 @@ func (f *FixedExpense) Deactivate(status Status, changedBy string) error {
 }
 
 func (f *FixedExpense) Validate() error {
+	if f.GuildID <= 0 {
+		return errors.New("guildID must be positive")
+	}
 	if f.Name == "" {
 		return errors.New("name is required")
 	}

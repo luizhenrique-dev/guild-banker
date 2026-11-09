@@ -14,25 +14,30 @@ import (
 
 type storageMock struct {
 	mock.Mock
+	member            *bool
+	membershipErr     error
+	membershipCtx     context.Context
+	membershipGuildID int64
+	membershipUserID  int64
 }
 
-func (m *storageMock) Create(ctx context.Context, fixedExpense *FixedExpense, userID int64) error {
-	args := m.Called(ctx, fixedExpense, userID)
+func (m *storageMock) Create(ctx context.Context, fixedExpense *FixedExpense) error {
+	args := m.Called(ctx, fixedExpense)
 	return args.Error(0)
 }
 
-func (m *storageMock) GetByIDAndUser(ctx context.Context, id, userID int64) (*FixedExpense, error) {
+func (m *storageMock) GetByIDAndGuild(ctx context.Context, id, userID int64) (*FixedExpense, error) {
 	args := m.Called(ctx, id, userID)
 	return args.Get(0).(*FixedExpense), args.Error(1)
 }
 
-func (m *storageMock) ListActiveByUser(ctx context.Context, userID int64) ([]*FixedExpense, error) {
+func (m *storageMock) ListActiveByGuild(ctx context.Context, userID int64) ([]*FixedExpense, error) {
 	args := m.Called(ctx, userID)
 	return args.Get(0).([]*FixedExpense), args.Error(1)
 }
 
-func (m *storageMock) Update(ctx context.Context, fixedExpense *FixedExpense, userID int64) error {
-	args := m.Called(ctx, fixedExpense, userID)
+func (m *storageMock) Update(ctx context.Context, fixedExpense *FixedExpense) error {
+	args := m.Called(ctx, fixedExpense)
 	return args.Error(0)
 }
 
@@ -47,7 +52,7 @@ func validActor() audit.Actor {
 }
 
 func stubFixedExpense() *FixedExpense {
-	fe, _ := New("Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, "admin@example.com")
+	fe, _ := New(1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, "admin@example.com")
 	fe.ID = 1
 	return fe
 }
@@ -56,9 +61,9 @@ func TestService_Create(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
-		storage.On("Create", mock.Anything, mock.AnythingOfType("*fixedexpense.FixedExpense"), actor.UserID).Return(nil)
+		storage.On("Create", mock.Anything, mock.AnythingOfType("*fixedexpense.FixedExpense")).Return(nil)
 
-		fe, err := svc.Create(context.Background(), "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
+		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, fe)
@@ -73,7 +78,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("error when actor is invalid", func(t *testing.T) {
 		svc, storage := newService(t)
 
-		fe, err := svc.Create(context.Background(), "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, audit.Actor{})
+		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, audit.Actor{})
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -84,7 +89,7 @@ func TestService_Create(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 
-		fe, err := svc.Create(context.Background(), "", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
+		fe, err := svc.Create(context.Background(), 1, "", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -94,9 +99,9 @@ func TestService_Create(t *testing.T) {
 	t.Run("error on storage", func(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
-		storage.On("Create", mock.Anything, mock.AnythingOfType("*fixedexpense.FixedExpense"), actor.UserID).Return(errors.New("db error"))
+		storage.On("Create", mock.Anything, mock.AnythingOfType("*fixedexpense.FixedExpense")).Return(errors.New("db error"))
 
-		fe, err := svc.Create(context.Background(), "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
+		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -104,13 +109,13 @@ func TestService_Create(t *testing.T) {
 	})
 }
 
-func TestService_ListActiveByUser(t *testing.T) {
+func TestService_ListActiveByGuild(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		svc, storage := newService(t)
 		expected := []*FixedExpense{stubFixedExpense()}
-		storage.On("ListActiveByUser", mock.Anything, int64(1)).Return(expected, nil)
+		storage.On("ListActiveByGuild", mock.Anything, int64(1)).Return(expected, nil)
 
-		result, err := svc.ListActiveByUser(context.Background(), 1)
+		result, err := svc.ListActiveByGuild(context.Background(), 1, validActor())
 
 		assert.NoError(t, err)
 		assert.Equal(t, expected, result)
@@ -120,19 +125,19 @@ func TestService_ListActiveByUser(t *testing.T) {
 	t.Run("error when userID is zero", func(t *testing.T) {
 		svc, storage := newService(t)
 
-		result, err := svc.ListActiveByUser(context.Background(), 0)
+		result, err := svc.ListActiveByGuild(context.Background(), 0, validActor())
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
-		assert.EqualError(t, err, "list fixed expenses: userID is required")
-		storage.AssertNotCalled(t, "ListActiveByUser")
+		assert.ErrorIs(t, err, ErrInvalidInput)
+		storage.AssertNotCalled(t, "ListActiveByGuild")
 	})
 
 	t.Run("error on storage", func(t *testing.T) {
 		svc, storage := newService(t)
-		storage.On("ListActiveByUser", mock.Anything, int64(1)).Return(([]*FixedExpense)(nil), errors.New("db error"))
+		storage.On("ListActiveByGuild", mock.Anything, int64(1)).Return(([]*FixedExpense)(nil), errors.New("db error"))
 
-		result, err := svc.ListActiveByUser(context.Background(), 1)
+		result, err := svc.ListActiveByGuild(context.Background(), 1, validActor())
 
 		assert.Error(t, err)
 		assert.Nil(t, result)
@@ -150,8 +155,8 @@ func TestService_Update(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
-		storage.On("Update", mock.Anything, existing, actor.UserID).Return(nil)
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
+		storage.On("Update", mock.Anything, existing).Return(nil)
 
 		input := UpdateInput{
 			Amount:   &newAmount,
@@ -160,7 +165,7 @@ func TestService_Update(t *testing.T) {
 			Status:   &newStatus,
 		}
 
-		fe, err := svc.Update(context.Background(), 1, input, actor)
+		fe, err := svc.Update(context.Background(), 1, 1, input, actor)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, fe)
@@ -175,10 +180,10 @@ func TestService_Update(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
-		storage.On("Update", mock.Anything, existing, actor.UserID).Return(nil)
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
+		storage.On("Update", mock.Anything, existing).Return(nil)
 
-		fe, err := svc.Update(context.Background(), 1, UpdateInput{}, actor)
+		fe, err := svc.Update(context.Background(), 1, 1, UpdateInput{}, actor)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, fe)
@@ -192,11 +197,11 @@ func TestService_Update(t *testing.T) {
 	t.Run("error when actor is invalid", func(t *testing.T) {
 		svc, storage := newService(t)
 
-		fe, err := svc.Update(context.Background(), 1, UpdateInput{}, audit.Actor{})
+		fe, err := svc.Update(context.Background(), 1, 1, UpdateInput{}, audit.Actor{})
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
-		storage.AssertNotCalled(t, "GetByIDAndUser")
+		storage.AssertNotCalled(t, "GetByIDAndGuild")
 		storage.AssertNotCalled(t, "Update")
 	})
 
@@ -204,21 +209,21 @@ func TestService_Update(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 
-		fe, err := svc.Update(context.Background(), 0, UpdateInput{}, actor)
+		fe, err := svc.Update(context.Background(), 1, 0, UpdateInput{}, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
-		assert.EqualError(t, err, "update fixed expense: id is required")
-		storage.AssertNotCalled(t, "GetByIDAndUser")
+		assert.ErrorIs(t, err, ErrInvalidInput)
+		storage.AssertNotCalled(t, "GetByIDAndGuild")
 		storage.AssertNotCalled(t, "Update")
 	})
 
 	t.Run("error on get by id", func(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return((*FixedExpense)(nil), errors.New("db error"))
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return((*FixedExpense)(nil), errors.New("db error"))
 
-		fe, err := svc.Update(context.Background(), 1, UpdateInput{}, actor)
+		fe, err := svc.Update(context.Background(), 1, 1, UpdateInput{}, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -230,9 +235,9 @@ func TestService_Update(t *testing.T) {
 		actor := validActor()
 		existing := stubFixedExpense()
 		invalidAmount := decimal.NewFromFloat(-1.00)
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
 
-		fe, err := svc.Update(context.Background(), 1, UpdateInput{Amount: &invalidAmount}, actor)
+		fe, err := svc.Update(context.Background(), 1, 1, UpdateInput{Amount: &invalidAmount}, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -243,10 +248,10 @@ func TestService_Update(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
-		storage.On("Update", mock.Anything, existing, actor.UserID).Return(errors.New("db error"))
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
+		storage.On("Update", mock.Anything, existing).Return(errors.New("db error"))
 
-		fe, err := svc.Update(context.Background(), 1, UpdateInput{}, actor)
+		fe, err := svc.Update(context.Background(), 1, 1, UpdateInput{}, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -259,10 +264,10 @@ func TestService_Deactivate(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
-		storage.On("Update", mock.Anything, existing, actor.UserID).Return(nil)
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
+		storage.On("Update", mock.Anything, existing).Return(nil)
 
-		err := svc.Deactivate(context.Background(), 1, StatusPaused, actor)
+		err := svc.Deactivate(context.Background(), 1, 1, StatusPaused, actor)
 
 		assert.NoError(t, err)
 		assert.Equal(t, StatusPaused, existing.Status)
@@ -273,10 +278,10 @@ func TestService_Deactivate(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
-		storage.On("Update", mock.Anything, existing, actor.UserID).Return(nil)
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
+		storage.On("Update", mock.Anything, existing).Return(nil)
 
-		err := svc.Deactivate(context.Background(), 1, StatusCancelled, actor)
+		err := svc.Deactivate(context.Background(), 1, 1, StatusCancelled, actor)
 
 		assert.NoError(t, err)
 		assert.Equal(t, StatusCancelled, existing.Status)
@@ -286,10 +291,10 @@ func TestService_Deactivate(t *testing.T) {
 	t.Run("error when actor is invalid", func(t *testing.T) {
 		svc, storage := newService(t)
 
-		err := svc.Deactivate(context.Background(), 1, StatusPaused, audit.Actor{})
+		err := svc.Deactivate(context.Background(), 1, 1, StatusPaused, audit.Actor{})
 
 		assert.Error(t, err)
-		storage.AssertNotCalled(t, "GetByIDAndUser")
+		storage.AssertNotCalled(t, "GetByIDAndGuild")
 		storage.AssertNotCalled(t, "Update")
 	})
 
@@ -297,20 +302,20 @@ func TestService_Deactivate(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 
-		err := svc.Deactivate(context.Background(), 0, StatusPaused, actor)
+		err := svc.Deactivate(context.Background(), 1, 0, StatusPaused, actor)
 
 		assert.Error(t, err)
-		assert.EqualError(t, err, "deactivate fixed expense: id is required")
-		storage.AssertNotCalled(t, "GetByIDAndUser")
+		assert.ErrorIs(t, err, ErrInvalidInput)
+		storage.AssertNotCalled(t, "GetByIDAndGuild")
 		storage.AssertNotCalled(t, "Update")
 	})
 
 	t.Run("error on get by id", func(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return((*FixedExpense)(nil), errors.New("db error"))
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return((*FixedExpense)(nil), errors.New("db error"))
 
-		err := svc.Deactivate(context.Background(), 1, StatusPaused, actor)
+		err := svc.Deactivate(context.Background(), 1, 1, StatusPaused, actor)
 
 		assert.Error(t, err)
 		storage.AssertNotCalled(t, "Update")
@@ -320,9 +325,9 @@ func TestService_Deactivate(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
 
-		err := svc.Deactivate(context.Background(), 1, StatusActive, actor)
+		err := svc.Deactivate(context.Background(), 1, 1, StatusActive, actor)
 
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrInvalidFixedExpenseStatus)
@@ -333,12 +338,76 @@ func TestService_Deactivate(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 		existing := stubFixedExpense()
-		storage.On("GetByIDAndUser", mock.Anything, int64(1), actor.UserID).Return(existing, nil)
-		storage.On("Update", mock.Anything, existing, actor.UserID).Return(errors.New("db error"))
+		storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(existing, nil)
+		storage.On("Update", mock.Anything, existing).Return(errors.New("db error"))
 
-		err := svc.Deactivate(context.Background(), 1, StatusPaused, actor)
+		err := svc.Deactivate(context.Background(), 1, 1, StatusPaused, actor)
 
 		assert.Error(t, err)
 		storage.AssertExpectations(t)
 	})
+}
+
+func (m *storageMock) IsGuildMember(ctx context.Context, guildID, userID int64) (bool, error) {
+	m.membershipCtx = ctx
+	m.membershipGuildID = guildID
+	m.membershipUserID = userID
+	if m.membershipErr != nil {
+		return false, m.membershipErr
+	}
+	if m.member != nil {
+		return *m.member, nil
+	}
+	return true, nil
+}
+
+func TestServiceGuildAuthorization(t *testing.T) {
+	for _, operation := range []string{"create", "list", "update", "deactivate"} {
+		for _, failure := range []string{"non member", "technical failure", "canceled context", "invalid guild", "invalid actor"} {
+			t.Run(operation+" "+failure, func(t *testing.T) {
+				svc, storage := newService(t)
+				member := false
+				storage.member = &member
+				ctx := context.Background()
+				guildID := int64(2)
+				actor := validActor()
+				want := ErrRequesterIsNotMember
+				switch failure {
+				case "technical failure":
+					want = errors.New("database unavailable")
+					storage.membershipErr = want
+				case "canceled context":
+					canceled, cancel := context.WithCancel(ctx)
+					cancel()
+					ctx = canceled
+					want = context.Canceled
+					storage.membershipErr = want
+				case "invalid guild":
+					guildID = -1
+					want = ErrInvalidInput
+				case "invalid actor":
+					actor = audit.Actor{}
+					want = ErrInvalidInput
+				}
+				var err error
+				switch operation {
+				case "create":
+					_, err = svc.Create(ctx, guildID, "Expense", decimal.NewFromInt(10), 1, CategoryOther, actor)
+				case "list":
+					_, err = svc.ListActiveByGuild(ctx, guildID, actor)
+				case "update":
+					_, err = svc.Update(ctx, guildID, 1, UpdateInput{}, actor)
+				case "deactivate":
+					err = svc.Deactivate(ctx, guildID, 1, StatusPaused, actor)
+				}
+				assert.ErrorIs(t, err, want)
+				assert.Empty(t, storage.Calls, "no expense operation may execute when authorization fails")
+				if failure != "invalid guild" && failure != "invalid actor" {
+					assert.Equal(t, ctx, storage.membershipCtx)
+					assert.Equal(t, guildID, storage.membershipGuildID)
+					assert.Equal(t, actor.UserID, storage.membershipUserID)
+				}
+			})
+		}
+	}
 }

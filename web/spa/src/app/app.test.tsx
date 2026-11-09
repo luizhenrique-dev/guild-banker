@@ -46,7 +46,7 @@ afterEach(() => vi.restoreAllMocks())
 const demoUser = { id: 1, name: 'Ana', email: 'ana@example.test' }
 it.each(['/fixed-expenses', '/transactions?guild=1', '/import?guild=1', '/guild?guild=1'])('keeps shell and Home for forbidden loading on %s', async (path) => {
   let calls = 0
-  const endpoint = path.startsWith('/fixed-expenses') ? '*/api/v1/fixed-expenses' : '*/api/v1/guilds'
+  const endpoint = path.startsWith('/fixed-expenses') ? '*/api/v1/guilds/:guildID/fixed-expenses' : '*/api/v1/guilds'
   server.use(http.get(endpoint, () => { calls++; return HttpResponse.json({ error: 'secret internal cause' }, { status: 403 }) }))
   render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
@@ -62,7 +62,7 @@ it.each(['/fixed-expenses', '/transactions?guild=1', '/import?guild=1', '/guild?
 it.each(['/home'])('does not block independent %s when guilds are forbidden', async (path) => {
   server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })))
   render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
-  const title = path === '/home' ? 'Bem-vindo(a) Ana' : 'Minhas despesas fixas'
+  const title = path === '/home' ? 'Bem-vindo(a) Ana' : 'Despesas fixas da guild'
   expect(await screen.findByRole('heading', { name: title })).toBeVisible()
   if (path === '/fixed-expenses') expect(await screen.findByRole('row', { name: /Aluguel/ })).toBeVisible()
   expect(screen.queryByRole('heading', { name: 'Acesso negado' })).toBeNull()
@@ -87,7 +87,7 @@ it('removes refused guild cache and stops dependent loading after refetch', asyn
 
 it.each(['/fixed-expenses', '/fixed-expenses?guild=999'])('blocks expenses without authorized guild on %s', async (path) => {
   let calls = 0
-  server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })), http.get('*/api/v1/fixed-expenses', () => { calls++; return HttpResponse.json([]) }))
+  server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })), http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => { calls++; return HttpResponse.json([]) }))
   render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
   expect(calls).toBe(0)

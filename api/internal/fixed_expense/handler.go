@@ -20,6 +20,11 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) Create(c *gin.Context) {
+	guildID, err := parseIDParam(c, "guildID")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	var req createFixedExpenseRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
@@ -32,7 +37,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	fixedExpense, err := h.service.Create(c.Request.Context(), req.Name, req.Amount, req.DueDay, req.Category, actor)
+	fixedExpense, err := h.service.Create(c.Request.Context(), guildID, req.Name, req.Amount, req.DueDay, req.Category, actor)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -41,14 +46,19 @@ func (h *Handler) Create(c *gin.Context) {
 	c.JSON(http.StatusCreated, toResponse(fixedExpense))
 }
 
-func (h *Handler) ListActiveByUser(c *gin.Context) {
-	requesterUserID, ok := getRequesterUserID(c)
+func (h *Handler) ListActiveByGuild(c *gin.Context) {
+	guildID, err := parseIDParam(c, "guildID")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	actor, ok := getRequesterActor(c)
 	if !ok {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
 		return
 	}
 
-	fixedExpenses, err := h.service.ListActiveByUser(c.Request.Context(), requesterUserID)
+	fixedExpenses, err := h.service.ListActiveByGuild(c.Request.Context(), guildID, actor)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -63,6 +73,11 @@ func (h *Handler) ListActiveByUser(c *gin.Context) {
 }
 
 func (h *Handler) Update(c *gin.Context) {
+	guildID, err := parseIDParam(c, "guildID")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	id, err := parseIDParam(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -81,7 +96,7 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	fixedExpense, err := h.service.Update(c.Request.Context(), id, UpdateInput(req), actor)
+	fixedExpense, err := h.service.Update(c.Request.Context(), guildID, id, UpdateInput(req), actor)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -91,6 +106,11 @@ func (h *Handler) Update(c *gin.Context) {
 }
 
 func (h *Handler) Deactivate(c *gin.Context) {
+	guildID, err := parseIDParam(c, "guildID")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	id, err := parseIDParam(c, "id")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -109,7 +129,7 @@ func (h *Handler) Deactivate(c *gin.Context) {
 		return
 	}
 
-	if err := h.service.Deactivate(c.Request.Context(), id, req.Status, actor); err != nil {
+	if err := h.service.Deactivate(c.Request.Context(), guildID, id, req.Status, actor); err != nil {
 		h.handleError(c, err)
 		return
 	}
@@ -119,12 +139,16 @@ func (h *Handler) Deactivate(c *gin.Context) {
 
 func (h *Handler) handleError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, ErrRequesterIsNotMember):
+		c.JSON(http.StatusForbidden, gin.H{"error": "requester is not a member of this guild"})
+	case errors.Is(err, ErrInvalidInput):
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid fixed expense input"})
 	case errors.Is(err, ErrFixedExpenseNotFound):
 		c.JSON(http.StatusNotFound, gin.H{"error": "fixed expense not found"})
 	case errors.Is(err, ErrInvalidFixedExpenseStatus):
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid fixed expense status"})
 	default:
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
 	}
 }
 
@@ -141,9 +165,4 @@ func parseIDParam(c *gin.Context, name string) (int64, error) {
 func getRequesterActor(c *gin.Context) (audit.Actor, bool) {
 	principal, ok := auth.PrincipalFromContext(c.Request.Context())
 	return principal.Actor, ok
-}
-
-func getRequesterUserID(c *gin.Context) (int64, bool) {
-	principal, ok := auth.PrincipalFromContext(c.Request.Context())
-	return principal.Actor.UserID, ok
 }

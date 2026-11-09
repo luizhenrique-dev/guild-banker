@@ -34,7 +34,7 @@ O lockfile npm é a fonte da instalação reproduzível; o frontend não utiliza
 
 `VITE_USE_MOCKS=true` só habilita MSW quando `import.meta.env.DEV` também é verdadeiro. `.env.demo` e `.env.test` ativam esse opt-in. O bootstrap aguarda o worker antes de montar; falha de startup aparece na tela. Requests `/api` não reconhecidas falham nos mocks. Produção ignora o opt-in, não inicializa worker nem identidade demo.
 
-A sessão usa Context restrito, dados remotos usam Query, seleção de guild e filtros usam URL; formulários/arquivo selecionado ficam locais. Logout/401 aborta requests e limpa cache; logout voluntário encerra também o SSO, enquanto 401 inicia recuperação de login limitada. Keys incluem usuário/guild/filtros pertinentes; despesas fixas exigem seleção de guild. Em T1 da ISSUE-4, o contexto organiza guarda/cache/estado; o vínculo e o HTTP ainda são pessoais até T2. GET repete no máximo uma vez falhas de rede/5xx (exceto 501); mutations não têm retry automático nem atualização financeira otimista. A revisão de importação é descartada na troca de guild. Os membros exibidos são fixtures explicitamente demonstrativas, pois não existe GET de membros no backend.
+A sessão usa Context restrito, dados remotos usam Query, seleção de guild e filtros usam URL; formulários/arquivo selecionado ficam locais. Logout/401 aborta requests e limpa cache; logout voluntário encerra também o SSO, enquanto 401 inicia recuperação de login limitada. Keys incluem usuário/guild/filtros pertinentes; despesas fixas exigem seleção de guild. Todos os membros compartilham as despesas da guild e podem criar, editar e desativar. Consultas e mutations usam `/api/v1/guilds/{guildID}/fixed-expenses`; cache inclui usuário e guild e ações capturam a guild de origem. A troca de guild fecha modais e confirmações; respostas antigas não afetam o novo formulário. O cadastro não altera totais nem gera transações. GET repete no máximo uma vez falhas de rede/5xx (exceto 501); mutations não têm retry automático nem atualização financeira otimista. A revisão de importação é descartada na troca de guild. Os membros exibidos são fixtures explicitamente demonstrativas, pois não existe GET de membros no backend.
 
 Os tipos são gerados do OpenAPI corrigido contra rotas/DTOs Go; a geração não substitui a conferência do contrato. [OPENAPI_GAPS](../../docs/specs/OPENAPI_GAPS.md) registra limites e divergências. Valores monetários são strings decimais no payload, com normalização de vírgula para ponto; não há cálculos financeiros no cliente. Nome da despesa é somente leitura na edição porque PATCH não aceita renomear. A política local de nome tem limite de 100 caracteres.
 
@@ -116,7 +116,16 @@ A consulta de despesas requer membership: a suíte resolve a guild pela listagem
 Em ambiente exclusivo de testes, `E2E_ALLOW_GUILD_CREATE=true` permite criar uma guild
 pelo POST público se a lista estiver vazia; não habilite em ambiente compartilhado.
 A API deve ser iniciada pelo responsável pelo ambiente, considerando que o startup
-atual executa automaticamente sua rotina de migrações.
+atual executa automaticamente sua rotina de migrações. A ISSUE-4 altera a migration
+inicial: API e SPA devem ser usadas juntas com banco/schema novo. Um banco que já
+executou a versão 1 não recebe essa alteração automaticamente. Não apagar volumes
+ou executar force/down em bancos compartilhados para reaplicá-la.
+
+Integração PostgreSQL real: no diretório `api/`,
+`go test ./... -race -count=1 -tags=integration,postgres` exige as URLs de teste
+`USER_TEST_DATABASE_URL`, `FIXED_EXPENSE_TEST_DATABASE_URL` e `GUILD_TEST_DATABASE_URL`.
+Cada suíte cria e limpa apenas seu próprio schema e falha se faltar configuração;
+mocks demonstram a interface e não substituem a prova de autorização do backend.
 
 Credenciais: `E2E_USERNAME` (padrão `foo.bar@email.com`), `E2E_NAME` (padrão `Foo Bar`)
 e `E2E_PASSWORD` ou `KC_TEST_USER_PASSWORD`. O config lê também `infra/.env` local

@@ -18,7 +18,7 @@ for (const width of [375, 1280]) {
     await dialog.getByRole('textbox', { name: 'Valor (R$)' }).fill('123,45')
     await dialog.getByRole('spinbutton', { name: 'Dia de vencimento' }).fill('31')
     await dialog.getByRole('combobox', { name: 'Categoria' }).selectOption('SUBSCRIPTIONS')
-    const create = page.waitForRequest((request) => request.url().includes('/api/v1/fixed-expenses') && request.method() === 'POST')
+    const create = page.waitForRequest((request) => request.url().includes('/api/v1/guilds/1/fixed-expenses') && request.method() === 'POST')
     await dialog.getByRole('button', { name: 'Salvar', exact: true }).click()
     expect((await create).postDataJSON()).toEqual({ name: 'Internet teste', amount: '123.45', due_day: 31, category: 'SUBSCRIPTIONS' })
     const row = page.getByRole('row').filter({ hasText: 'Internet teste' })
@@ -52,7 +52,7 @@ for (const width of [375, 1280]) {
     await expect(newButton).toBeFocused()
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
     if (width === 375) {
-      const table = page.getByRole('table', { name: 'Minhas despesas fixas' })
+      const table = page.getByRole('table', { name: 'Despesas fixas da guild' })
       await table.evaluate((element) => element.parentElement!.focus())
       await page.keyboard.press('ArrowRight')
       await expect.poll(() => table.evaluate((element) => element.parentElement!.scrollLeft)).toBeGreaterThan(0)
@@ -68,7 +68,7 @@ test('forbidden expense action preserves the draft and session', async ({ page }
     window.fetch = (input, options) => {
       const path = new URL(input instanceof Request ? input.url : String(input), location.origin).pathname
       const method = options?.method ?? (input instanceof Request ? input.method : 'GET')
-      if (path === '/api/v1/fixed-expenses' && method === 'POST') return Promise.resolve(new Response('{"error":"forbidden"}', { status: 403, headers: { 'Content-Type': 'application/json' } }))
+      if (path === '/api/v1/guilds/1/fixed-expenses' && method === 'POST') return Promise.resolve(new Response('{"error":"forbidden"}', { status: 403, headers: { 'Content-Type': 'application/json' } }))
       return original(input, options)
     }
   })

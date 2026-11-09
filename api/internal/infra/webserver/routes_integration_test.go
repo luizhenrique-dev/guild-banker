@@ -7,6 +7,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/luizhenrique-dev/guild-banker/api/config"
@@ -30,6 +31,7 @@ func TestAPIPrefixProtection(t *testing.T) {
 	}
 	server := NewServer(cfg, nil, authenticator, slog.New(slog.NewJSONHandler(&logs, nil)))
 	for _, tt := range []struct {
+		method string
 		path   string
 		token  bool
 		status int
@@ -39,10 +41,20 @@ func TestAPIPrefixProtection(t *testing.T) {
 		{path: "/api/v1/guilds", status: 401}, {path: "/api/v1/fixed-expenses", status: 401},
 		{path: "/api/v1/guilds/1/transactions", status: 401}, {path: "/api/v1/guilds/1/imports/1", status: 401},
 		{path: "/api/not-found", token: true, status: 404},
+		{path: "/api/v1/guilds/1/fixed-expenses", status: 401},
+		{method: "POST", path: "/api/v1/fixed-expenses", token: true, status: 404},
+		{path: "/api/v1/fixed-expenses", token: true, status: 404},
+		{method: "PATCH", path: "/api/v1/fixed-expenses/1", token: true, status: 404},
+		{method: "PATCH", path: "/api/v1/fixed-expenses/1/deactivate", token: true, status: 404},
+		{method: "PATCH", path: "/api/v1/fixed-expenses/1", status: 401},
 	} {
 		t.Run(tt.path+map[bool]string{false: " without token", true: " with token"}[tt.token], func(t *testing.T) {
 			before := authenticator.calls
-			req := httptest.NewRequest("GET", tt.path, nil)
+			method := tt.method
+			if method == "" {
+				method = "GET"
+			}
+			req := httptest.NewRequest(method, tt.path, nil)
 			if tt.token {
 				req.Header.Set("Authorization", "Bearer token")
 			}
@@ -56,6 +68,19 @@ func TestAPIPrefixProtection(t *testing.T) {
 			assert.Equal(t, wantCalls, authenticator.calls-before)
 		})
 	}
+
+	routes := []string{}
+	for _, route := range server.router.Routes() {
+		if strings.Contains(route.Path, "fixed-expenses") {
+			routes = append(routes, route.Method+" "+route.Path)
+		}
+	}
+	assert.ElementsMatch(t, []string{
+		"GET /api/v1/guilds/:guildID/fixed-expenses",
+		"POST /api/v1/guilds/:guildID/fixed-expenses",
+		"PATCH /api/v1/guilds/:guildID/fixed-expenses/:id",
+		"PATCH /api/v1/guilds/:guildID/fixed-expenses/:id/deactivate",
+	}, routes)
 
 	t.Run("plain OPTIONS is protected", func(t *testing.T) {
 		req := httptest.NewRequest("OPTIONS", "/api/not-found", nil)

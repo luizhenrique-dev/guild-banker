@@ -43,7 +43,7 @@ it('shows loading, a GET error with manual retry and an empty list', async () =>
 })
 it('preserves values and exposes server error after a single failed write', async () => {
   let calls = 0
-  server.use(http.post('*/api/v1/fixed-expenses', () => { calls++; return new HttpResponse(null, { status: 500 }) }))
+  server.use(http.post('*/api/v1/guilds/:guildID/fixed-expenses', () => { calls++; return new HttpResponse(null, { status: 500 }) }))
   page()
   const { user, dialog } = await fill()
   await user.click(dialog.getByRole('button', { name: 'Salvar' }))
@@ -69,13 +69,13 @@ it('reports saved changes when refetch fails and retries only GET', async () => 
   const { user, dialog } = await fill()
   let writes = 0
   server.use(
-    http.post('*/api/v1/fixed-expenses', async ({ request }) => { writes++; return HttpResponse.json({ ...(await request.json() as object), id: 100, status: 'ACTIVE' }, { status: 201 }) }),
-    http.get('*/api/v1/fixed-expenses', () => new HttpResponse(null, { status: 400 })),
+    http.post('*/api/v1/guilds/:guildID/fixed-expenses', async ({ request }) => { writes++; return HttpResponse.json({ ...(await request.json() as object), id: 100, status: 'ACTIVE' }, { status: 201 }) }),
+    http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => new HttpResponse(null, { status: 400 })),
   )
   await user.click(dialog.getByRole('button', { name: 'Salvar' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('A alteração foi salva, mas a lista não foi atualizada.')
   expect(screen.queryByRole('dialog')).toBeNull()
-  server.use(http.get('*/api/v1/fixed-expenses', () => HttpResponse.json([{ id: 100, name: 'Internet', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }])))
+  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([{ guild_id: 1, id: 100, name: 'Internet', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }])))
   await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
   expect(await screen.findByRole('row', { name: /Internet/ }, { timeout: 3000 })).toBeVisible()
   expect(writes).toBe(1)
@@ -99,7 +99,7 @@ it('replaces cached personal expenses with access denied after forbidden refetch
   page()
   expect(await screen.findByRole('row', { name: /Aluguel/ })).toBeVisible()
   let calls = 0
-  server.use(http.get('*/api/v1/fixed-expenses', () => { calls++; return new HttpResponse(null, { status: 403 }) }))
+  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => { calls++; return new HttpResponse(null, { status: 403 }) }))
   await act(async () => { await client.invalidateQueries({ queryKey: ['fixed-expenses'] }) })
   expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
   expect(screen.queryByRole('table')).toBeNull()
@@ -111,7 +111,7 @@ it.each(['create', 'edit', 'deactivate'])('preserves local state on forbidden ex
   const success = vi.spyOn(toast, 'success')
   let calls = 0
   const denied = () => { calls++; return HttpResponse.json({ error: 'private cause' }, { status: 403 }) }
-  server.use(http.post('*/api/v1/fixed-expenses', denied), http.patch('*/api/v1/fixed-expenses/:id', denied), http.patch('*/api/v1/fixed-expenses/:id/deactivate', denied))
+  server.use(http.post('*/api/v1/guilds/:guildID/fixed-expenses', denied), http.patch('*/api/v1/guilds/:guildID/fixed-expenses/:id', denied), http.patch('*/api/v1/guilds/:guildID/fixed-expenses/:id/deactivate', denied))
   page()
   const user = userEvent.setup()
   if (action === 'create') {
@@ -161,7 +161,7 @@ it('a late create from G1 leaves the new G2 draft intact and invalidates only G1
   act(() => navigate('/fixed-expenses?guild=2'))
   expect(screen.queryByRole('dialog')).toBeNull()
   const next = await fill()
-  await act(async () => { finish({ id: 100, name: 'Old', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }) })
+  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Old', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }) })
   expect(screen.getByRole('dialog')).toBeVisible()
   expect(next.dialog.getByRole('textbox', { name: 'Nome' })).toHaveValue('Internet')
   expect(invalidate).toHaveBeenCalledExactlyOnceWith({ queryKey: ['fixed-expenses', 1, 1] })

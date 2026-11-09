@@ -1,129 +1,65 @@
-// ============================================================
-// MSW Handlers: Fixed Expenses
-// Espelham os endpoints da OpenAPI spec (tags: FixedExpenses)
-// ============================================================
 import { http, HttpResponse, delay } from 'msw'
-import { mockUserID } from '../request-context'
-import { fixedExpensesFixtures } from '../fixtures/fixed-expenses'
+import { mockGuildMember } from '../request-context'
+import { fixedExpensesFixtures, sharedFixedExpensesFixtures } from '../fixtures/fixed-expenses'
 import type { FixedExpenseResponse } from '@/src/features/fixed-expenses/types'
 
-// 📌 PADRÃO: Estado in-memory para que mutations persistam durante a sessão.
-// Em produção, isso é o banco de dados.
-const expensesByUser = new Map<number, FixedExpenseResponse[]>()
-function userExpenses(request: Request) {
-  const userID = mockUserID(request)
-  if (!expensesByUser.has(userID)) expensesByUser.set(userID, userID === 1 ? structuredClone(fixedExpensesFixtures) : [])
-  return expensesByUser.get(userID)!
+const expensesByGuild = new Map<number, FixedExpenseResponse[]>()
+function guildExpenses(guildID: number) {
+  if (!expensesByGuild.has(guildID)) expensesByGuild.set(guildID, structuredClone(guildID === 1 ? fixedExpensesFixtures : guildID === 2 ? sharedFixedExpensesFixtures : []))
+  return expensesByGuild.get(guildID)!
 }
+const forbidden = () => HttpResponse.json({ error: 'forbidden' }, { status: 403 })
+const notFound = () => HttpResponse.json({ error: 'fixed expense not found' }, { status: 404 })
+const root = '*/api/v1/guilds/:guildID/fixed-expenses'
 let nextId = 100
 
 export const fixedExpensesHandlers = [
-  // --------------------------------------------------------
   // operationId: listActiveFixedExpenses
-  // GET /api/v1/fixed-expenses
-  // Produção: requer header X-User-ID para filtrar despesas do usuário logado
-  // Retorna apenas despesas com status ACTIVE
-  // --------------------------------------------------------
-  http.get('*/api/v1/fixed-expenses', async ({ request }) => {
-    const expenses = userExpenses(request)
-    if (!mockUserID(request)) return HttpResponse.json({ error: 'x-user-id header is required' }, { status: 400 })
+  http.get(root, async ({ request, params }) => {
+    const guildID = Number(params['guildID'])
+    if (!mockGuildMember(request, guildID)) return forbidden()
     await delay(600)
-    const active = expenses.filter((e) => e.status === 'ACTIVE')
-    return HttpResponse.json(active)
+    return HttpResponse.json(guildExpenses(guildID).filter((expense) => expense.status === 'ACTIVE').sort((a, b) => a.due_day - b.due_day || a.name.localeCompare(b.name)))
   }),
-
-  // --------------------------------------------------------
   // operationId: createFixedExpense
-  // POST /api/v1/fixed-expenses
-  // Produção: requer X-User-ID e X-User-Email
-  // Body: { name, amount, due_day, category }
-  // --------------------------------------------------------
-  http.post('*/api/v1/fixed-expenses', async ({ request }) => {
-    const expenses = userExpenses(request)
-    if (!mockUserID(request) || !request.headers.get('X-User-Email')) return HttpResponse.json({ error: 'identity headers required' }, { status: 400 })
+  http.post(root, async ({ request, params }) => {
+    const guildID = Number(params['guildID'])
+    if (!mockGuildMember(request, guildID)) return forbidden()
     await delay(500)
-    const body = (await request.json()) as {
-      name: string
-      amount: string
-      due_day: number
-      category: string
-    }
-
-    const newExpense: FixedExpenseResponse = {
-      id: nextId++,
-      name: body.name,
-      amount: body.amount,
-      due_day: body.due_day,
-      category: body.category as FixedExpenseResponse['category'],
-      status: 'ACTIVE',
-    }
-
-    expenses.push(newExpense)
-    return HttpResponse.json(newExpense, { status: 201 })
+    const body = await request.json() as FixedExpenseResponse
+    const expense: FixedExpenseResponse = { id: nextId++, guild_id: guildID, name: body.name, amount: body.amount, due_day: body.due_day, category: body.category, status: 'ACTIVE' }
+    guildExpenses(guildID).push(expense)
+    return HttpResponse.json(expense, { status: 201 })
   }),
-
-  // --------------------------------------------------------
   // operationId: updateFixedExpense
-  // PATCH /api/v1/fixed-expenses/:id
-  // Produção: campos opcionais — só os enviados são atualizados
-  // --------------------------------------------------------
-  http.patch('*/api/v1/fixed-expenses/:id', async ({ params, request }) => {
-    const expenses = userExpenses(request)
-    if (!mockUserID(request) || !request.headers.get('X-User-Email')) return HttpResponse.json({ error: 'identity headers required' }, { status: 400 })
+  http.patch(root + '/:id', async ({ request, params }) => {
+    const guildID = Number(params['guildID'])
+    if (!mockGuildMember(request, guildID)) return forbidden()
     await delay(400)
-    const id = Number(params['id'])
-    const body = (await request.json()) as Partial<FixedExpenseResponse>
-    const index = expenses.findIndex((e) => e.id === id)
-
-    if (index === -1) {
-      return HttpResponse.json({ error: 'Despesa fixa não encontrada' }, { status: 404 })
-    }
-
+    const expenses = guildExpenses(guildID)
+    const index = expenses.findIndex((expense) => expense.id === Number(params['id']))
     const existing = expenses[index]
-    if (!existing) {
-      return HttpResponse.json({ error: 'Despesa fixa não encontrada' }, { status: 404 })
-    }
-
-    const updated: FixedExpenseResponse = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category }
+    if (!existing) return notFound()
+    const body = await request.json() as Partial<FixedExpenseResponse>
+    const updated = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category, status: body.status ?? existing.status }
     expenses[index] = updated
     return HttpResponse.json(updated)
   }),
-
-  // --------------------------------------------------------
   // operationId: deactivateFixedExpense
-  // PATCH /api/v1/fixed-expenses/:id/deactivate
-  // Body: { status: 'PAUSED' | 'CANCELLED' }
-  // Produção: só aceita PAUSED ou CANCELLED; outros retornam 400
-  // --------------------------------------------------------
-  http.patch('*/api/v1/fixed-expenses/:id/deactivate', async ({ params, request }) => {
-    const expenses = userExpenses(request)
-    if (!mockUserID(request) || !request.headers.get('X-User-Email')) return HttpResponse.json({ error: 'identity headers required' }, { status: 400 })
+  http.patch(root + '/:id/deactivate', async ({ request, params }) => {
+    const guildID = Number(params['guildID'])
+    if (!mockGuildMember(request, guildID)) return forbidden()
     await delay(400)
-    const id = Number(params['id'])
-    const body = (await request.json()) as { status: string }
-
-    if (body.status !== 'PAUSED' && body.status !== 'CANCELLED') {
-      return HttpResponse.json(
-        { error: 'Status inválido para desativação' },
-        { status: 400 }
-      )
-    }
-
-    const index = expenses.findIndex((e) => e.id === id)
-    if (index === -1) {
-      return HttpResponse.json({ error: 'Não encontrada' }, { status: 404 })
-    }
-
-    const existing = expenses[index]
-    if (existing) {
-      expenses[index] = { ...existing, status: body.status as FixedExpenseResponse['status'] }
-    }
-
+    const body = await request.json() as { status: string }
+    if (body.status !== 'PAUSED' && body.status !== 'CANCELLED') return HttpResponse.json({ error: 'invalid fixed expense status' }, { status: 400 })
+    const expense = guildExpenses(guildID).find((row) => row.id === Number(params['id']))
+    if (!expense) return notFound()
+    expense.status = body.status
     return new HttpResponse(null, { status: 204 })
   }),
 ]
 
 export function resetFixedExpensesMocks() {
-  expensesByUser.clear()
+  expensesByGuild.clear()
   nextId = 100
 }

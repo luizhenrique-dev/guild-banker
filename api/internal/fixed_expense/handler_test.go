@@ -4,6 +4,7 @@ package fixedexpense
 
 import (
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
@@ -32,15 +33,12 @@ func TestAuthenticatedHandlerIdentity(t *testing.T) {
 			}
 			got, ok := getRequesterActor(c)
 			assert.Equal(t, tt.authenticated, ok)
-			id, ok := getRequesterUserID(c)
-			assert.Equal(t, tt.authenticated, ok)
+
 			if tt.authenticated {
 				assert.Equal(t, actor, got)
-				assert.EqualValues(t, 42, id)
 				return
 			}
 			assert.Zero(t, got)
-			assert.Zero(t, id)
 		})
 	}
 }
@@ -51,9 +49,9 @@ type identityStorage struct {
 	called bool
 }
 
-func (s *identityStorage) Create(_ context.Context, expense *FixedExpense, userID int64) error {
+func (s *identityStorage) Create(_ context.Context, expense *FixedExpense) error {
 	s.called = true
-	assert.EqualValues(s.t, 42, userID)
+	assert.EqualValues(s.t, 1, expense.GuildID)
 	assert.Equal(s.t, "local@example.test", expense.CreatedBy)
 	return nil
 }
@@ -61,8 +59,8 @@ func TestHandlerUsesTrustedActor(t *testing.T) {
 	storage := &identityStorage{t: t}
 	handler := NewHandler(NewService(storage))
 	router := gin.New()
-	router.POST("/api/fixed-expenses", handler.Create)
-	testIdentityRequest(t, router, "POST", "/api/fixed-expenses", `{"name":"fixture","amount":"10","due_day":1,"category":"OTHER"}`, 201)
+	router.POST("/api/guilds/:guildID/fixed-expenses", handler.Create)
+	testIdentityRequest(t, router, "POST", "/api/guilds/1/fixed-expenses", `{"name":"fixture","amount":"10","due_day":1,"category":"OTHER"}`, 201)
 	assert.True(t, storage.called)
 }
 
@@ -86,5 +84,51 @@ func testIdentityRequest(t *testing.T, router *gin.Engine, method, path, body st
 		if !authenticated {
 			assert.JSONEq(t, `{"error":"unauthorized"}`, w.Body.String())
 		}
+	}
+}
+
+func (s *identityStorage) IsGuildMember(_ context.Context, guildID, userID int64) (bool, error) {
+	assert.EqualValues(s.t, 42, userID)
+	assert.EqualValues(s.t, 1, guildID)
+	return true, nil
+}
+
+func TestHandlerGuildErrors(t *testing.T) {
+	for _, test := range []struct {
+		name       string
+		membership bool
+		err        error
+		code       int
+	}{
+		{name: "forbidden", code: 403},
+		{name: "technical", err: errors.New("SQL password confidential"), code: 500},
+		{name: "allowed", membership: true, code: 400},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			storage := &storageMock{member: &test.membership, membershipErr: test.err}
+			handler := NewHandler(NewService(storage))
+			router := gin.New()
+			router.POST("/guilds/:guildID/fixed-expenses", handler.Create)
+			req := httptest.NewRequest("POST", "/guilds/1/fixed-expenses", strings.NewReader(`{"name":"","amount":"1","due_day":1,"category":"OTHER"}`))
+			req.Header.Set("Content-Type", "application/json")
+			req = req.WithContext(auth.WithPrincipal(req.Context(), auth.Principal{Actor: validActor()}))
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, req)
+			assert.Equal(t, test.code, response.Code)
+			assert.NotContains(t, response.Body.String(), "confidential")
+			if test.code == 500 {
+				assert.JSONEq(t, `{"error":"internal server error"}`, response.Body.String())
+			}
+		})
+	}
+	for _, id := range []string{"0", "-1", "invalid", "9223372036854775808"} {
+		t.Run("invalid guild "+id, func(t *testing.T) {
+			handler := NewHandler(NewService(&storageMock{}))
+			router := gin.New()
+			router.GET("/guilds/:guildID/fixed-expenses", handler.ListActiveByGuild)
+			response := httptest.NewRecorder()
+			router.ServeHTTP(response, httptest.NewRequest("GET", "/guilds/"+id+"/fixed-expenses", nil))
+			assert.Equal(t, 400, response.Code)
+		})
 	}
 }

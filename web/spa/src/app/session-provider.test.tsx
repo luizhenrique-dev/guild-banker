@@ -66,7 +66,7 @@ it('late mutation after logout cannot recreate cache or show notifications', asy
   await waitFor(() => expect(finish).toBeTypeOf('function'))
   act(() => result.current.session.logout())
   await act(async () => {
-    finish({ id: 100, name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING', status: 'ACTIVE' })
+    finish({ guild_id: 1, id: 100, name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING', status: 'ACTIVE' })
     await rejection
   })
   expect(qc.getQueryCache().getAll()).toHaveLength(0)
@@ -89,13 +89,18 @@ it('combines query cancellation with the session lifetime', async () => {
   expect(signal.aborted).toBe(true)
   expect(result.current.active()).toBe(true)
 })
-it('switching users cannot display the previous personal list', async () => {
+it('switching users clears cached data before querying the shared guild again', async () => {
   await i18n.changeLanguage('pt-BR')
   const { rerender } = render(<MemoryRouter initialEntries={['/fixed-expenses?guild=2']}><App initialUser={user} demo /></MemoryRouter>)
-  await screen.findByText('Aluguel')
+  await screen.findByText('Internet da República')
+  let finish!: (value: Awaited<ReturnType<typeof fixedExpensesApi.list>>) => void
+  const list = vi.spyOn(fixedExpensesApi, 'list').mockImplementation(() => new Promise((resolve) => { finish = resolve }))
   rerender(<MemoryRouter initialEntries={['/fixed-expenses?guild=2']}><App initialUser={{ id: 2, name: 'Other', email: 'other@example.com' }} demo /></MemoryRouter>)
-  await screen.findByText('Nenhuma despesa fixa cadastrada.')
-  expect(screen.queryByText('Aluguel')).not.toBeInTheDocument()
+  expect(screen.queryByText('Internet da República')).not.toBeInTheDocument()
+  await waitFor(() => expect(finish).toBeTypeOf('function'))
+  await act(async () => { finish([{ id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, category: 'OTHER', status: 'ACTIVE' }]) })
+  expect(await screen.findByText('Internet da República')).toBeVisible()
+  expect(list).toHaveBeenCalledOnce()
 })
 it('retries only eligible GET failures once and never retries mutations', async () => {
   const { qc } = setup()

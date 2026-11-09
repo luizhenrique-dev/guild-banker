@@ -61,11 +61,11 @@ test('real API provisions and authorizes a verified identity', async ({ page }) 
     }, { headers })
   }
   expect(guild && Number.isSafeInteger(guild.id) && guild.id > 0).toBe(true)
-  const api = page.waitForResponse((r) => r.url().includes('/api/v1/fixed-expenses'))
+  const api = page.waitForResponse((r) => r.url().endsWith('/api/v1/guilds/' + guild!.id + '/fixed-expenses'))
   await page.goto('/fixed-expenses?guild=' + guild!.id)
   await expect(page).toHaveURL(new RegExp('guild=' + guild!.id + '(?:&|$)'))
   expect((await api).status()).toBe(200)
-  await expect(page.getByRole('heading', { name: 'Minhas despesas fixas', exact: true })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Despesas fixas da guild', exact: true })).toBeVisible()
 })
 
 test('real token renewal occurs on expiration without changing the server session policy', async ({ page }) => {

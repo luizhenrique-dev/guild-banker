@@ -32,9 +32,9 @@ const resources = {
       'permission.denied': 'Você não tem permissão para realizar esta ação.',
 
       // Fixed Expenses
-      'fx.title': 'Minhas despesas fixas',
-      'fx.badge': 'pessoais',
-      'fx.info': 'Despesas fixas são pessoais — não aparecem no total da guild.',
+      'fx.title': 'Despesas fixas da guild',
+      'fx.badge': 'compartilhadas',
+      'fx.info': 'Membros da guild podem criar, editar e desativar estas despesas. O cadastro não altera o total da guild.',
       'fx.newButton': 'Nova despesa fixa',
       'fx.col.name': 'Nome',
       'fx.col.category': 'Categoria',
@@ -195,9 +195,9 @@ const resources = {
       'accessDenied.home': 'Back to Home',
       'permission.denied': 'You do not have permission to perform this action.',
 
-      'fx.title': 'My fixed expenses',
-      'fx.badge': 'personal',
-      'fx.info': 'Fixed expenses are personal — they don\'t count towards the guild total.',
+      'fx.title': 'Guild fixed expenses',
+      'fx.badge': 'shared',
+      'fx.info': 'Guild members can create, edit and deactivate these expenses. Registration does not change the guild total.',
       'fx.newButton': 'New fixed expense',
       'fx.col.name': 'Name',
       'fx.col.category': 'Category',

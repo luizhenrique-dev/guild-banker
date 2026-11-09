@@ -6,7 +6,7 @@ Vincular cada despesa fixa a uma única guild, permitindo que todos os seus memb
 
 ## Contexto e decisões
 
-Origem: demanda fornecida pelo usuário nesta conversa, identificada por ele como **ISSUE-4**. Refinamento em 2026-11-02, sem links, versão ou comentários externos informados. **Estado: spec aprovada pelo usuário em 2026-11-02; implementação não iniciada.** Aprovação explícita nesta conversa: “aprovada”. A aprovação valida o plano; não autoriza iniciar a implementação.
+Origem: demanda fornecida pelo usuário nesta conversa, identificada por ele como **ISSUE-4**. Refinamento em 2026-11-02, sem links, versão ou comentários externos informados. **Estado: concluída em 2026-11-08; implementação autorizada pelo usuário.** Aprovação explícita nesta conversa: “aprovada”. A aprovação valida o plano; não autoriza iniciar a implementação.
 
 ### Fatos verificados
 
@@ -205,7 +205,7 @@ Pré-requisito externo para todas: **ISSUE-3 concluída**, conforme D4. Todas as
 | Task | Título | Status | Depende de | Arquivo |
 |---|---|---|---|---|
 | T1 | Preparar contexto de guild nas despesas da SPA | concluida | nenhuma task interna; ISSUE-3 concluída | [T1](./ISSUE-4-T1-contexto-guild-spa.md) |
-| T2 | Substituir despesas pessoais por despesas da guild | ⬜ pendente | T1 | [T2](./ISSUE-4-T2-despesas-compartilhadas.md) |
+| T2 | Substituir despesas pessoais por despesas da guild | concluida | T1 | [T2](./ISSUE-4-T2-despesas-compartilhadas.md) |
 
 **Justificativa da decomposição:** T1 entrega guarda/reset/cache verificáveis sobre a API atual. T2 é um commit coeso de troca do vínculo, reunindo schema, todas as camadas da feature, cliente, mocks e contrato para não deixar consumidor apontando para rota removida. Cada task inclui seus testes e termina com gates aplicáveis passando; não há task genérica de testes finais nem código intencionalmente quebrado para a próxima. Não executar ou publicar metade de T2.
 
@@ -249,4 +249,13 @@ Disponibilidade de infraestrutura não foi testada nesta fase. Não declarar CA3
 ## Decisões
 
 - **D5 — Decisão aprovada em 2026-11-03:** usuário autorizou “Autorizado correção” após pergunta explícita sobre correção mínima com teste no fluxo existente de criação de guild. Justificativa: gate de login real de T1 falha ao preparar membership no banco exclusivo (POST /guilds 400). Alteração limitada à causa comprovada e regressão; sem ampliar regras de guild.
-- Execução autorizada pelo pedido “implemente a ISSUE-4 com qualidade de produção”. T1 concluída e validada, incluindo D5; T2 elegível. Evidências e gates no arquivo da task.
+- Execução autorizada pelo pedido “implemente a ISSUE-4 com qualidade de produção”. T1 concluída e validada, incluindo D5 (`57d656d`); T2 concluída e validada, commit coeso deste fechamento. Evidências e gates no arquivo da task.
+
+
+## Evidências finais — 2026-11-08
+
+CA1–CA11 aprovados pelas matrizes T1/T2 e suas evidências observadas: quatro critérios de T1 e oito de T2. PostgreSQL real comprova vínculo, compartilhamento, isolamento e auditoria; mocks comprovam UX/contrato. Detalhes/comandos estão nas seções Evidências das tasks.
+
+Gates finais: vet/lint/build/test/test integration Go e integração PostgreSQL ampla com race passaram; tipos sem drift/lint/build web passaram; Vitest 136, E2E demo 15, produção 8 e OIDC real 6 testes passaram. Revisão independente de T1/D5/T2 sem achados remanescentes. Nenhuma falha detectada nas verificações executadas. Sem critérios obrigatórios pendentes, bloqueios ou dependências novas.
+
+Publicação não executada; push/PR a cargo do usuário. API e SPA devem ser usadas juntas com schema novo; README documenta que alterar migration inicial não reaplica versão já executada. Todos os testes usaram container/schema exclusivos; bancos da aplicação/Keycloak não foram migrados ou apagados.

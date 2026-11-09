@@ -13,7 +13,7 @@ for (const width of [375, 1280]) {
     await expect(page.getByRole('button', { name: 'República dos Amigos' })).toHaveCount(0)
     const routes = [
       ['Transações', 'Transações'], ['Importar', 'Importar extrato'],
-      ['Guild / Membros', 'Guild / Membros'], ['Despesas fixas', 'Minhas despesas fixas'],
+      ['Guild / Membros', 'Guild / Membros'], ['Despesas fixas', 'Despesas fixas da guild'],
     ] as const
     for (const [link, heading] of routes) {
       const target = page.getByRole('navigation').getByRole('link', { name: link, exact: true })
@@ -36,7 +36,7 @@ for (const width of [375, 1280]) {
       const original = window.fetch.bind(window)
       window.fetch = (input, options) => {
         const path = new URL(input instanceof Request ? input.url : String(input), location.origin).pathname
-        if (path === '/api/v1/fixed-expenses') return Promise.resolve(new Response('{"error":"forbidden"}', { status: 403, headers: { 'Content-Type': 'application/json' } }))
+        if (path === '/api/v1/guilds/1/fixed-expenses') return Promise.resolve(new Response('{"error":"forbidden"}', { status: 403, headers: { 'Content-Type': 'application/json' } }))
         return original(input, options)
       }
     })

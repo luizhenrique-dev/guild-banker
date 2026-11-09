@@ -21,13 +21,18 @@ test('URL guild selection isolates data, restores history and rejects invalid ID
 
 test('expenses close the old guild modal and preserve selection through history', async ({ page }) => {
   await page.goto('/fixed-expenses?guild=1')
+  await expect(page.getByText('Aluguel', { exact: true })).toBeVisible()
   await page.getByRole('button', { name: 'Nova despesa fixa' }).click()
   await expect(page.getByRole('dialog')).toBeVisible()
   await page.evaluate(() => { history.pushState({}, '', '/fixed-expenses?guild=2'); dispatchEvent(new PopStateEvent('popstate')) })
   await expect(page).toHaveURL(/guild=2/)
+  await expect(page.getByText('Internet da República', { exact: true })).toBeVisible()
+  await expect(page.getByText('Aluguel', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.goBack()
   await expect(page).toHaveURL(/guild=1/)
+  await expect(page.getByText('Aluguel', { exact: true })).toBeVisible()
+  await expect(page.getByText('Internet da República', { exact: true })).toHaveCount(0)
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await page.goto('/fixed-expenses?guild=999')
   await expect(page.getByText('Selecione uma guild válida.')).toBeVisible()

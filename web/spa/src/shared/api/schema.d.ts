@@ -133,17 +133,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/fixed-expenses": {
+    "/api/v1/guilds/{guildID}/fixed-expenses": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Lista as despesas fixas ativas do requisitante */
+        /** Lista despesas fixas ativas da guild para seus membros */
         get: operations["listActiveFixedExpenses"];
         put?: never;
-        /** Cria uma despesa fixa recorrente */
+        /** Cria uma despesa fixa compartilhada por membros da guild */
         post: operations["createFixedExpense"];
         delete?: never;
         options?: never;
@@ -151,7 +151,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/fixed-expenses/{id}": {
+    "/api/v1/guilds/{guildID}/fixed-expenses/{id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -168,7 +168,7 @@ export interface paths {
         patch: operations["updateFixedExpense"];
         trace?: never;
     };
-    "/api/v1/fixed-expenses/{id}/deactivate": {
+    "/api/v1/guilds/{guildID}/fixed-expenses/{id}/deactivate": {
         parameters: {
             query?: never;
             header?: never;
@@ -386,6 +386,8 @@ export interface components {
             status: "PAUSED" | "CANCELLED";
         };
         FixedExpenseResponse: {
+            /** Format: int64 */
+            guild_id: number;
             /** Format: int64 */
             id: number;
             name: string;
@@ -885,7 +887,10 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description ID do guild. */
+                id: components["parameters"]["GuildIDPath"];
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -909,7 +914,10 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                /** @description ID do guild. */
+                id: components["parameters"]["GuildIDPath"];
+            };
             cookie?: never;
         };
         requestBody: {

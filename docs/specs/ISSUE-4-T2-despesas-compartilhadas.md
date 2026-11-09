@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-4 — Despesas fixas compartilhadas por guild](./ISSUE-4-despesas-fixas-por-guild.md)
 
-- **Status:** ⬜ pendente
+- **Status:** concluida
 - **Depende de:** T1; ISSUE-3 concluída conforme o pré-requisito geral.
 
 ## O que fazer
@@ -70,3 +70,32 @@ D1–D4: todos os membros operam, sem dados a preservar, quebra de rotas aprovad
 ## Evidências
 
 <!-- Preenchido pelo dev-mage: matriz ator/guild/operação/status, round-trip PostgreSQL/auditoria, contratos gerados, contextos UI, gates reais/demo, limitações e commit local. -->
+
+
+### Fechamento — 2026-11-08
+
+Pré-requisito: T1 validada e commitada em `57d656d`, incluindo correção D5 autorizada do fluxo de criação de guild. Working tree sem mudanças alheias; alteração T2 iniciada nesta execução e retomada após reinício do daemon. Nenhuma migration em banco compartilhado, push ou PR.
+
+| Critério | Evidência observada | Resultado |
+|---|---|---|
+| T2-AC1 | `TestFixedExpenseGuild`, `TestFixedExpenseGuildSchema`: guild positiva no domínio, persistência/DTO, FK e NOT NULL reais (23503/23502); inspeção migration sem owner pessoal, índice por guild/status. | aprovado |
+| T2-AC2 | `TestFixedExpenseSharingPostgres`: A cria e B lê/edita/desativa mesmo ID; outsider e A removido têm 403 nas quatro operações; B membro de ambas recebe 404 na guild errada; adapter Update errado não altera linha. | aprovado |
+| T2-AC3 | `TestAPIPrefixProtection`: somente quatro novas rotas registradas; antigas autenticadas 404, sem token 401. OpenAPI, tipos gerados, cliente e contratos MSW atualizados sem aliases. | aprovado |
+| T2-AC4 | PostgreSQL/HTTP real controlado: principal prevalece sobre headers conflitantes; criação/autoria estáveis, updated_by de B; remover membership de A preserva despesa. | aprovado |
+| T2-AC5 | Testes de hook/página/sessão: chaves usuário/guild, guild capturada, G1 tardio preserva draft G2 e não invalida G2; query 403 substitui cache, ação 403 preserva draft sem replay; E2E G1/G2 listas distintas/histórico/modal fechado. | aprovado |
+| T2-AC6 | Testes de domínio preservam valor/vencimento/categoria/status; PG round-trip decimal/ACTIVE/ordenação/array vazio; contratos/CRUD/foco a 375/1280 px e nome read-only; textos PT/EN e README atualizados, sem alteração em totais/transações. | aprovado |
+| T2-AC7 | `TestServiceGuildAuthorization` todas quatro operações × não membro, falha técnica, cancelamento, guild/ator inválidos: nenhuma operação de despesa executa. `TestHandlerGuildErrors`: 400/403/500 distinguíveis, 500 genérico sem conteúdo técnico. Integração cobre 404/contexto real. | aprovado |
+| T2-AC8 | Schema exclusivo PostgreSQL 17+ com migration atualizada e serviço/handlers reais; regressão integrada ISSUE-3/provisioning/guild passou; MSW distingue A/B da mesma guild e não membro; login OIDC real resolve/cria guild pelo contrato público e consulta rota nova com 200. | aprovado |
+
+RED observado antes do schema: `TestFixedExpenseGuildSchema` falhou porque `fixed_expense.guild_id` não existia (42703); após migration/adapter, schema e compartilhamento passaram. Primeira compilação do novo sensor tinha import não utilizado; isso foi corrigido antes de registrar o RED de comportamento. Não foi relaxada expectativa financeira ou de autorização.
+
+Comandos e saídas observadas:
+
+- Na raiz: `make api/vet`, `make api/lint` → 0 issues, `make api/test`, `make api/test/integration`, `make api/build` → pacotes aplicáveis passaram/build gerado.
+- Em `api/`: `go test ./internal/fixed_expense -race -v -count=1 -tags=integration,postgres` → domínio/aplicação/HTTP, schema e compartilhamento passaram; `go test ./... -race -v -count=1 -tags=integration,postgres` → todos os pacotes aplicáveis passaram, inclusive `TestStorageEnsureAccountPostgres`, `TestStorageEnsureAccountConcurrent` e `TestStorageCreatePostgres`. Configuração exclusiva via `FIXED_EXPENSE_TEST_DATABASE_URL`, `USER_TEST_DATABASE_URL`, `GUILD_TEST_DATABASE_URL`; schemas removidos pelas suítes. Toolchain/race no sandbox falhou antes de executar testes; gate fora do sandbox observou PASS, sem substituir por mocks.
+- Na raiz: `npm --prefix web/spa run api:types` gerou tipos; `api:types:check` passou sem drift; `lint` passou; build com variáveis públicas OIDC passou (aviso de chunk >500 kB); `test` → 17 arquivos, 136 testes passaram.
+- `npm --prefix web/spa run test:e2e` → 15 passaram; `test:e2e:prod` → 8 passaram; `E2E_ALLOW_GUILD_CREATE=true npm --prefix web/spa run test:e2e:auth` → 6 passaram, API de T2 iniciada em PostgreSQL descartável exclusivo, guild criada somente nesse banco pela rota pública. Sem artefatos de autenticação.
+
+Revisão independente `review_t1`: sem achados remanescentes após revisar membership, predicados SQL, auditoria, erros, contexto, contrato, frontend e cobertura; executou contratos MSW independentemente (6 passaram). Segunda revisão própria confirmou escopo, diff e ausência de alterações alheias. Nenhuma falha detectada nas verificações executadas. Verificação manual extra não é gate e não foi necessária.
+
+Implementação validada; commit local coeso integra este fechamento. Operação exige API/SPA juntas e banco/schema novo; edição da versão 1 não migra bancos existentes. Nenhum backfill/reset compartilhado foi executado.

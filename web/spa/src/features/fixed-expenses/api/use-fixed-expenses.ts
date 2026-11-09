@@ -14,7 +14,7 @@ export function useFixedExpenses() {
   const { activeGuild } = useActiveGuild()
   return useQuery({
     queryKey: fixedExpenseKeys.list(session.user?.id, activeGuild?.id),
-    queryFn: ({ signal }) => session.request((options) => fixedExpensesApi.list(options), signal),
+    queryFn: ({ signal }) => session.request((options) => fixedExpensesApi.list(options, activeGuild!.id), signal),
     enabled: !!session.user && !!activeGuild,
     staleTime: 5 * 60 * 1000,
   })
@@ -37,11 +37,11 @@ function useExpenseMutation<V extends { guildId: number }, R>(operation: (input:
   })
 }
 export function useCreateFixedExpense() {
-  return useExpenseMutation(({ input }: { guildId: number; input: CreateFixedExpenseInput }, options) => fixedExpensesApi.create(input, options), 'fx.toast.created')
+  return useExpenseMutation(({ input, guildId }: { guildId: number; input: CreateFixedExpenseInput }, options) => fixedExpensesApi.create(input, options, guildId), 'fx.toast.created')
 }
 export function useUpdateFixedExpense() {
-  return useExpenseMutation(({ id, input }: { guildId: number; id: number; input: UpdateFixedExpenseInput }, options) => fixedExpensesApi.update(id, input, options), 'fx.toast.updated')
+  return useExpenseMutation(({ id, input, guildId }: { guildId: number; id: number; input: UpdateFixedExpenseInput }, options) => fixedExpensesApi.update(id, input, options, guildId), 'fx.toast.updated')
 }
 export function useDeactivateFixedExpense() {
-  return useExpenseMutation(({ id, status }: { guildId: number; id: number; status: 'PAUSED' | 'CANCELLED' }, options) => fixedExpensesApi.deactivate(id, status, options), 'fx.toast.deactivated')
+  return useExpenseMutation(({ id, status, guildId }: { guildId: number; id: number; status: 'PAUSED' | 'CANCELLED' }, options) => fixedExpensesApi.deactivate(id, status, options, guildId), 'fx.toast.deactivated')
 }

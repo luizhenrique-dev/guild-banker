@@ -1,6 +1,7 @@
 package fixedexpense
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
@@ -19,14 +20,14 @@ var (
 
 func newValidFixedExpense(t *testing.T) *FixedExpense {
 	t.Helper()
-	fe, err := New(validName, validAmount, validDueDay, validCategory, validCreatedBy)
+	fe, err := New(1, validName, validAmount, validDueDay, validCategory, validCreatedBy)
 	assert.NoError(t, err)
 	return fe
 }
 
 func TestFixedExpense_New(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		fe, err := New(validName, validAmount, validDueDay, validCategory, validCreatedBy)
+		fe, err := New(1, validName, validAmount, validDueDay, validCategory, validCreatedBy)
 
 		assert.NoError(t, err)
 		assert.EqualValues(t, 0, fe.ID)
@@ -42,7 +43,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when name is empty", func(t *testing.T) {
-		fe, err := New("", validAmount, validDueDay, validCategory, validCreatedBy)
+		fe, err := New(1, "", validAmount, validDueDay, validCategory, validCreatedBy)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -50,7 +51,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when amount is zero", func(t *testing.T) {
-		fe, err := New(validName, decimal.Zero, validDueDay, validCategory, validCreatedBy)
+		fe, err := New(1, validName, decimal.Zero, validDueDay, validCategory, validCreatedBy)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -58,7 +59,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when amount is negative", func(t *testing.T) {
-		fe, err := New(validName, decimal.NewFromFloat(-1.00), validDueDay, validCategory, validCreatedBy)
+		fe, err := New(1, validName, decimal.NewFromFloat(-1.00), validDueDay, validCategory, validCreatedBy)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -66,7 +67,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when dueDay is less than 1", func(t *testing.T) {
-		fe, err := New(validName, validAmount, 0, validCategory, validCreatedBy)
+		fe, err := New(1, validName, validAmount, 0, validCategory, validCreatedBy)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -74,7 +75,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when dueDay is greater than 31", func(t *testing.T) {
-		fe, err := New(validName, validAmount, 32, validCategory, validCreatedBy)
+		fe, err := New(1, validName, validAmount, 32, validCategory, validCreatedBy)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -82,7 +83,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when category is invalid", func(t *testing.T) {
-		fe, err := New(validName, validAmount, validDueDay, "INVALID_CATEGORY", validCreatedBy)
+		fe, err := New(1, validName, validAmount, validDueDay, "INVALID_CATEGORY", validCreatedBy)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -90,7 +91,7 @@ func TestFixedExpense_New(t *testing.T) {
 	})
 
 	t.Run("error when createdBy is empty", func(t *testing.T) {
-		fe, err := New(validName, validAmount, validDueDay, validCategory, "")
+		fe, err := New(1, validName, validAmount, validDueDay, validCategory, "")
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -278,4 +279,18 @@ func TestStatus_IsValid(t *testing.T) {
 	t.Run("invalid status", func(t *testing.T) {
 		assert.False(t, Status("INVALID_STATUS").IsValid())
 	})
+}
+
+func TestFixedExpenseGuild(t *testing.T) {
+	for _, id := range []int64{0, -1} {
+		t.Run(fmt.Sprint(id), func(t *testing.T) {
+			expense, err := New(id, validName, validAmount, validDueDay, validCategory, validCreatedBy)
+			assert.Error(t, err)
+			assert.Nil(t, expense)
+		})
+	}
+	expense := newValidFixedExpense(t)
+	assert.EqualValues(t, 1, expense.GuildID)
+	expense.GuildID = 0
+	assert.Error(t, expense.Validate())
 }

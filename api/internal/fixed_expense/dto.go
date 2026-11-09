@@ -21,6 +21,7 @@ type deactivateFixedExpenseRequest struct {
 }
 
 type fixedExpenseResponse struct {
+	GuildID  int64           `json:"guild_id"`
 	ID       int64           `json:"id"`
 	Name     string          `json:"name"`
 	Amount   decimal.Decimal `json:"amount"`
@@ -32,6 +33,7 @@ type fixedExpenseResponse struct {
 func toResponse(fixedExpense *FixedExpense) fixedExpenseResponse {
 	return fixedExpenseResponse{
 		ID:       fixedExpense.ID,
+		GuildID:  fixedExpense.GuildID,
 		Name:     fixedExpense.Name,
 		Amount:   fixedExpense.Amount,
 		DueDay:   fixedExpense.DueDay,

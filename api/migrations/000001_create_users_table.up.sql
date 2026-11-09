@@ -41,7 +41,7 @@ CREATE UNIQUE INDEX idx_guild_name_lower ON guild (LOWER(name));
 CREATE TABLE fixed_expense
 (
 	id         BIGSERIAL PRIMARY KEY,
-	user_id    BIGINT         NOT NULL REFERENCES user_account (id) ON DELETE CASCADE,
+	guild_id    BIGINT         NOT NULL REFERENCES guild (id),
 	name       TEXT           NOT NULL,
 	amount     NUMERIC(12, 2) NOT NULL,
 	due_day    INTEGER        NOT NULL,
@@ -56,7 +56,7 @@ CREATE TABLE fixed_expense
 	CONSTRAINT chk_fixed_expense_status CHECK (status IN ('ACTIVE', 'PAUSED', 'CANCELLED'))
 );
 
-CREATE INDEX idx_fixed_expense_user_id_status ON fixed_expense (user_id, status);
+CREATE INDEX idx_fixed_expense_guild_id_status ON fixed_expense (guild_id, status);
 
 CREATE TYPE transaction_type AS ENUM ('EXPENSE', 'INCOME');
 CREATE TYPE transaction_status AS ENUM ('ACTIVE', 'CANCELLED');

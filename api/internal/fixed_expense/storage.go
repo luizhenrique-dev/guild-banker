@@ -13,6 +13,7 @@ import (
 
 type fixedExpenseEntity struct {
 	ID        int64           `db:"id"`
+	GuildID   int64           `db:"guild_id"`
 	Name      string          `db:"name"`
 	Amount    decimal.Decimal `db:"amount"`
 	DueDay    int             `db:"due_day"`
@@ -32,15 +33,15 @@ func NewStorage(db *sqlx.DB) Storage {
 	return &postgresStorage{db: db}
 }
 
-func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense, userID int64) error {
+func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense) error {
 	const query = `
-		INSERT INTO fixed_expense (user_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by)
-		VALUES (:user_id, :name, :amount, :due_day, :category, :status, :created_at, :created_by, :updated_at, :updated_by)
+		INSERT INTO fixed_expense (guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by)
+		VALUES (:guild_id, :name, :amount, :due_day, :category, :status, :created_at, :created_by, :updated_at, :updated_by)
 		RETURNING id
 	`
 
 	params := map[string]any{
-		"user_id":    userID,
+		"guild_id":   fixedExpense.GuildID,
 		"name":       fixedExpense.Name,
 		"amount":     fixedExpense.Amount,
 		"due_day":    fixedExpense.DueDay,
@@ -64,39 +65,42 @@ func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense
 		}
 	}
 
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("read fixed expense id: %w", err)
+	}
 	return nil
 }
 
-func (s *postgresStorage) GetByIDAndUser(ctx context.Context, id, userID int64) (*FixedExpense, error) {
+func (s *postgresStorage) GetByIDAndGuild(ctx context.Context, id, guildID int64) (*FixedExpense, error) {
 	const query = `
-		SELECT id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
+		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
 		FROM fixed_expense
-		WHERE id = $1 AND user_id = $2
+		WHERE id = $1 AND guild_id = $2
 	`
 
 	var entity fixedExpenseEntity
-	if err := s.db.GetContext(ctx, &entity, query, id, userID); err != nil {
+	if err := s.db.GetContext(ctx, &entity, query, id, guildID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, ErrFixedExpenseNotFound
 		}
 
-		return nil, fmt.Errorf("get fixed expense by id and user: %w", err)
+		return nil, fmt.Errorf("get fixed expense by id and guild: %w", err)
 	}
 
 	return toDomain(entity), nil
 }
 
-func (s *postgresStorage) ListActiveByUser(ctx context.Context, userID int64) ([]*FixedExpense, error) {
+func (s *postgresStorage) ListActiveByGuild(ctx context.Context, guildID int64) ([]*FixedExpense, error) {
 	const query = `
-		SELECT id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
+		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
 		FROM fixed_expense
-		WHERE user_id = $1 AND status = $2
+		WHERE guild_id = $1 AND status = $2
 		ORDER BY due_day ASC, name ASC
 	`
 
 	entities := make([]fixedExpenseEntity, 0)
-	if err := s.db.SelectContext(ctx, &entities, query, userID, StatusActive); err != nil {
-		return nil, fmt.Errorf("list active fixed expenses by user: %w", err)
+	if err := s.db.SelectContext(ctx, &entities, query, guildID, StatusActive); err != nil {
+		return nil, fmt.Errorf("list active fixed expenses by guild: %w", err)
 	}
 
 	fixedExpenses := make([]*FixedExpense, 0, len(entities))
@@ -107,7 +111,7 @@ func (s *postgresStorage) ListActiveByUser(ctx context.Context, userID int64) ([
 	return fixedExpenses, nil
 }
 
-func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense, userID int64) error {
+func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense) error {
 	const query = `
 		UPDATE fixed_expense
 		SET amount = $1,
@@ -116,7 +120,7 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 			status = $4,
 			updated_at = $5,
 			updated_by = $6
-		WHERE id = $7 AND user_id = $8
+		WHERE id = $7 AND guild_id = $8
 	`
 
 	result, err := s.db.ExecContext(
@@ -129,7 +133,7 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 		fixedExpense.UpdatedAt,
 		fixedExpense.UpdatedBy,
 		fixedExpense.ID,
-		userID,
+		fixedExpense.GuildID,
 	)
 	if err != nil {
 		return fmt.Errorf("update fixed expense: %w", err)
@@ -149,6 +153,7 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 func toDomain(entity fixedExpenseEntity) *FixedExpense {
 	return &FixedExpense{
 		ID:        entity.ID,
+		GuildID:   entity.GuildID,
 		Name:      entity.Name,
 		Amount:    entity.Amount,
 		DueDay:    entity.DueDay,
@@ -159,4 +164,13 @@ func toDomain(entity fixedExpenseEntity) *FixedExpense {
 		UpdatedAt: entity.UpdatedAt,
 		UpdatedBy: entity.UpdatedBy,
 	}
+}
+
+func (s *postgresStorage) IsGuildMember(ctx context.Context, guildID, userID int64) (bool, error) {
+	const query = `SELECT EXISTS (SELECT 1 FROM guild_member WHERE guild_id = $1 AND user_id = $2)`
+	var isMember bool
+	if err := s.db.GetContext(ctx, &isMember, query, guildID, userID); err != nil {
+		return false, fmt.Errorf("check guild membership: %w", err)
+	}
+	return isMember, nil
 }
