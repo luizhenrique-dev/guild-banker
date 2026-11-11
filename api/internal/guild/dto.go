@@ -1,12 +1,13 @@
 package guild
 
 type createGuildRequest struct {
-	Name        string `json:"name"`
 	DisplayName string `json:"display_name"`
+	Description string `json:"description"`
 }
 
 type updateGuildRequest struct {
-	Name string `json:"name"`
+	DisplayName string  `json:"display_name"`
+	Description *string `json:"description"`
 }
 
 type inviteUserRequest struct {
@@ -17,5 +18,6 @@ type guildResponse struct {
 	ID          int64  `json:"id"`
 	Name        string `json:"name"`
 	DisplayName string `json:"display_name"`
+	Description string `json:"description"`
 	Enabled     bool   `json:"enabled"`
 }

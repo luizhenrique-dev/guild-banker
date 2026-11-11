@@ -1,5 +1,5 @@
 import { http, HttpResponse, delay } from 'msw'
-import { mockUserID, mockGuildMember } from '../request-context'
+import { mockUserID, mockGuildMember, addMockGuildMember, resetMockMemberships } from '../request-context'
 import { guildsFixtures } from '../fixtures/guilds'
 import type { Guild } from '@/src/features/guilds/types'
 
@@ -15,14 +15,24 @@ export const guildsHandlers = [
   // operationId: createGuild
   http.post('*/api/v1/guilds', async ({ request }) => {
     await delay(500)
-    const body = (await request.json()) as { name: string; display_name: string }
+    const body = (await request.json()) as { display_name: string; description?: string }
+    const displayName = body.display_name?.trim() ?? ''
+    if (!displayName || [...displayName].length > 70) return HttpResponse.json({ error: 'invalid display name' }, { status: 400 })
+    const base = displayName.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'guild'
+    let name = base
+    for (let attempt = 0; guilds.some((guild) => guild.name === name); attempt++) {
+      if (attempt === 5) return HttpResponse.json({ error: 'guild name generation temporarily unavailable' }, { status: 503 })
+      name = base.slice(0,61).replace(/-+$/, '') + '-' + crypto.randomUUID().replaceAll('-', '').slice(0,8)
+    }
     const newGuild: Guild = {
       id: guilds.length + 10,
-      name: body.name,
-      display_name: body.display_name,
+      name,
+      display_name: displayName,
+      description: body.description ?? "",
       enabled: true,
     }
     guilds.push(newGuild)
+    addMockGuildMember(mockUserID(request), newGuild.id)
     return HttpResponse.json(newGuild, { status: 201 })
   }),
 
@@ -30,10 +40,12 @@ export const guildsHandlers = [
   http.put('*/api/v1/guilds/:id', async ({ params, request }) => {
     await delay(400)
     const id = Number(params['id'])
-    const body = (await request.json()) as { name: string }
+    const body = (await request.json()) as { display_name: string; description?: string }
     const guild = guilds.find((g) => g.id === id)
     if (!guild) return HttpResponse.json({ error: 'Não encontrado' }, { status: 404 })
-    guild.display_name = body.name
+    if (!body.display_name?.trim() || [...body.display_name.trim()].length > 70) return HttpResponse.json({ error: "invalid display name" }, { status: 400 })
+    guild.display_name = body.display_name.trim()
+    if (body.description !== undefined) guild.description = body.description
     return HttpResponse.json(guild)
   }),
 
@@ -72,4 +84,5 @@ export const guildsHandlers = [
 
 export function resetGuildsMocks() {
   guilds = structuredClone(guildsFixtures)
+  resetMockMemberships()
 }

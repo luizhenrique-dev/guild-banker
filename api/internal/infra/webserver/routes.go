@@ -12,7 +12,7 @@ func (s *Server) registerRoutes() {
 	api := s.router.Group("/api/v1")
 	{
 		api.POST("/guilds", s.guild.Create)
-		api.PUT("/guilds/:guildID", s.guild.UpdateName)
+		api.PUT("/guilds/:guildID", s.guild.Update)
 		api.PATCH("/guilds/:guildID/enable", s.guild.Enable)
 		api.PATCH("/guilds/:guildID/disable", s.guild.Disable)
 		api.GET("/guilds", s.guild.ListByMember)

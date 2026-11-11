@@ -35,3 +35,18 @@ it.each(['GET', 'POST', 'PATCH', 'deactivate'])('denies non member %s in demo', 
   const path = '/api/v1/guilds/1/fixed-expenses' + (method === 'PATCH' ? '/1' : '') + (operation === 'deactivate' ? '/deactivate' : '')
   await expect(apiClient(path, { method, headers: { 'X-User-ID': '2', 'X-User-Email': 'b@example.test' }, ...(method === 'GET' ? {} : { body: { status: 'PAUSED' } }) })).rejects.toMatchObject({ status: 403 })
 })
+
+it('guild mock generates unique names, retains creator membership and edits only mutable fields', async () => {
+  type Guild = components['schemas']['GuildResponse']
+  const create = () => apiClient<Guild>('/api/v1/guilds', { method: 'POST', headers, body: { name: 'ignored', display_name: 'Á&B  Amigos', description: 'Casa' } })
+  const first = await create()
+  const second = await create()
+  expect(first).toMatchObject({ name: 'ab-amigos', display_name: 'Á&B  Amigos', description: 'Casa' })
+  expect(second.name).toMatch(/^ab-amigos-[a-f0-9]{8}$/)
+  expect(await apiClient<Guild[]>('/api/v1/guilds', { headers })).toContainEqual(first)
+  const updated = await apiClient<Guild>('/api/v1/guilds/' + first.id, { method: 'PUT', headers, body: { name: 'ignored-again', display_name: 'Novo visual' } })
+  expect(updated).toMatchObject({ name: first.name, description: 'Casa' })
+  const cleared = await apiClient<Guild>('/api/v1/guilds/' + first.id, { method: 'PUT', headers, body: { display_name: 'Novo visual', description: '' } })
+  expect(cleared.description).toBe('')
+  await expect(apiClient('/api/v1/guilds', { method: 'POST', headers, body: { display_name: 'á'.repeat(71) } })).rejects.toMatchObject({ status: 400 })
+})

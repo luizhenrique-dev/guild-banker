@@ -33,7 +33,7 @@ export interface paths {
         put?: never;
         /**
          * Cria um novo guild
-         * @description Cria um guild com o usuário local autenticado como membro criador. Falha com 409 se o nome já estiver em uso.
+         * @description Cria uma guild e associa o criador atomicamente. O identificador name é gerado pela API a partir de display_name, com sufixo automático em colisões.
          */
         post: operations["createGuild"];
         delete?: never;
@@ -52,7 +52,7 @@ export interface paths {
         get?: never;
         /**
          * Atualiza o nome de exibição de um guild
-         * @description TODO: o campo `name` do corpo é, na implementação atual, aplicado ao atributo displayName do guild (ver OPENAPI_GAPS.md). Requer que o requisitante seja membro do guild.
+         * @description Atualiza display_name e description. name é imutável. Requer membership. Descrição omitida é preservada; string vazia limpa a descrição.
          */
         put: operations["updateGuildName"];
         post?: never;
@@ -339,14 +339,13 @@ export interface components {
             error: string;
         };
         CreateGuildRequest: {
-            /** @description Nome único do guild (chave de negócio). */
-            name: string;
-            /** @description Nome de exibição do guild. */
             display_name: string;
+            description?: string;
         };
-        /** @description TODO: apesar do campo se chamar `name`, o valor é aplicado ao atributo displayName do guild na implementação atual (guild/service.go, guild/guild.go Rename). Ver OPENAPI_GAPS.md. */
         UpdateGuildRequest: {
-            name: string;
+            display_name: string;
+            /** @description Omitir preserva; string vazia limpa. */
+            description?: string;
         };
         InviteUserRequest: {
             /** Format: email */
@@ -355,8 +354,9 @@ export interface components {
         GuildResponse: {
             /** Format: int64 */
             id: number;
-            name: string;
+            readonly name: string;
             display_name: string;
+            description: string;
             enabled: boolean;
         };
         /** @enum {string} */
@@ -671,8 +671,9 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            /** @description Nome de guild já utilizado. */
-            409: {
+            500: components["responses"]["InternalServerError"];
+            /** @description Não foi possível reservar um identificador após as tentativas limitadas. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -680,7 +681,6 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
     updateGuildName: {
@@ -720,15 +720,6 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            /** @description Nome de guild já utilizado. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
             500: components["responses"]["InternalServerError"];
         };
     };

@@ -8,6 +8,7 @@ import (
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -88,4 +89,14 @@ func testIdentityRequest(t *testing.T, router *gin.Engine, method, path, body st
 			assert.JSONEq(t, `{"error":"unauthorized"}`, w.Body.String())
 		}
 	}
+}
+
+func TestNameGenerationExhaustionReturnsUnavailable(t *testing.T) {
+	service, storage := newService(t)
+	storage.On("Create", mock.Anything, mock.Anything, int64(42)).Return(ErrGuildNameAlreadyUsed).Times(6)
+	handler := NewHandler(service)
+	router := gin.New()
+	router.POST("/api/guilds", handler.Create)
+	testIdentityRequest(t, router, "POST", "/api/guilds", `{"display_name":"Repeated"}`, 503)
+	storage.AssertExpectations(t)
 }

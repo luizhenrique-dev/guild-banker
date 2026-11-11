@@ -37,7 +37,7 @@ func TestGuild_New(t *testing.T) {
 
 		assert.Error(t, err)
 		assert.Nil(t, g)
-		assert.EqualError(t, err, "displayName is required")
+		assert.ErrorIs(t, err, ErrInvalidGuild)
 	})
 
 	t.Run("error when created by is empty", func(t *testing.T) {
@@ -71,7 +71,7 @@ func TestGuild_Rename(t *testing.T) {
 
 		err = g.Rename("", "owner@example.com")
 
-		assert.EqualError(t, err, "name is required")
+		assert.ErrorIs(t, err, ErrInvalidGuild)
 	})
 
 	t.Run("error when by is empty", func(t *testing.T) {

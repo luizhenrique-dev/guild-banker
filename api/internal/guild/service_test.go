@@ -31,7 +31,7 @@ func (m *storageMock) NameExists(ctx context.Context, name string, excludeID int
 	return args.Bool(0), args.Error(1)
 }
 
-func (m *storageMock) UpdateName(ctx context.Context, g *Guild) error {
+func (m *storageMock) Update(ctx context.Context, g *Guild) error {
 	args := m.Called(ctx, g)
 	return args.Error(0)
 }
@@ -83,54 +83,19 @@ func validActor() audit.Actor {
 }
 
 func TestService_Create(t *testing.T) {
-	t.Run("success", func(t *testing.T) {
+	t.Run("invalid actor", func(t *testing.T) {
 		svc, storage := newService(t)
-		actor := validActor()
-		storage.On("NameExists", mock.Anything, "devs", int64(0)).Return(false, nil)
-		storage.On("Create", mock.Anything, mock.AnythingOfType("*guild.Guild"), actor.UserID).Return(nil)
-
-		g, err := svc.Create(context.Background(), "devs", "Developers", actor)
-
-		assert.NoError(t, err)
-		assert.NotNil(t, g)
-		assert.Equal(t, "devs", g.Name)
-		assert.Equal(t, "Developers", g.DisplayName)
+		_, err := svc.Create(context.Background(), "Developers", "", audit.Actor{})
+		assert.Error(t, err)
+		storage.AssertNotCalled(t, "Create")
+	})
+	t.Run("storage error is not retried", func(t *testing.T) {
+		svc, storage := newService(t)
+		cause := errors.New("db error")
+		storage.On("Create", mock.Anything, mock.Anything, int64(1)).Return(cause).Once()
+		_, err := svc.Create(context.Background(), "Developers", "", validActor())
+		assert.ErrorIs(t, err, cause)
 		storage.AssertExpectations(t)
-	})
-
-	t.Run("error when actor is invalid", func(t *testing.T) {
-		svc, storage := newService(t)
-
-		g, err := svc.Create(context.Background(), "devs", "Developers", audit.Actor{})
-
-		assert.Error(t, err)
-		assert.Nil(t, g)
-		storage.AssertNotCalled(t, "NameExists")
-		storage.AssertNotCalled(t, "Create")
-	})
-
-	t.Run("error on name exists check", func(t *testing.T) {
-		svc, storage := newService(t)
-		actor := validActor()
-		storage.On("NameExists", mock.Anything, "devs", int64(0)).Return(false, errors.New("db error"))
-
-		g, err := svc.Create(context.Background(), "devs", "Developers", actor)
-
-		assert.Error(t, err)
-		assert.Nil(t, g)
-		storage.AssertNotCalled(t, "Create")
-	})
-
-	t.Run("error when name already used", func(t *testing.T) {
-		svc, storage := newService(t)
-		actor := validActor()
-		storage.On("NameExists", mock.Anything, "devs", int64(0)).Return(true, nil)
-
-		g, err := svc.Create(context.Background(), "devs", "Developers", actor)
-
-		assert.ErrorIs(t, err, ErrGuildNameAlreadyUsed)
-		assert.Nil(t, g)
-		storage.AssertNotCalled(t, "Create")
 	})
 }
 
@@ -140,11 +105,10 @@ func TestService_UpdateName(t *testing.T) {
 		actor := validActor()
 		existing := stubGuild()
 		storage.On("IsMember", mock.Anything, int64(1), actor.UserID).Return(true, nil)
-		storage.On("NameExists", mock.Anything, "Platform", int64(1)).Return(false, nil)
 		storage.On("GetByID", mock.Anything, int64(1)).Return(existing, nil)
-		storage.On("UpdateName", mock.Anything, existing).Return(nil)
+		storage.On("Update", mock.Anything, existing).Return(nil)
 
-		g, err := svc.UpdateName(context.Background(), 1, "Platform", actor)
+		g, err := svc.Update(context.Background(), 1, UpdateInput{DisplayName: "Platform"}, actor)
 
 		assert.NoError(t, err)
 		assert.Equal(t, "Platform", g.DisplayName)
@@ -156,13 +120,13 @@ func TestService_UpdateName(t *testing.T) {
 		actor := validActor()
 		storage.On("IsMember", mock.Anything, int64(1), actor.UserID).Return(false, nil)
 
-		g, err := svc.UpdateName(context.Background(), 1, "platform", actor)
+		g, err := svc.Update(context.Background(), 1, UpdateInput{DisplayName: "platform"}, actor)
 
 		assert.ErrorIs(t, err, ErrRequesterIsNotMember)
 		assert.Nil(t, g)
 		storage.AssertNotCalled(t, "NameExists")
 		storage.AssertNotCalled(t, "GetByID")
-		storage.AssertNotCalled(t, "UpdateName")
+		storage.AssertNotCalled(t, "Update")
 	})
 }
 
