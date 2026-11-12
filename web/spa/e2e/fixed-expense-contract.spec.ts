@@ -9,3 +9,6 @@ test('name stays read-only and PATCH sends only supported fields', async ({ page
   expect((await update).postDataJSON()).toEqual({ amount: '2500.00', due_day: 10, category: 'HOUSING' })
   await expect(page.getByRole('dialog')).toHaveCount(0)
 })
+
+// Existing business journeys begin with an explicit saved guild preference.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('guildbanker:last-guild:demo:1', '1')) })

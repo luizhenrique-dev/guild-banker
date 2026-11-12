@@ -8,5 +8,5 @@ import { resetImportsMocks } from '../mocks/handlers/imports'
 import { resetTransactionsMocks } from '../mocks/handlers/transactions'
 
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
-afterEach(() => { cleanup(); server.resetHandlers(); resetFixedExpensesMocks(); resetGuildsMocks(); resetTransactionsMocks(); resetImportsMocks() })
+afterEach(() => { cleanup(); if (typeof localStorage !== 'undefined') localStorage.clear(); server.resetHandlers(); resetFixedExpensesMocks(); resetGuildsMocks(); resetTransactionsMocks(); resetImportsMocks() })
 afterAll(() => server.close())

@@ -31,7 +31,7 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 | T3-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
 | T3-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
-Commit: pendente.
+Commit: 21d475f.
 
 ### Fechamento T3
 RED observado: storage ainda não suportava resposta atômica. GREEN PostgreSQL com race: rollback, convite antes do cadastro local, dados do convidador/guild, recusa/reenvio/aceite, resposta alheia, repetição, dois aceites, aceite×recusa, emissão×aceite. HTTP prova401/404/200/409, dados corretos e cabeçalhos/body incapazes de substituir o principal.

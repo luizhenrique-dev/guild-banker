@@ -86,3 +86,6 @@ test('forbidden expense action preserves the draft and session', async ({ page }
   await dialog.getByRole('button', { name: 'Cancelar', exact: true }).click()
   await expect(page.getByRole('button', { name: 'Sair' })).toBeEnabled()
 })
+
+// Existing business journeys begin with an explicit saved guild preference.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('guildbanker:last-guild:demo:1', '1')) })

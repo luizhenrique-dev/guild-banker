@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-5](./ISSUE-5-onboarding-guild-apos-login.md)
 
-- Status: em_andamento
+- Status: concluida
 - Depende de: T1
 
 ## O que fazer
@@ -28,7 +28,12 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 ## Evidências
 | Critério | Evidência | Esperado | Resultado |
 |---|---|---|---|
-| T4-AC1 | testes descritos acima (planejados) | comportamento aprovado | pendente |
-| T4-AC2 | gates e revisão | sem falhas no escopo | pendente |
+| T4-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
+| T4-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
 Commit: pendente.
+
+### Fechamento T4
+RED quatro falhas observadas: seleção automática entre várias, restauração ignorada, preferência não persistida e ID corrompido. GREEN provider12testes: URL/prioridade/validação, IDs removidos/corrompidos, storage indisponível, usuário isolado, guild única, logout conserva preferência e resposta tardia bloqueada. Resposta antiga não apaga erro403mais recente, comprovado também diretamente no estado do cache.
+Gates frontend lint/build passaram; suite completa152testes antes dos dois sensores finais; provider12passou depois deles. Demo15/prod8/authreal6 passaram. Ajustes de fixtures antigos usam explicitamente guild1/preferência, mantendo asserções de isolamento/autorização/histórico.
+Revisão independente aprovou o provider após proteção adicional contra ativação tardia sobre403. Nenhuma API/SQL foi alterada nesta task; gatesAPI não aplicáveis.

@@ -13,3 +13,6 @@ test('demo invitation and member removal report actual mutation outcomes', async
   await expect(page.getByText('Bruno Lima')).toBeVisible()
   await expect(page.getByText('Maria Silva')).toHaveCount(0)
 })
+
+// Existing business journeys begin with an explicit saved guild preference.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('guildbanker:last-guild:demo:1', '1')) })

@@ -1,3 +1,4 @@
+import { ActiveGuildProvider } from '@/src/features/guilds/active-guild-provider'
 import { act, render, renderHook, waitFor } from '@testing-library/react'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter } from 'react-router-dom'
@@ -11,7 +12,7 @@ import { fixedExpenseKeys, useCreateFixedExpense, useFixedExpenses } from './use
 afterEach(() => vi.restoreAllMocks())
 function setup(guild = '999') {
   const client = makeQueryClient()
-  const wrapper = ({ children }: { children: React.ReactNode }) => <MemoryRouter initialEntries={['/fixed-expenses?guild=' + guild]}><QueryClientProvider client={client}><SessionProvider initialUser={{ id: 1, name: 'Ana', email: 'ana@example.test' }} demo>{children}</SessionProvider></QueryClientProvider></MemoryRouter>
+  const wrapper = ({ children }: { children: React.ReactNode }) => <MemoryRouter initialEntries={['/fixed-expenses?guild=' + guild]}><QueryClientProvider client={client}><SessionProvider initialUser={{ id: 1, name: 'Ana', email: 'ana@example.test' }} demo><ActiveGuildProvider>{children}</ActiveGuildProvider></SessionProvider></QueryClientProvider></MemoryRouter>
   return { client, wrapper }
 }
 it('keys distinguish both user and guild', () => {

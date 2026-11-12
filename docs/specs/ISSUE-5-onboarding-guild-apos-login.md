@@ -98,7 +98,7 @@ Infraestrutura de teste deve ser exclusiva; não executar down/force ou apagar d
 | T1 | Metadados e nome de guild | concluida | nenhuma | [T1](./ISSUE-5-T1-metadados-guild.md) |
 | T2 | Emissão de convites pendentes | concluida | T1 | [T2](./ISSUE-5-T2-emissao-convites.md) |
 | T3 | Consulta e resposta de convites | concluida | T2 | [T3](./ISSUE-5-T3-resposta-convites.md) |
-| T4 | Contexto e preferência | em_andamento | T1 | [T4](./ISSUE-5-T4-preferencia-guild.md) |
+| T4 | Contexto e preferência | concluida | T1 | [T4](./ISSUE-5-T4-preferencia-guild.md) |
 | T5 | Componentes de onboarding | pendente | T3,T4 | [T5](./ISSUE-5-T5-telas-onboarding.md) |
 | T6 | Entrada obrigatória | pendente | T5 | [T6](./ISSUE-5-T6-entrada-obrigatoria.md) |
 

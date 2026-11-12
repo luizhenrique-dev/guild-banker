@@ -44,7 +44,7 @@ import * as queryClients from '../shared/lib/query-client'
 
 afterEach(() => vi.restoreAllMocks())
 const demoUser = { id: 1, name: 'Ana', email: 'ana@example.test' }
-it.each(['/fixed-expenses', '/transactions?guild=1', '/import?guild=1', '/guild?guild=1'])('keeps shell and Home for forbidden loading on %s', async (path) => {
+it.each(['/fixed-expenses?guild=1', '/transactions?guild=1', '/import?guild=1', '/guild?guild=1'])('keeps shell and Home for forbidden loading on %s', async (path) => {
   let calls = 0
   const endpoint = path.startsWith('/fixed-expenses') ? '*/api/v1/guilds/:guildID/fixed-expenses' : '*/api/v1/guilds'
   server.use(http.get(endpoint, () => { calls++; return HttpResponse.json({ error: 'secret internal cause' }, { status: 403 }) }))

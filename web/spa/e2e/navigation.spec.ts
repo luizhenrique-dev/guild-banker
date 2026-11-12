@@ -53,3 +53,6 @@ for (const width of [375, 1280]) {
     await expect(page.getByRole('navigation')).toHaveCount(0)
   })
 }
+
+// Existing business journeys begin with an explicit saved guild preference.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('guildbanker:last-guild:demo:1', '1')) })
