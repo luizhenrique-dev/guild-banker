@@ -136,6 +136,8 @@ const resources = {
       'guild.inviteButton': 'Enviar convite',
       'guild.remove': 'Remover',
       'guild.toast.invited': 'Convite enviado!',
+      'guild.invite.alreadyPending': 'O usuário já foi convidado para esta guild.',
+      'guild.invite.alreadyMember': 'O usuário já é membro desta guild.',
       'guild.toast.removed': 'Membro removido.',
 
       // Import page
@@ -295,6 +297,8 @@ const resources = {
       'guild.inviteButton': 'Send invite',
       'guild.remove': 'Remove',
       'guild.toast.invited': 'Invite sent!',
+      'guild.invite.alreadyPending': 'The user has already been invited to this guild.',
+      'guild.invite.alreadyMember': 'The user is already a member of this guild.',
       'guild.toast.removed': 'Member removed.',
 
       'validation.email': 'Enter a valid email.',

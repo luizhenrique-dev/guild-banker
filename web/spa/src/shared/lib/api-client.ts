@@ -1,7 +1,9 @@
 export class APIError extends Error {
-  constructor(message: string, public readonly status: number, public readonly kind: 'http' | 'network' | 'timeout' | 'invalid-response', options?: ErrorOptions) {
+  readonly code?: string
+  constructor(message: string, public readonly status: number, public readonly kind: 'http' | 'network' | 'timeout' | 'invalid-response', options?: ErrorOptions & { code?: string }) {
     super(message, options)
     this.name = 'APIError'
+    this.code = options?.code
   }
 }
 
@@ -38,11 +40,15 @@ export async function apiClient<T = void>(path: string, options: RequestOptions 
     })
     if (!response.ok) {
       let message = `HTTP ${response.status}`
+      let code: string | undefined
       try {
         const payload: unknown = await response.json()
-        if (payload && typeof payload === 'object' && 'error' in payload && typeof payload.error === 'string') message = payload.error
+        if (payload && typeof payload === 'object') {
+          if ('error' in payload && typeof payload.error === 'string') message = payload.error
+          if ('code' in payload && typeof payload.code === 'string') code = payload.code
+        }
       } catch { /* HTTP status remains useful without a JSON envelope. */ }
-      throw new APIError(message, response.status, 'http')
+      throw new APIError(message, response.status, 'http', { code })
     }
     if (response.status === 204) return undefined as T
     try { return await response.json() as T }

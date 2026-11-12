@@ -31,7 +31,7 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 | T1-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
 | T1-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
-Commit: pendente.
+Commit: 1974ee3.
 
 
 ### Fechamento T1 — 2026-11-11

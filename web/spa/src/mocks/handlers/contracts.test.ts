@@ -50,3 +50,11 @@ it('guild mock generates unique names, retains creator membership and edits only
   expect(cleared.description).toBe('')
   await expect(apiClient('/api/v1/guilds', { method: 'POST', headers, body: { display_name: 'á'.repeat(71) } })).rejects.toMatchObject({ status: 400 })
 })
+
+it('inviting only creates a pending invitation and distinguishes duplicate from existing member', async () => {
+  await apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'new@example.test' } })
+  await expect(apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'NEW@example.test' } })).rejects.toMatchObject({ status: 409, code: 'invitation_already_pending' })
+  await expect(apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'ana@familia.com' } })).rejects.toMatchObject({ status: 409, code: 'guild_member_already_set' })
+  const recipient = { 'X-User-ID': '8', 'X-User-Email': 'new@example.test' }
+  expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([])
+})

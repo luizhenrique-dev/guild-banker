@@ -32,4 +32,3 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 | T5-AC2 | gates e revisão | sem falhas no escopo | pendente |
 
 Commit: pendente.
-

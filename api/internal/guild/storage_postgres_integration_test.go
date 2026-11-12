@@ -168,3 +168,43 @@ func TestGuildMetadataHTTPPostgres(t *testing.T) {
 	request("PUT", path, `{"name":"legacy-field-only"}`, 400)
 	request("POST", "/guilds", `{"display_name":"`+strings.Repeat("á", 71)+`"}`, 400)
 }
+
+func TestPendingInvitationsPostgres(t *testing.T) {
+	db := guildTestDB(t)
+	var userID int64
+	require.NoError(t, db.Get(&userID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('inviter','Inviter','inviter@example.test','fixture') RETURNING id`))
+	service := NewService(NewStorage(db))
+	actor := audit.Actor{UserID: userID, Email: "inviter@example.test"}
+	g, err := service.Create(t.Context(), "Invitations", "", actor)
+	require.NoError(t, err)
+	require.NoError(t, service.InviteUser(t.Context(), userID, g.ID, "  NEW@example.test  "))
+	var email string
+	require.NoError(t, db.Get(&email, "SELECT recipient_email FROM guild_invitation WHERE guild_id=$1", g.ID))
+	require.Equal(t, "new@example.test", email)
+	var count int
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_member WHERE guild_id=$1", g.ID))
+	require.Equal(t, 1, count, "only the creator is a member")
+	require.ErrorIs(t, service.InviteUser(t.Context(), userID, g.ID, "new@example.test"), ErrInvitationAlreadyPending)
+	require.ErrorIs(t, service.InviteUser(t.Context(), userID, g.ID, "INVITER@example.test"), ErrGuildMemberAlreadySet)
+	require.ErrorIs(t, service.InviteUser(t.Context(), userID+100, g.ID, "someone@example.test"), ErrRequesterIsNotMember)
+	errors := make(chan error, 2)
+	var wg sync.WaitGroup
+	for range 2 {
+		wg.Go(func() { errors <- service.InviteUser(t.Context(), userID, g.ID, "race@example.test") })
+	}
+	wg.Wait()
+	close(errors)
+	successes := 0
+	for err := range errors {
+		if err == nil {
+			successes++
+			continue
+		}
+		require.ErrorIs(t, err, ErrInvitationAlreadyPending)
+	}
+	require.Equal(t, 1, successes)
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_invitation WHERE recipient_email='race@example.test'"))
+	require.Equal(t, 1, count)
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_invitation WHERE recipient_email='someone@example.test'"))
+	require.Zero(t, count)
+}

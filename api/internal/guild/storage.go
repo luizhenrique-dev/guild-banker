@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
@@ -218,31 +217,6 @@ func (s *postgresStorage) IsMember(ctx context.Context, guildID, userID int64) (
 	return exists, nil
 }
 
-func (s *postgresStorage) InviteByEmail(ctx context.Context, guildID int64, email string, invitedByUserID int64) error {
-	const query = `
-		INSERT INTO guild_member (guild_id, user_id, invited_at, invited_by)
-		SELECT $1, u.id, NOW(), $3
-		FROM users u
-		WHERE LOWER(u.email) = LOWER($2)
-	`
-	result, err := s.db.ExecContext(ctx, query, guildID, email, invitedByUserID)
-	if err != nil {
-		if isUniqueViolation(err) {
-			return ErrGuildMemberAlreadySet
-		}
-		err = mapFKViolation(err)
-		return fmt.Errorf("invite user by email: %w", err)
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("get affected rows in invite user: %w", err)
-	}
-	if rowsAffected == 0 {
-		return ErrUserNotFound
-	}
-	return nil
-}
-
 func (s *postgresStorage) RemoveMember(ctx context.Context, guildID, userID int64) error {
 	const query = `
 		DELETE FROM guild_member
@@ -293,23 +267,6 @@ func toDomain(e guildEntity) *Guild {
 		DisabledAt:  e.DisabledAt,
 		DisabledBy:  e.DisabledBy,
 	}
-}
-
-func isUniqueViolation(err error) bool {
-	var pqErr *pq.Error
-	return errors.As(err, &pqErr) && pqErr.Code == "23505"
-}
-
-func mapFKViolation(err error) error {
-	if pqErr, ok := errors.AsType[*pq.Error](err); ok && pqErr.Code == "23503" {
-		if strings.Contains(pqErr.Constraint, "guild") {
-			return ErrGuildNotFound
-		}
-		if strings.Contains(pqErr.Constraint, "user") {
-			return ErrUserNotFound
-		}
-	}
-	return err
 }
 
 func isNameConflict(err error) bool {

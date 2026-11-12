@@ -96,7 +96,7 @@ Infraestrutura de teste deve ser exclusiva; não executar down/force ou apagar d
 | Task | Título | Status | Depende de | Arquivo |
 |---|---|---|---|---|
 | T1 | Metadados e nome de guild | concluida | nenhuma | [T1](./ISSUE-5-T1-metadados-guild.md) |
-| T2 | Emissão de convites pendentes | pendente | T1 | [T2](./ISSUE-5-T2-emissao-convites.md) |
+| T2 | Emissão de convites pendentes | concluida | T1 | [T2](./ISSUE-5-T2-emissao-convites.md) |
 | T3 | Consulta e resposta de convites | pendente | T2 | [T3](./ISSUE-5-T3-resposta-convites.md) |
 | T4 | Contexto e preferência | pendente | T1 | [T4](./ISSUE-5-T4-preferencia-guild.md) |
 | T5 | Componentes de onboarding | pendente | T3,T4 | [T5](./ISSUE-5-T5-telas-onboarding.md) |
@@ -121,4 +121,3 @@ Build exige VITE_KEYCLOAK_URL/REALM/CLIENT_ID. E2E real requer API/Keycloak e cr
 Implementação autorizada pelo usuário: "Implement the plan."
 Working tree inicial limpo; branch feat/issue-5-guild-onboarding.
 Go 1.27.3 agora disponível. Baseline/testes e evidências serão registrados por task.
-

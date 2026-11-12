@@ -62,3 +62,18 @@ it.each(['invite', 'remove'])('reports forbidden guild %s without dropping state
   expect(screen.getByRole('heading', { name: 'Guild / Membros' })).toBeVisible()
   if (action === 'remove') expect(screen.getAllByRole('button', { name: /^Remover/ }).length).toBeGreaterThan(0)
 })
+
+it.each([
+  ['invitation_already_pending', 'O usuário já foi convidado para esta guild.'],
+  ['guild_member_already_set', 'O usuário já é membro desta guild.'],
+])('localizes %s without losing the invitation draft', async (code, message) => {
+  const error = vi.spyOn(toast, 'error')
+  server.use(http.post('*/api/v1/guilds/1/invites', () => HttpResponse.json({ error: 'conflict', code }, { status: 409 })))
+  render(<MemoryRouter initialEntries={['/guild?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  const user = userEvent.setup()
+  const input = await screen.findByRole('textbox', { name: 'Convidar membro' })
+  await user.type(input, 'draft@example.test')
+  await user.click(screen.getByRole('button', { name: 'Enviar convite' }))
+  await waitFor(() => expect(error).toHaveBeenCalledWith(message))
+  expect(input).toHaveValue('draft@example.test')
+})

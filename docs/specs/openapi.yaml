@@ -204,7 +204,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
         "204":
-          description: Usuário convidado/adicionado com sucesso.
+          description: Convite pendente criado; não concede membership.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -218,7 +218,7 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Usuário já é membro do guild.
+          description: Convite já pendente ou usuário já membro; code identifica a causa.
           content:
             application/json:
               schema:
@@ -934,6 +934,9 @@ components:
       properties:
         error:
           type: string
+        code:
+          type: string
+          description: Código estável opcional para feedback localizado.
 
     # Guilds
     CreateGuildRequest:

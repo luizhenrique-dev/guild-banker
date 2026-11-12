@@ -3,6 +3,8 @@ package guild
 import "errors"
 
 var (
+	ErrInvitationAlreadyPending  = errors.New("user already invited to guild")
+	ErrInvalidInvitation         = errors.New("invalid invitation")
 	ErrInvalidGuild              = errors.New("invalid guild")
 	ErrNameGenerationUnavailable = errors.New("guild name generation temporarily unavailable")
 	ErrGuildNotFound             = errors.New("guild not found")

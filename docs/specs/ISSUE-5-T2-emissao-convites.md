@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-5](./ISSUE-5-onboarding-guild-apos-login.md)
 
-- Status: pendente
+- Status: concluida
 - Depende de: T1
 
 ## O que fazer
@@ -28,8 +28,12 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 ## Evidências
 | Critério | Evidência | Esperado | Resultado |
 |---|---|---|---|
-| T2-AC1 | testes descritos acima (planejados) | comportamento aprovado | pendente |
-| T2-AC2 | gates e revisão | sem falhas no escopo | pendente |
+| T2-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
+| T2-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
 Commit: pendente.
 
+### Fechamento T2
+RED observado: emissão falhou por query legada users inexistente; APIError descartava code. GREEN: TestPendingInvitationsPostgres comprova convite sem conta/membership, normalização, ErrorIs distinto para duplicata/membro, emissor negado sem persistência e somente uma emissão concorrente vencedora; perdedor ErrInvitationAlreadyPending. TestInvitationErrorCodes observa409/400/500 sanitizado.
+Gates API vet/lint(0issues)/unit/integration/build passaram. PostgreSQL guild completo com race passou. Frontend lint/tipos/build passaram; Vitest completo139testes e depois suite de feedback7testes passaram, incluindo duas mensagens localizadas e preservação do rascunho. Demo15/produção8/authreal6 passaram.
+Revisão independente review_t1_issue5: sem defeito impeditivo; sensores adicionais pedidos foram implementados e passaram. Retomada após reinício exigiu restaurar serviços exclusivos; fixture de realm agora copiada ao container. Falhas de startup foram corrigidas aguardando prontidão, sem alterar código para acomodar sensor.

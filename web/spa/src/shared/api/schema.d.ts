@@ -337,6 +337,8 @@ export interface components {
         /** @description Envelope padrão de erro utilizado por todos os handlers (gin.H{"error": ...}). */
         ErrorResponse: {
             error: string;
+            /** @description Código estável opcional para feedback localizado. */
+            code?: string;
         };
         CreateGuildRequest: {
             display_name: string;
@@ -807,7 +809,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Usuário convidado/adicionado com sucesso. */
+            /** @description Convite pendente criado; não concede membership. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -826,7 +828,7 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            /** @description Usuário já é membro do guild. */
+            /** @description Convite já pendente ou usuário já membro; code identifica a causa. */
             409: {
                 headers: {
                     [name: string]: unknown;

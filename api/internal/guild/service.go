@@ -155,12 +155,11 @@ func (s *Service) InviteUser(ctx context.Context, requesterUserID, guildID int64
 	if err := s.ensureRequesterMember(ctx, requesterUserID, guildID, "invite user"); err != nil {
 		return err
 	}
-	if email == "" {
-		return errors.New("invite user: email is required")
+	address, err := mail.ParseAddress(strings.TrimSpace(email))
+	if err != nil {
+		return fmt.Errorf("%w: invalid email", ErrInvalidInvitation)
 	}
-	if _, err := mail.ParseAddress(email); err != nil {
-		return fmt.Errorf("invite user: invalid email: %w", err)
-	}
+	email = strings.ToLower(address.Address)
 	if err := s.storage.InviteByEmail(ctx, guildID, email, requesterUserID); err != nil {
 		return fmt.Errorf("invite user: %w", err)
 	}

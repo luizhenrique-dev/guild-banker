@@ -118,7 +118,7 @@ func (h *Handler) InviteUser(c *gin.Context) {
 	}
 
 	if err := h.service.InviteUser(c.Request.Context(), requesterUserID, guildID, req.Email); err != nil {
-		h.handleError(c, err)
+		h.handleInvitationError(c, err)
 		return
 	}
 
@@ -216,4 +216,19 @@ func getRequesterActor(c *gin.Context) (audit.Actor, bool) {
 func getRequesterUserID(c *gin.Context) (int64, bool) {
 	principal, ok := auth.PrincipalFromContext(c.Request.Context())
 	return principal.Actor.UserID, ok
+}
+
+func (h *Handler) handleInvitationError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, ErrInvitationAlreadyPending):
+		c.JSON(http.StatusConflict, gin.H{"error": "user already invited to guild", "code": "invitation_already_pending"})
+	case errors.Is(err, ErrGuildMemberAlreadySet):
+		c.JSON(http.StatusConflict, gin.H{"error": "user is already a guild member", "code": "guild_member_already_set"})
+	case errors.Is(err, ErrInvalidInvitation):
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid invitation email"})
+	case errors.Is(err, ErrRequesterIsNotMember), errors.Is(err, ErrGuildNotFound):
+		h.handleError(c, err)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+	}
 }

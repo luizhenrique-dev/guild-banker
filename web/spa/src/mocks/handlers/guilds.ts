@@ -1,9 +1,10 @@
 import { http, HttpResponse, delay } from 'msw'
-import { mockUserID, mockGuildMember, addMockGuildMember, resetMockMemberships } from '../request-context'
+import { mockUserID, mockGuildMember, addMockGuildMember, resetMockMemberships, mockGuildMemberByEmail } from '../request-context'
 import { guildsFixtures } from '../fixtures/guilds'
 import type { Guild } from '@/src/features/guilds/types'
 
 let guilds = structuredClone(guildsFixtures)
+let invitations: { guildID: number; email: string; invitedBy: number }[] = []
 
 export const guildsHandlers = [
   // operationId: listGuildsByMember
@@ -70,6 +71,13 @@ export const guildsHandlers = [
   // operationId: inviteGuildMember
   http.post('*/api/v1/guilds/:id/invites', async ({ params, request }) => {
     if (!mockGuildMember(request, Number(params['id']))) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
+    const guildID = Number(params['id'])
+    const body = await request.json() as { email: string }
+    const email = body.email?.trim().toLowerCase()
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return HttpResponse.json({ error: 'invalid invitation email' }, { status: 400 })
+    if (mockGuildMemberByEmail(email, guildID)) return HttpResponse.json({ error: 'user is already a guild member', code: 'guild_member_already_set' }, { status: 409 })
+    if (invitations.some((invite) => invite.guildID === guildID && invite.email === email)) return HttpResponse.json({ error: 'user already invited to guild', code: 'invitation_already_pending' }, { status: 409 })
+    invitations.push({ guildID, email, invitedBy: mockUserID(request) })
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),
@@ -85,4 +93,5 @@ export const guildsHandlers = [
 export function resetGuildsMocks() {
   guilds = structuredClone(guildsFixtures)
   resetMockMemberships()
+  invitations = []
 }

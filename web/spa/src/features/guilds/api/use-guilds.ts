@@ -24,7 +24,16 @@ export function useInviteMember() {
   return useMutation({
     mutationFn: ({ guildId, email }: { guildId: number; email: string }) => session.request((options) => guildsApi.invite(guildId, email, options)),
     onSuccess: () => { if (session.active()) toast.success(i18n.t('guild.toast.invited')) },
-    onError: (error) => { if (session.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },
+    onError: (error) => {
+      if (!session.active()) return
+      let message = 'fx.toast.error'
+      if (error instanceof APIError) {
+        if (error.status === 403) message = 'permission.denied'
+        if (error.code === 'invitation_already_pending') message = 'guild.invite.alreadyPending'
+        if (error.code === 'guild_member_already_set') message = 'guild.invite.alreadyMember'
+      }
+      toast.error(i18n.t(message))
+    },
   })
 }
 export function useRemoveMember() {
