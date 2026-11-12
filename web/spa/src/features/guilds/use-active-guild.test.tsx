@@ -89,6 +89,7 @@ it('retains preference on logout and ignores late activation from that session',
   await waitFor(() => expect(localStorage.getItem(key)).toBe('2'))
   act(() => result.current.session.logout())
   act(() => activate(guild))
+  expect(result.current.client.getQueryData(['guilds', 1])).toBeUndefined()
   expect(result.current.guild.activeGuild).toBeUndefined()
   expect(localStorage.getItem(key)).toBe('2')
 })

@@ -31,7 +31,7 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 | T4-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
 | T4-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
-Commit: pendente.
+Commit: 397159b.
 
 ### Fechamento T4
 RED quatro falhas observadas: seleção automática entre várias, restauração ignorada, preferência não persistida e ID corrompido. GREEN provider12testes: URL/prioridade/validação, IDs removidos/corrompidos, storage indisponível, usuário isolado, guild única, logout conserva preferência e resposta tardia bloqueada. Resposta antiga não apaga erro403mais recente, comprovado também diretamente no estado do cache.

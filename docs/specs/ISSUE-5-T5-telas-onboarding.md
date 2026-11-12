@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-5](./ISSUE-5-onboarding-guild-apos-login.md)
 
-- Status: pendente
+- Status: concluida
 - Depende de: T3,T4
 
 ## O que fazer
@@ -28,7 +28,11 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 ## Evidências
 | Critério | Evidência | Esperado | Resultado |
 |---|---|---|---|
-| T5-AC1 | testes descritos acima (planejados) | comportamento aprovado | pendente |
-| T5-AC2 | gates e revisão | sem falhas no escopo | pendente |
+| T5-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
+| T5-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
 Commit: pendente.
+
+### Fechamento T5
+RED cinco sensores UI falharam pela ausência de convites/formulário. GREEN: aceite com contexto/pref, recusa do último seguida de criação, múltiplos convites/recusa parcial, draft preservado sem retry, validação71, loading403 sem criação, logout e respostas tardias, desambiguação visual/acessível. Sensores de resposta tardia201/200 conservam403 mais recente de convites e não ativam cache/pref.
+Lint/build passaram; Vitest19arquivos164testes passaram; demo15/prod8 passaram. Auth real6 passou antes da integração global. Revisão independente sem achados após ajustes de403e labels duplicados. Nenhuma API/SQL muda nesta task. Sensor adicional T4 verifica cache não repovoado após logout.
