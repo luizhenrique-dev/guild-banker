@@ -31,8 +31,7 @@ it('offers retry when guild listing fails', async () => {
   server.resetHandlers()
   await userEvent.click(retry)
   await screen.findByText('Selecione uma guild válida.')
-  await userEvent.click(screen.getByRole('button', { name: /Selecionar guild/ }))
-  await userEvent.click(screen.getByRole('button', { name: 'Família Silva' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar em Família Silva' }))
   expect(await screen.findByRole('textbox', { name: 'Convidar membro' })).toBeVisible()
 })
 it('shows the empty guild state without requesting financial data', async () => {

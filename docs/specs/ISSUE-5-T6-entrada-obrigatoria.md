@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-5](./ISSUE-5-onboarding-guild-apos-login.md)
 
-- Status: pendente
+- Status: concluida
 - Depende de: T5
 
 ## O que fazer
@@ -28,7 +28,16 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 ## Evidências
 | Critério | Evidência | Esperado | Resultado |
 |---|---|---|---|
-| T6-AC1 | testes descritos acima (planejados) | comportamento aprovado | pendente |
-| T6-AC2 | gates e revisão | sem falhas no escopo | pendente |
+| T6-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
+| T6-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
-Commit: pendente.
+Commit: este documento integra o commit local de fechamento da T6; identificar o hash pelo Git.
+
+### Fechamento T6 — 2026-11-12
+- RED: três testes observaram Home/menu antecipados e Home liberada no403. GREEN: onboarding-entry4testes incluindo contexto obrigatório, loading sem IO financeiro,403sem link em loop e Header distinguindo homônimos.
+- Gate completo frontend passou em ordem: tipos sem drift, lint, build com OIDC público,20 arquivos / 168 testes,19 E2E demo,8 smoke de produção,6 de autenticação real. Avisos existentes: npm config python e chunk>500kB; nenhuma falha nas verificações finais executadas.
+- Novos E2E: escolha e retomada após logout entrando em /home SEM ?guild= (preferência comprovada), múltiplos convites e aceite com rota/filtro conservados sem request financeiro antecipado, recusa do último seguida de criação com retry/draft/teclado/layout375 e 1280.
+- Auth real executado inicialmente com banco NOVO exclusivo issue5_auth_20261112, sem conta/membership prévia e E2E_ALLOW_GUILD_CREATE=true. Primeiro teste criou pela UI e entrou em Home; consulta posterior observou1 usuário / 1 guild / 1 membership e name válido. Repetição final também passou.
+- API final: make api/vet api/lint api/test api/test/integration api/build passou (lint0issues). Integração PostgreSQL de todos os pacotes com race e três URLs exclusivas passou. Sensor adicional TestAcceptancePreservesOtherInvitationsPostgres passou e observou o outro convite PENDING após aceitar um de dois.
+- Revisão independente final: nenhum achado remanescente. Ajustes: Header compartilha guildLabel com cartões; preferência E2E provada sem URL; documentação distingue403 de memberships de 403 financeiro.
+- Nenhuma migration ou operação destrutiva em ambiente compartilhado; serviços descartáveis são encerrados após a validação. Sem push/PR.

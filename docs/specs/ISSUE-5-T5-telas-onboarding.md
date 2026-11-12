@@ -31,7 +31,7 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 | T5-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
 | T5-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
-Commit: pendente.
+Commit: 8c4f5d0.
 
 ### Fechamento T5
 RED cinco sensores UI falharam pela ausência de convites/formulário. GREEN: aceite com contexto/pref, recusa do último seguida de criação, múltiplos convites/recusa parcial, draft preservado sem retry, validação71, loading403 sem criação, logout e respostas tardias, desambiguação visual/acessível. Sensores de resposta tardia201/200 conservam403 mais recente de convites e não ativam cache/pref.

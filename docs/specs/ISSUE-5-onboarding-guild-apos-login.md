@@ -85,7 +85,7 @@ sequenceDiagram
  A-->>S: GuildResponse
  S->>S: Cache, URL e preferência
 ```
-Sintaxe Mermaid não validada no planejamento: parser requereu DOM indisponível.
+Sintaxe Mermaid dos três diagramas validada no fechamento com mermaid.parse e JSDOM (sem alterar arquivos de implementação).
 
 ## Fora do escopo e premissas
 Sem envio de e-mails, expiração, revogação, inbox para membros, owner/roles, alteração IAM ou nova tela de edição. Preservar regras de enabled existentes e dados legados, sem constraints retroativas que invalidem nomes antigos.
@@ -100,7 +100,7 @@ Infraestrutura de teste deve ser exclusiva; não executar down/force ou apagar d
 | T3 | Consulta e resposta de convites | concluida | T2 | [T3](./ISSUE-5-T3-resposta-convites.md) |
 | T4 | Contexto e preferência | concluida | T1 | [T4](./ISSUE-5-T4-preferencia-guild.md) |
 | T5 | Componentes de onboarding | concluida | T3,T4 | [T5](./ISSUE-5-T5-telas-onboarding.md) |
-| T6 | Entrada obrigatória | pendente | T5 | [T6](./ISSUE-5-T6-entrada-obrigatoria.md) |
+| T6 | Entrada obrigatória | concluida | T5 | [T6](./ISSUE-5-T6-entrada-obrigatoria.md) |
 
 ## Verificação final
 API raiz: make api/vet api/lint api/test api/test/integration api/build.
@@ -121,3 +121,20 @@ Build exige VITE_KEYCLOAK_URL/REALM/CLIENT_ID. E2E real requer API/Keycloak e cr
 Implementação autorizada pelo usuário: "Implement the plan."
 Working tree inicial limpo; branch feat/issue-5-guild-onboarding.
 Go 1.27.3 agora disponível. Baseline/testes e evidências serão registrados por task.
+
+## Evidência integrada final — 2026-11-12
+Todos os CAs têm evidência observada; seis tasks concluídas. Ver detalhes/evidências por task.
+| CA | Evidência observada |
+|---|---|
+| CA1 | onboarding-entry tests: Home/menu/finanças bloqueados; bootstrap sem requests antes OIDC; E2E sem IO financeiro até aceite |
+| CA2 | use-active-guild12testes; E2E próximo login em /home sem guild na URL; prioridade/IDs inválidos/storage/logout |
+| CA3 | InvitationHTTPPostgres/LifecyclePostgres e componentes/cards; dados guild/convidador |
+| CA4 | decisões concorrentes/rollback PostgreSQL; AcceptancePreservesOtherInvitationsPostgres; UI ativa contexto após aceite |
+| CA5 | lifecycle recusa/reenvio; UI e E2E de recusa parcial/última recusa/criação |
+| CA6 | MetadataHTTPPostgres e criação concorrente; UI real primeiro login com banco vazio; associação atômica |
+| CA7 | onboarding_test/ConcurrentGuildCreationPostgres: acentos,70/71,6colisões,limite de retry,503 e constraint exata |
+| CA8 | MetadataHTTPPostgres: display_name/descrição, omissão/limpeza, name imutável, nome enviado ignorado |
+| CA9 | PendingInvitationsPostgres, InvitationErrorCodes e feedback localizado; pending sem membership e emissor autorizado |
+| CA10 | testes sessão/HTTP e providers:403prioritário,cache antigo,storagebloqueado,respostas tardias/logout; SQL parametrizado/timeouts |
+
+Gates finais: API vet/lint0issues/unit/integration/build e PostgreSQL completo -race aprovados; frontend tipos/lint/build/168Vitest/19demo/8prod/6authreal aprovados. Revisão independente em cada fronteira de alto risco, sem achados remanescentes. Commits locais por task, nenhum push/PR. Nenhuma falha detectada nas verificações finais executadas.

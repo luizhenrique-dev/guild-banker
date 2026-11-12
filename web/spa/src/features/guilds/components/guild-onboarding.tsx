@@ -1,4 +1,4 @@
-import type { Guild } from '../types'
+import { guildLabel } from '../guild-label'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
@@ -67,8 +67,4 @@ function CreateGuildForm({ pending, submit }: { pending: boolean; submit: (input
       <button type="submit" className={button} disabled={pending}>{t(pending ? 'onboarding.creating' : 'onboarding.createButton')}</button>
     </form>
   </>
-}
-
-function guildLabel(guild: Guild, guilds: Guild[]) {
-  return guilds.filter((candidate) => candidate.display_name === guild.display_name).length > 1 ? `${guild.display_name} (${guild.name})` : guild.display_name
 }

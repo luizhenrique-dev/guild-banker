@@ -200,3 +200,30 @@ func TestInvitationHTTPPostgres(t *testing.T) {
 	require.Contains(t, string(request("POST", path, recipient, 409)), "invitation_already_answered")
 	require.JSONEq(t, "[]", string(request("GET", "/guild-invites", recipient, 200)))
 }
+
+func TestAcceptancePreservesOtherInvitationsPostgres(t *testing.T) {
+	db := guildTestDB(t)
+	var ownerID, recipientID int64
+	require.NoError(t, db.Get(&ownerID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('owner','Owner','owner@example.test','fixture') RETURNING id`))
+	require.NoError(t, db.Get(&recipientID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('recipient','Recipient','recipient@example.test','fixture') RETURNING id`))
+	service := NewService(NewStorage(db))
+	owner := audit.Actor{UserID: ownerID, Email: "owner@example.test"}
+	recipient := audit.Actor{UserID: recipientID, Email: "recipient@example.test"}
+	for _, name := range []string{"First", "Second"} {
+		g, err := service.Create(t.Context(), name, "", owner)
+		require.NoError(t, err)
+		require.NoError(t, service.InviteUser(t.Context(), ownerID, g.ID, recipient.Email))
+	}
+	pending, err := service.ListInvitations(t.Context(), recipient)
+	require.NoError(t, err)
+	require.Len(t, pending, 2)
+	_, err = service.RespondInvitation(t.Context(), pending[0].ID, recipient, true)
+	require.NoError(t, err)
+	remaining, err := service.ListInvitations(t.Context(), recipient)
+	require.NoError(t, err)
+	require.Len(t, remaining, 1)
+	require.Equal(t, pending[1].ID, remaining[0].ID)
+	var status string
+	require.NoError(t, db.Get(&status, "SELECT status FROM guild_invitation WHERE id=$1", pending[1].ID))
+	require.Equal(t, "PENDING", status)
+}

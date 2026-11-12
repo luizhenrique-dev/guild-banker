@@ -1,6 +1,6 @@
 # GuildBanker SPA
 
-React 18 + TypeScript estrito, Vite, React Router, Tailwind 3, TanStack Query e RHF/Zod. A Home `/home` exibe a saudação da sessão. As demais telas são `/fixed-expenses`, `/transactions`, `/import` e `/guild`; `/` redireciona para `/home` após autenticação. Idiomas: português e inglês. Fontes Inter/JetBrains Mono são servidas localmente.
+React 18 + TypeScript estrito, Vite, React Router, Tailwind 3, TanStack Query e RHF/Zod. A Home `/home` exibe a saudação depois de resolver uma guild no onboarding obrigatório. As demais telas são `/fixed-expenses`, `/transactions`, `/import` e `/guild`; `/` redireciona para `/home` após autenticação e resolução da guild. Idiomas: português e inglês. Fontes Inter/JetBrains Mono são servidas localmente.
 
 ## Instalação e comandos
 
@@ -83,7 +83,7 @@ As variáveis públicas `VITE_KEYCLOAK_URL`, `VITE_KEYCLOAK_REALM` e
 `http://localhost:8080`, `guild-banker`, `guild-banker-ui`.
 Configuração ausente ou callback inválido mostra erro sem liberar o shell.
 A SPA inicializa OIDC antes do Router com Code + PKCE S256; o login ocorre
-na página do Keycloak. `/` leva a `/home`; um link interno conserva sua rota/query.
+na página do Keycloak. `/` leva a `/home` após o onboarding; um link interno conserva sua rota/query.
 Nome vem de `name`, depois `preferred_username`, com saudação sem nome como fallback.
 O ID de sessão real é o `sub` textual e não o ID numérico interno da API.
 Tokens permanecem na memória do SDK; recarga restaura sessão pelo SSO.
@@ -152,14 +152,13 @@ npm --prefix web/spa run test:e2e:auth
 ```
 
 Cadastro automático e sincronização de `user_account` acontecem nas chamadas
-autenticadas à API, usando apenas o access token validado. A Home
-permanece acessível e não exige guild ou sucesso nas consultas da API.
+autenticadas à API, usando apenas o access token validado. O onboarding precede Home e navegação: loading/erro das consultas necessárias mantém o conteúdo fechado, com identidade, idioma e Sair disponíveis.
 
-403 em consultas necessárias de despesas, transações e rotas dependentes de guild
+Com contexto de guild autorizado, 403 nas consultas de despesas, transações ou importação
 mostra acesso negado no conteúdo da rota, com menu, Sair e link Home. O erro tem
 prioridade sobre cache anterior; guilds recusadas não ficam no seletor nem iniciam
-consultas dependentes. Falha de guilds não bloqueia Home; despesas exigem guild válida; vazio e demais erros mantêm os fluxos anteriores.
-403 não inicia login, logout, retry automático ou redirect global.
+consultas dependentes. Falha de guilds bloqueia Home e rotas dependentes; 403 da listagem oculta também o menu e não oferece link de volta para o mesmo bloqueio.
+403 não inicia login, logout, retry automático ou redirect em loop.
 
 403 de uma ação (criar/editar/desativar despesa, cancelar/alterar visibilidade,
 convidar/remover membro, upload/confirmar importação) mostra mensagem de permissão
@@ -167,3 +166,17 @@ no feedback local existente, sem navegar ou encerrar sessão. Formulário, arqui
 e revisão ficam preservados; não há sucesso, replay ou limpeza de rascunho.
 Confirmação explicitamente negada não invalida transações; cancelamento sem
 resposta mantém a invalidação do contexto original para consistência.
+
+## Onboarding de guild (ISSUE-5)
+
+Após autenticar, a SPA consulta as guilds. Uma guild é selecionada automaticamente; com várias, URL válida tem prioridade, seguida da preferência válida salva por identidade. Sem escolha válida, o usuário escolhe explicitamente. URL inválida não é substituída silenciosamente. Rotas e filtros são preservados.
+
+Somente o ID é salvo em localStorage (`guildbanker:last-guild:demo|oidc:<identidade>`). A preferência sobrevive ao logout e é sempre validada contra memberships retornadas pela API. Storage bloqueado ou inválido não impede uso. Tokens continuam somente em memória.
+
+Sem guilds, a SPA consulta convites pendentes. Os cartões mostram guild/descrição/convidador (nome/e-mail), com Aceitar e Negar. Recusar aguarda nova consulta antes de oferecer criação. Aceitar ou criar associa o usuário no servidor e seleciona imediatamente a guild retornada. Erros não são interpretados como lista vazia; callbacks antigos não sobrescrevem 403 nem sessão encerrada.
+
+Criação usa apenas `display_name` (1–70 caracteres Unicode) e descrição opcional. A API gera `name` único e imutável, sem acentos, lowercase, com espaços convertidos em traços, somente letras ASCII/números/traços e máximo 70; colisões recebem sufixo. DisplayName pode repetir; seleção/convites mostram o identificador para distinguir homônimos. PUT recebe `display_name` e descrição (omitir preserva; string vazia limpa), nunca altera `name`.
+
+Convites são persistidos para qualquer e-mail antes do primeiro login, sem expiração. Não concedem membership até o aceite. Duplicata pendente e membro existente retornam 409 com códigos distintos e feedback localizado; após recusa é possível reenviar. Não há envio de e-mail nesta issue.
+
+Migrações 000002/000003 são incrementais e preservam memberships/dados anteriores. Não executar force/down em banco compartilhado. Os testes reais podem criar a primeira guild pela UI apenas com `E2E_ALLOW_GUILD_CREATE=true` em ambiente exclusivo. A suíte demo usa fixtures para a jornada; os testes PostgreSQL reais provam autorização, concorrência e rollback.
