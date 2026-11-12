@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-5](./ISSUE-5-onboarding-guild-apos-login.md)
 
-- Status: pendente
+- Status: em_andamento
 - Depende de: T1
 
 ## O que fazer

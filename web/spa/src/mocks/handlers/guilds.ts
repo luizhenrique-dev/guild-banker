@@ -4,7 +4,7 @@ import { guildsFixtures } from '../fixtures/guilds'
 import type { Guild } from '@/src/features/guilds/types'
 
 let guilds = structuredClone(guildsFixtures)
-let invitations: { guildID: number; email: string; invitedBy: number }[] = []
+let invitations: { id: number; guildID: number; email: string; invitedBy: number; inviterEmail: string; status: string }[] = []
 
 export const guildsHandlers = [
   // operationId: listGuildsByMember
@@ -76,11 +76,25 @@ export const guildsHandlers = [
     const email = body.email?.trim().toLowerCase()
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return HttpResponse.json({ error: 'invalid invitation email' }, { status: 400 })
     if (mockGuildMemberByEmail(email, guildID)) return HttpResponse.json({ error: 'user is already a guild member', code: 'guild_member_already_set' }, { status: 409 })
-    if (invitations.some((invite) => invite.guildID === guildID && invite.email === email)) return HttpResponse.json({ error: 'user already invited to guild', code: 'invitation_already_pending' }, { status: 409 })
-    invitations.push({ guildID, email, invitedBy: mockUserID(request) })
+    if (invitations.some((invite) => invite.guildID === guildID && invite.email === email && invite.status === 'PENDING')) return HttpResponse.json({ error: 'user already invited to guild', code: 'invitation_already_pending' }, { status: 409 })
+    invitations.push({ id: invitations.length + 1, guildID, email, invitedBy: mockUserID(request), inviterEmail: request.headers.get('X-User-Email') ?? '', status: 'PENDING' })
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),
+
+  // operationId: listGuildInvitations
+  http.get('*/api/v1/guild-invites', ({ request }) => {
+    if (!mockUserID(request)) return HttpResponse.json({ error: 'unauthorized' }, { status: 401 })
+    const email = request.headers.get('X-User-Email')?.trim().toLowerCase()
+    return HttpResponse.json(invitations.filter((invite) => invite.email === email && invite.status === 'PENDING').map((invite) => ({
+      id: invite.id, guild: guilds.find((guild) => guild.id === invite.guildID)!,
+      invited_by: { name: invite.invitedBy === 1 ? 'Ana Silva' : 'Convidador', email: invite.inviterEmail },
+    })))
+  }),
+  // operationId: acceptGuildInvitation
+  http.post('*/api/v1/guild-invites/:id/accept', ({ request, params }) => respondInvitation(request, Number(params['id']), true)),
+  // operationId: declineGuildInvitation
+  http.post('*/api/v1/guild-invites/:id/decline', ({ request, params }) => respondInvitation(request, Number(params['id']), false)),
 
   // operationId: removeGuildMember
   http.delete('*/api/v1/guilds/:id/members/:userID', async ({ params, request }) => {
@@ -94,4 +108,17 @@ export function resetGuildsMocks() {
   guilds = structuredClone(guildsFixtures)
   resetMockMemberships()
   invitations = []
+}
+
+function respondInvitation(request: Request, id: number, accept: boolean) {
+  const userID = mockUserID(request)
+  if (!userID) return HttpResponse.json({ error: 'unauthorized' }, { status: 401 })
+  const email = request.headers.get('X-User-Email')?.trim().toLowerCase()
+  const invitation = invitations.find((invite) => invite.id === id && invite.email === email)
+  if (!invitation) return HttpResponse.json({ error: 'invitation not found' }, { status: 404 })
+  if (invitation.status !== 'PENDING') return HttpResponse.json({ error: 'invitation already answered', code: 'invitation_already_answered' }, { status: 409 })
+  invitation.status = accept ? 'ACCEPTED' : 'DECLINED'
+  if (!accept) return new HttpResponse(null, { status: 204 })
+  addMockGuildMember(userID, invitation.guildID)
+  return HttpResponse.json(guilds.find((guild) => guild.id === invitation.guildID))
 }

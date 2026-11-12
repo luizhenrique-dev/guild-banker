@@ -113,6 +113,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/guild-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista convites pendentes do e-mail verificado do usuário autenticado */
+        get: operations["listGuildInvitations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guild-invites/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Responde convite destinado ao usuário autenticado */
+        post: operations["acceptGuildInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guild-invites/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Responde convite destinado ao usuário autenticado */
+        post: operations["declineGuildInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/guilds/{id}/members/{userID}": {
         parameters: {
             query?: never;
@@ -360,6 +411,16 @@ export interface components {
             display_name: string;
             description: string;
             enabled: boolean;
+        };
+        InvitationResponse: {
+            /** Format: int64 */
+            id: number;
+            guild: components["schemas"]["GuildResponse"];
+            invited_by: {
+                name: string;
+                /** Format: email */
+                email: string;
+            };
         };
         /** @enum {string} */
         FixedExpenseCategory: "HOUSING" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER";
@@ -829,6 +890,99 @@ export interface operations {
             };
             404: components["responses"]["NotFound"];
             /** @description Convite já pendente ou usuário já membro; code identifica a causa. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    listGuildInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Convites pendentes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationResponse"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    acceptGuildInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aceite e membership confirmados atomicamente. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuildResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Convite já respondido; code invitation_already_answered. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    declineGuildInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recusa persistida, sem membership. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Convite já respondido; code invitation_already_answered. */
             409: {
                 headers: {
                     [name: string]: unknown;

@@ -31,7 +31,7 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 | T2-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
 | T2-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
-Commit: pendente.
+Commit: f65c41b.
 
 ### Fechamento T2
 RED observado: emissão falhou por query legada users inexistente; APIError descartava code. GREEN: TestPendingInvitationsPostgres comprova convite sem conta/membership, normalização, ErrorIs distinto para duplicata/membro, emissor negado sem persistência e somente uma emissão concorrente vencedora; perdedor ErrInvitationAlreadyPending. TestInvitationErrorCodes observa409/400/500 sanitizado.

@@ -220,6 +220,10 @@ func getRequesterUserID(c *gin.Context) (int64, bool) {
 
 func (h *Handler) handleInvitationError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, ErrInvitationNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "invitation not found"})
+	case errors.Is(err, ErrInvitationAlreadyAnswered):
+		c.JSON(http.StatusConflict, gin.H{"error": "invitation already answered", "code": "invitation_already_answered"})
 	case errors.Is(err, ErrInvitationAlreadyPending):
 		c.JSON(http.StatusConflict, gin.H{"error": "user already invited to guild", "code": "invitation_already_pending"})
 	case errors.Is(err, ErrGuildMemberAlreadySet):

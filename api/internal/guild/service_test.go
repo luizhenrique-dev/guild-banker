@@ -13,6 +13,7 @@ import (
 )
 
 type storageMock struct {
+	Storage
 	mock.Mock
 }
 

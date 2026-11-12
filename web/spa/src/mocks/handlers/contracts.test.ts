@@ -58,3 +58,22 @@ it('inviting only creates a pending invitation and distinguishes duplicate from 
   const recipient = { 'X-User-ID': '8', 'X-User-Email': 'new@example.test' }
   expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([])
 })
+
+it('invitation mock authorizes the recipient and grants access only after acceptance', async () => {
+  type Invitation = components['schemas']['InvitationResponse']
+  const recipient = { 'X-User-ID': '8', 'X-User-Email': 'new@example.test' }
+  const emit = () => apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'new@example.test' } })
+  await emit()
+  const pending = await apiClient<Invitation[]>('/api/v1/guild-invites', { headers: recipient })
+  expect(pending).toHaveLength(1)
+  expect(pending[0]?.invited_by).toEqual({ name: 'Ana Silva', email: headers['X-User-Email'] })
+  const root = '/api/v1/guild-invites/' + pending[0]!.id
+  await expect(apiClient(root + '/accept', { method: 'POST', headers })).rejects.toMatchObject({ status: 404 })
+  await apiClient(root + '/decline', { method: 'POST', headers: recipient })
+  expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([])
+  await emit()
+  const again = await apiClient<Invitation[]>('/api/v1/guild-invites', { headers: recipient })
+  await apiClient('/api/v1/guild-invites/' + again[0]!.id + '/accept', { method: 'POST', headers: recipient })
+  expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([expect.objectContaining({ id: 1 })])
+  expect(await apiClient('/api/v1/guild-invites', { headers: recipient })).toEqual([])
+})

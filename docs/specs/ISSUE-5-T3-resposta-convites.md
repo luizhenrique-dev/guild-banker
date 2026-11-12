@@ -2,7 +2,7 @@
 
 Spec: [ISSUE-5](./ISSUE-5-onboarding-guild-apos-login.md)
 
-- Status: pendente
+- Status: concluida
 - Depende de: T2
 
 ## O que fazer
@@ -28,7 +28,12 @@ Seguir contratos e limites da spec aprovada. Não alterar critérios para acomod
 ## Evidências
 | Critério | Evidência | Esperado | Resultado |
 |---|---|---|---|
-| T3-AC1 | testes descritos acima (planejados) | comportamento aprovado | pendente |
-| T3-AC2 | gates e revisão | sem falhas no escopo | pendente |
+| T3-AC1 | testes descritos acima (planejados) | comportamento aprovado | aprovado |
+| T3-AC2 | gates e revisão | sem falhas no escopo | aprovado |
 
 Commit: pendente.
+
+### Fechamento T3
+RED observado: storage ainda não suportava resposta atômica. GREEN PostgreSQL com race: rollback, convite antes do cadastro local, dados do convidador/guild, recusa/reenvio/aceite, resposta alheia, repetição, dois aceites, aceite×recusa, emissão×aceite. HTTP prova401/404/200/409, dados corretos e cabeçalhos/body incapazes de substituir o principal.
+Integração PostgreSQL completa de todos os pacotes passou com as três URLs exclusivas. API vet/lint0issues/unit/integration/build passaram. Frontend lint/build/tipos e142testes passaram; demo15/prod8/authreal6 passaram.
+Revisão independente sem achado remanescente após rejeitar ID<=0 e unificar canonicalização no domínio puro. Perfil persistido entre aspas também é comparado canonicamente ao emitir para membro existente. Testes afetados e lint reexecutados após esse delta: passaram.

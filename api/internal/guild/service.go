@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"golang.org/x/text/unicode/norm"
-	"net/mail"
 	"time"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
@@ -155,11 +154,10 @@ func (s *Service) InviteUser(ctx context.Context, requesterUserID, guildID int64
 	if err := s.ensureRequesterMember(ctx, requesterUserID, guildID, "invite user"); err != nil {
 		return err
 	}
-	address, err := mail.ParseAddress(strings.TrimSpace(email))
+	email, err := invitationEmail(email)
 	if err != nil {
-		return fmt.Errorf("%w: invalid email", ErrInvalidInvitation)
+		return err
 	}
-	email = strings.ToLower(address.Address)
 	if err := s.storage.InviteByEmail(ctx, guildID, email, requesterUserID); err != nil {
 		return fmt.Errorf("invite user: %w", err)
 	}

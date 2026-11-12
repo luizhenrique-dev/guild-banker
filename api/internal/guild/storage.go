@@ -9,9 +9,12 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 )
 
 type Storage interface {
+	ListInvitations(ctx context.Context, email string) ([]Invitation, error)
+	RespondInvitation(ctx context.Context, id int64, actor audit.Actor, accept bool) (*Guild, error)
 	Create(ctx context.Context, g *Guild, creatorUserID int64) error
 	GetByID(ctx context.Context, id int64) (*Guild, error)
 	NameExists(ctx context.Context, name string, excludeID int64) (bool, error)
