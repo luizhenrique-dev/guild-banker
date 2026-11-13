@@ -93,6 +93,10 @@ and `infra/postgres/init/01-init-multiple-dbs.sql`; change `api/config.env` if
 your existing database uses different credentials. The initialization SQL only
 runs for new volumes; setup does not reset existing databases or passwords.
 
+The project PostgreSQL is published on `localhost:5433` to avoid conflicts with
+a PostgreSQL installed on the host. Keep `DB_PORT=5433` in `api/config.env`.
+Containers communicate with PostgreSQL through `postgres:5432` on the Docker network.
+
 `make setup/tools` does not start containers or install API/UI dependencies. Make includes
 the asdf binary and shims in its PATH, so opening a new terminal is unnecessary.
 For direct use of `node`, `npm` and `go` outside Make, add the following to your
