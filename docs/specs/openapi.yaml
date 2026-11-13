@@ -460,6 +460,12 @@ paths:
       operationId: listActiveFixedExpenses
       parameters:
         - $ref: "#/components/parameters/GuildIDPath"
+        - name: include_paused
+          in: query
+          description: Inclui despesas pausadas; canceladas permanecem excluídas. O padrão preserva a listagem somente de ativas.
+          schema:
+            type: boolean
+            default: false
       tags: [FixedExpenses]
       summary: Lista despesas fixas ativas da guild para seus membros
       responses:
@@ -481,6 +487,26 @@ paths:
           $ref: "#/components/responses/Unauthorized"
 
   /api/v1/guilds/{guildID}/fixed-expenses/{id}:
+    delete:
+      operationId: deleteFixedExpense
+      tags: [FixedExpenses]
+      summary: Exclui permanentemente uma despesa fixa da guild; requer membership.
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - $ref: "#/components/parameters/FixedExpenseIDPath"
+      responses:
+        "204":
+          description: Despesa excluída.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
     patch:
       operationId: updateFixedExpense
       tags: [FixedExpenses]
@@ -1223,8 +1249,11 @@ components:
     # FixedExpenses
     FixedExpenseCategory:
       type: string
+      description: Categorias de despesas fixas. PERSONAL representa cuidados pessoais e preserva compatibilidade com registros existentes.
       enum:
+        - GROCERY
         - HOUSING
+        - UTILITIES
         - SUBSCRIPTIONS
         - INSURANCE
         - EDUCATION
@@ -1233,6 +1262,12 @@ components:
         - PERSONAL
         - TAXES
         - OTHER
+        - FOOD_AND_DINING
+        - ENTERTAINMENT
+        - SHOPPING
+        - PETS
+        - TRAVEL
+        - INVESTMENTS
     FixedExpenseStatus:
       type: string
       enum:

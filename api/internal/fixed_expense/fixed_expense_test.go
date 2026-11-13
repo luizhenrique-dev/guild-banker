@@ -241,7 +241,9 @@ func TestFixedExpense_Deactivate(t *testing.T) {
 
 func TestCategory_IsValid(t *testing.T) {
 	validCategories := []Category{
+		CategoryGrocery,
 		CategoryHousing,
+		CategoryUtilities,
 		CategorySubscriptions,
 		CategoryInsurance,
 		CategoryEducation,
@@ -250,6 +252,12 @@ func TestCategory_IsValid(t *testing.T) {
 		CategoryPersonal,
 		CategoryTaxes,
 		CategoryOther,
+		CategoryFoodAndDining,
+		CategoryEntertainment,
+		CategoryShopping,
+		CategoryPets,
+		CategoryTravel,
+		CategoryInvestments,
 	}
 
 	for _, category := range validCategories {

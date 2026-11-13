@@ -12,7 +12,9 @@ import (
 type Category string
 
 const (
+	CategoryGrocery        Category = "GROCERY"
 	CategoryHousing        Category = "HOUSING"
+	CategoryUtilities      Category = "UTILITIES"
 	CategorySubscriptions  Category = "SUBSCRIPTIONS"
 	CategoryInsurance      Category = "INSURANCE"
 	CategoryEducation      Category = "EDUCATION"
@@ -21,6 +23,12 @@ const (
 	CategoryPersonal       Category = "PERSONAL"
 	CategoryTaxes          Category = "TAXES"
 	CategoryOther          Category = "OTHER"
+	CategoryFoodAndDining  Category = "FOOD_AND_DINING"
+	CategoryEntertainment  Category = "ENTERTAINMENT"
+	CategoryShopping       Category = "SHOPPING"
+	CategoryPets           Category = "PETS"
+	CategoryTravel         Category = "TRAVEL"
+	CategoryInvestments    Category = "INVESTMENTS"
 )
 
 type Status string
@@ -126,8 +134,9 @@ func (f *FixedExpense) UpdateEntry(changedBy string) {
 
 func (c Category) IsValid() bool {
 	switch c {
-	case CategoryHousing, CategorySubscriptions, CategoryInsurance, CategoryEducation, CategoryTransportation,
-		CategoryHealth, CategoryPersonal, CategoryTaxes, CategoryOther:
+	case CategoryGrocery, CategoryHousing, CategoryUtilities, CategorySubscriptions, CategoryInsurance,
+		CategoryEducation, CategoryTransportation, CategoryHealth, CategoryPersonal, CategoryTaxes, CategoryOther,
+		CategoryFoodAndDining, CategoryEntertainment, CategoryShopping, CategoryPets, CategoryTravel, CategoryInvestments:
 		return true
 	default:
 		return false

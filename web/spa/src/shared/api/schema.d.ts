@@ -247,7 +247,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Exclui permanentemente uma despesa fixa da guild; requer membership. */
+        delete: operations["deleteFixedExpense"];
         options?: never;
         head?: never;
         /** Atualiza uma despesa fixa */
@@ -491,8 +492,11 @@ export interface components {
             /** Format: date-time */
             created_at: string;
         };
-        /** @enum {string} */
-        FixedExpenseCategory: "HOUSING" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER";
+        /**
+         * @description Categorias de despesas fixas. PERSONAL representa cuidados pessoais e preserva compatibilidade com registros existentes.
+         * @enum {string}
+         */
+        FixedExpenseCategory: "GROCERY" | "HOUSING" | "UTILITIES" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER" | "FOOD_AND_DINING" | "ENTERTAINMENT" | "SHOPPING" | "PETS" | "TRAVEL" | "INVESTMENTS";
         /** @enum {string} */
         FixedExpenseStatus: "ACTIVE" | "PAUSED" | "CANCELLED";
         CreateFixedExpenseRequest: {
@@ -1191,7 +1195,10 @@ export interface operations {
     };
     listActiveFixedExpenses: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Inclui despesas pausadas; canceladas permanecem excluídas. O padrão preserva a listagem somente de ativas. */
+                include_paused?: boolean;
+            };
             header?: never;
             path: {
                 /** @description ID do guild. */
@@ -1244,6 +1251,32 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    deleteFixedExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da despesa fixa. */
+                id: components["parameters"]["FixedExpenseIDPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Despesa excluída. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             500: components["responses"]["InternalServerError"];
         };
     };
