@@ -85,7 +85,7 @@ const resources = {
       'fx.toast.created': 'Despesa criada com sucesso!',
       'fx.toast.updated': 'Despesa atualizada com sucesso!',
       'fx.toast.deactivated': 'Despesa desativada.',
-      'fx.toast.error': 'Ocorreu um erro. Tente novamente.',
+      'fx.toast.error': 'Ocorreu um erro na comunicação com o servidor. Tente novamente mais tarde.',
       'fx.deactivate.title': 'Desativar despesa',
       'fx.deactivate.message': 'Tem certeza que deseja desativar "{{name}}"?',
       'fx.deactivate.confirm': 'Desativar',
