@@ -1,7 +1,7 @@
 # Fixture fictícia emitida pelo Keycloak
 
-JWT original emitido pelo Keycloak **26.7.5**, executado com OpenJDK21 em uma
-distribuição standalone extraída em `/tmp/issue1-tools/keycloak-26.7.5`.
+JWT original emitido pelo Keycloak **26.8.2**, executado com OpenJDK21 em uma
+distribuição standalone extraída em `/tmp/issue1-tools/keycloak-26.8.2`.
 Captura registrada em `metadata.json` (UTC). Identidade exclusivamente fictícia:
 `fixture-member`, UUID terminado em 42, role `member`. `admin` existe no realm,
 mas não foi atribuído a essa identidade.
@@ -30,11 +30,11 @@ ativos. Provider discovery e rotação de JWKS possuem testes separados.
 
 ## Recaptura isolada
 
-Requisitos: distribuição Keycloak 26.7.5, JDK 21 com truststore válido, curl,
+Requisitos: distribuição Keycloak 26.8.2, JDK 21 com truststore válido, curl,
 Python 3 e porta 18880 livre. Use uma distribuição nova em `/tmp/issue1-tools`;
 não aplique este import sobre o realm/volume pessoal. Execute os comandos de
 captura na raiz do repositório. Download utilizado:
-[release 26.7.5](https://github.com/keycloak/keycloak/releases/tag/26.7.5).
+[release 26.8.2](https://github.com/keycloak/keycloak/releases/tag/26.8.2).
 
 O transporte usa `127.0.0.1:18880`. `--hostname=http://localhost:8080` conserva
 `http://localhost:8080/realms/guild-banker` como issuer do token. O banco
@@ -42,7 +42,7 @@ O transporte usa `127.0.0.1:18880`. `--hostname=http://localhost:8080` conserva
 Nenhuma migration da API é executada.
 
 Salve o JSON abaixo em
-`/tmp/issue1-tools/keycloak-26.7.5/data/import/guild-banker-realm.json`:
+`/tmp/issue1-tools/keycloak-26.8.2/data/import/guild-banker-realm.json`:
 
 ```json
 {
@@ -97,7 +97,7 @@ omitidos para manter a identidade fictícia pequena.
 Inicie em um terminal, com `JAVA_HOME` apontando para o JDK 21:
 
 ```sh
-/tmp/issue1-tools/keycloak-26.7.5/bin/kc.sh start-dev \
+/tmp/issue1-tools/keycloak-26.8.2/bin/kc.sh start-dev \
   --http-host=127.0.0.1 --http-port=18880 \
   --hostname=http://localhost:8080 --db=dev-mem \
   --import-realm --log-console-color=false
@@ -162,7 +162,7 @@ assert any(key['kid'] == header['kid'] and key['alg'] == 'RS256' for key in jwks
 for key in jwks['keys']:
     assert not {'d', 'p', 'q', 'dp', 'dq', 'qi', 'oth', 'k'} & key.keys()
 meta = {
-    'keycloak_version': '26.7.5',
+    'keycloak_version': '26.8.2',
     'issuer': claims['iss'],
     'audience': 'guild-banker-api',
     'kid': header['kid'],

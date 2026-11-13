@@ -1,6 +1,6 @@
 # Keycloak local — GuildBanker
 
-Definições para Keycloak **26.7.5**, a versão do compose:
+Definições para Keycloak **26.8.2**, a versão do compose:
 
 - `guild-banker-realm.json`: realm `guild-banker`, assinatura RS256, roles
   `member`/`admin` e usuário de teste Foo Bar (`foo.bar@email.com`).
@@ -105,7 +105,7 @@ identidades/credenciais apropriadas ao ambiente.
 
 ## Validação realizada
 
-Os JSONs foram importados em uma instância isolada Keycloak26.7.5 com banco
+Os JSONs foram importados em uma instância isolada Keycloak 26.8.2 com banco
 em memória. Foram confirmados: login de Foo Bar com a senha fornecida por env,
 Authorization Code com PKCE S256, access token RS256 com issuer/sub/username/
 e-mail/role member e audience da API, ID token sem audience da API, bloqueio de

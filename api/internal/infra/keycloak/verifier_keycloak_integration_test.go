@@ -19,11 +19,12 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/gin-gonic/gin"
 	"github.com/go-jose/go-jose/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/infra/webserver/middleware"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 type keycloakMetadata struct {
@@ -49,7 +50,7 @@ func loadKeycloakFixture(t *testing.T) (string, *oidc.StaticKeySet, keycloakMeta
 	}
 	var meta keycloakMetadata
 	require.NoError(t, json.Unmarshal(read("metadata.json"), &meta))
-	require.Equal(t, "26.7.5", meta.Version)
+	require.Equal(t, "26.8.2", meta.Version)
 	require.Equal(t, "guild-banker-api", meta.Audience)
 	require.Greater(t, meta.ValidAt, meta.IssuedAt)
 	require.Less(t, meta.ValidAt, meta.ExpiresAt)
