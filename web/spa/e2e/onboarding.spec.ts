@@ -60,6 +60,9 @@ test('chooses a guild and restores it after logout and another demo login', asyn
 test('lists invitations, declines one and accepts the other before loading business data', async ({ page }) => {
   await scenario(page, guildsFixtures.map((guild, index) => ({ id: index+1, guild, invited_by: { name: 'Ana', email: 'inviter@example.test' } })))
   await page.goto('/transactions?category=OTHER')
+  await expect(page.getByRole('heading', { name: 'Olá, Ana!' })).toBeVisible()
+  await expect(page.getByRole('article')).toHaveCount(0)
+  await page.getByRole('button', { name: 'Continuar' }).click()
   await expect(page.getByRole('heading', { name: 'Seus convites' })).toBeVisible()
   await expect(page.getByRole('article')).toHaveCount(2)
   const requests = await page.evaluate(() => JSON.parse(sessionStorage.getItem('issue5-e2e-requests') || '[]') as string[])
@@ -77,6 +80,7 @@ for (const width of [375, 1280]) {
     await page.setViewportSize({ width, height: 900 })
     await scenario(page, [{ id: 1, guild: guildsFixtures[0]!, invited_by: { name: 'Ana', email: 'inviter@example.test' } }], true)
     await page.goto('/home')
+    await page.getByRole('button', { name: 'Continuar' }).click()
     await page.getByRole('button', { name: 'Negar' }).click()
     await expect(page.getByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
     const name = page.getByRole('textbox', { name: 'Nome de exibição' })
@@ -93,3 +97,38 @@ for (const width of [375, 1280]) {
     await expect(page).toHaveURL(/guild=50/)
   })
 }
+
+for (const viewport of [{ width: 375, height: 900 }, { width: 1280, height: 900 }]) {
+  test(`centers the welcome and creation form at ${viewport.width}px`, async ({ page }) => {
+    await page.setViewportSize(viewport)
+    await scenario(page)
+    await page.goto('/home')
+    await expect(page.getByRole('heading', { name: 'Olá, Ana!' })).toBeVisible()
+    const card = page.getByRole('region')
+    await expect.poll(async () => {
+      const box = await card.boundingBox()
+      return box ? Math.abs(box.x + box.width / 2 - viewport.width / 2) : Infinity
+    }).toBeLessThan(2)
+    await page.getByRole('button', { name: 'Continuar' }).click()
+    await expect(page.getByRole('heading', { name: 'Crie sua guild' })).toBeFocused()
+    await expect.poll(async () => {
+      const box = await card.boundingBox()
+      const header = await page.getByRole('banner').boundingBox()
+      return box && header ? Math.abs(box.y + box.height / 2 - (header.height + (viewport.height - header.height) / 2)) : Infinity
+    }).toBeLessThan(2)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+  })
+}
+
+test('supports reduced motion and scrolling through the creation form in a short viewport', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.setViewportSize({ width: 375, height: 500 })
+  await scenario(page)
+  await page.goto('/home')
+  await page.getByRole('button', { name: 'Continuar' }).click()
+  await expect(page.getByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
+  expect(await page.getByRole('region').evaluate((element) => getComputedStyle(element).animationName)).toBe('none')
+  await page.getByRole('textbox', { name: 'Nome de exibição' }).fill('Minha casa')
+  await page.getByRole('button', { name: 'Criar guild', exact: true }).click()
+  await expect(page.getByRole('heading', { name: 'Bem-vindo(a) Ana Silva' })).toBeVisible()
+})

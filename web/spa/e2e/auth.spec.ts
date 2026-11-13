@@ -13,7 +13,11 @@ async function login(page: Page) {
 }
 
 async function completeHomeOnboarding(page: Page) {
-  await expect(page.getByRole('heading', { name: /^(Bem-vindo\(a\)|Crie sua guild|Escolha sua guild)/ })).toBeVisible()
+  await expect(page.getByRole('heading', { name: /^(Bem-vindo\(a\)|Olá,|Seja bem-vindo|Crie sua guild|Escolha sua guild)/ })).toBeVisible()
+  if (await page.getByRole('button', { name: 'Continuar', exact: true }).isVisible()) {
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
+  }
   if (await page.getByRole('heading', { name: 'Crie sua guild' }).isVisible()) {
     if (process.env.E2E_ALLOW_GUILD_CREATE !== 'true') throw new Error('Provide test membership or E2E_ALLOW_GUILD_CREATE=true in a dedicated environment')
     await page.getByRole('textbox', { name: 'Nome de exibição' }).fill('Auth test ' + Date.now())

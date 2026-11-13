@@ -15,6 +15,7 @@ it('requires a guild before showing Home and navigation while retaining identity
   expect(screen.queryByRole('navigation')).toBeNull()
   expect(screen.getByRole('button', { name: 'Sair' })).toBeVisible()
   expect(await screen.findByRole('heading', { name: 'Escolha sua guild' })).toBeVisible()
+  expect(screen.queryByRole('button', { name: 'Continuar' })).toBeNull()
   await userEvent.click(screen.getByRole('button', { name: 'Entrar em Família Silva' }))
   expect(await screen.findByRole('heading', { name: 'Bem-vindo(a) Ana' })).toBeVisible()
   expect(screen.getByRole('navigation')).toBeVisible()

@@ -11,6 +11,12 @@ const resources = {
   'pt-BR': {
     translation: {
       'onboarding.select': 'Escolha sua guild',
+      'onboarding.welcome': 'Olá, {{name}}!',
+      'onboarding.welcomeAnonymous': 'Seja bem-vindo,',
+      'onboarding.firstStep': 'Organize suas finanças em uma guild',
+      'onboarding.guildExplanation': 'Uma guild é um espaço onde você pode acompanhar transações, reunir despesas e compartilhar a organização financeira com outras pessoas.',
+      'onboarding.welcomeInviteHint': 'Primeiro, vamos verificar se você recebeu algum convite. Depois, você poderá criar uma guild.',
+      'onboarding.start': 'Continuar',
       'onboarding.enter': 'Entrar em {{name}}',
       'onboarding.invites': 'Seus convites',
       'onboarding.inviteHint': 'Escolha um convite para começar.',
@@ -195,6 +201,12 @@ const resources = {
   en: {
     translation: {
       'onboarding.select': 'Choose your guild',
+      'onboarding.welcome': 'Welcome {{name}},',
+      'onboarding.welcomeAnonymous': 'Welcome,',
+      'onboarding.firstStep': 'Your first step is to create your guild.',
+      'onboarding.guildExplanation': 'A guild is your space to organize finances. Bring expenses together, track transactions and share that organization with your family or other people.',
+      'onboarding.welcomeInviteHint': 'If you have invitations, we will show them before creating a new guild.',
+      'onboarding.start': 'Let’s get started',
       'onboarding.enter': 'Enter {{name}}',
       'onboarding.invites': 'Your invitations',
       'onboarding.inviteHint': 'Choose an invitation to get started.',

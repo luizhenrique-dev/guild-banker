@@ -69,6 +69,8 @@ it('shows the empty guild state without requesting financial data', async () => 
     http.get('*/api/v1/guilds/:id/transactions', () => { financialRequests++; return HttpResponse.json([]) }),
   )
   render(<MemoryRouter initialEntries={['/transactions']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  expect(await screen.findByRole('heading', { name: 'Olá, Ana!' })).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
   expect(await screen.findByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
   expect(financialRequests).toBe(0)
 })

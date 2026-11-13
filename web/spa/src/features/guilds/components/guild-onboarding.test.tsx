@@ -23,9 +23,39 @@ function Probe() {
   return <><button onClick={session.logout}>Sair</button>{activeGuild ? <h1>Entrou em {activeGuild.display_name}</h1> : <GuildSelectionState />}</>
 }
 function setup(children = <Probe />) { return render(<MemoryRouter initialEntries={['/home']}><Providers initialUser={{ id: 8, name: 'New user', email: 'new@example.test' }} demo>{children}</Providers></MemoryRouter>) }
-it('shows guild and inviter information and activates the accepted guild', async () => {
+async function start(children = <Probe />) {
+  setup(children)
+  await userEvent.click(await screen.findByRole('button', { name: 'Continuar' }))
+}
+
+it('welcomes the new user by first name before checking invitations or showing creation', async () => {
+  let invitationRequests = 0
+  server.use(http.get('*/api/v1/guild-invites', () => { invitationRequests++; return HttpResponse.json([]) }))
+  setup()
+  expect(await screen.findByRole('heading', { name: 'Olá, New!' })).toBeVisible()
+  expect(screen.getByText('Organize suas finanças em uma guild')).toBeVisible()
+  expect(screen.getByText(/Uma guild é um espaço onde você pode acompanhar/)).toBeVisible()
+  expect(screen.queryByRole('textbox', { name: 'Nome de exibição' })).toBeNull()
+  expect(invitationRequests).toBe(0)
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  expect(await screen.findByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
+  expect(screen.getByRole('heading', { name: 'Crie sua guild' })).toHaveFocus()
+  expect(invitationRequests).toBe(1)
+})
+
+it('shows invitations only after the welcome button', async () => {
   await invite()
   setup()
+  expect(await screen.findByRole('heading', { name: 'Olá, New!' })).toBeVisible()
+  expect(screen.queryByRole('article')).toBeNull()
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  expect(await screen.findByRole('heading', { name: 'Seus convites' })).toBeVisible()
+  expect(screen.getByRole('article', { name: 'Família Silva' })).toBeVisible()
+})
+
+it('shows guild and inviter information and activates the accepted guild', async () => {
+  await invite()
+  await start()
   expect(await screen.findByRole('heading', { name: 'Seus convites' })).toBeVisible()
   expect(screen.getByText('Família Silva')).toBeVisible()
   expect(screen.getByText(/Ana Silva/)).toBeVisible()
@@ -36,7 +66,7 @@ it('shows guild and inviter information and activates the accepted guild', async
 })
 it('declines the last invitation then creates and activates a guild', async () => {
   await invite()
-  setup()
+  await start()
   await userEvent.click(await screen.findByRole('button', { name: 'Negar' }))
   expect(await screen.findByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
   const user = userEvent.setup()
@@ -48,7 +78,7 @@ it('declines the last invitation then creates and activates a guild', async () =
 it('preserves form values and never retries a failed creation automatically', async () => {
   let calls = 0
   server.use(http.post('*/api/v1/guilds', () => { calls++; return new HttpResponse(null, { status: 500 }) }))
-  setup()
+  await start()
   const input = await screen.findByRole('textbox', { name: 'Nome de exibição' })
   await userEvent.type(input, 'Draft')
   await userEvent.click(screen.getByRole('button', { name: 'Criar guild' }))
@@ -58,14 +88,24 @@ it('preserves form values and never retries a failed creation automatically', as
 })
 it('does not offer creation when invitation loading fails', async () => {
   server.use(http.get('*/api/v1/guild-invites', () => new HttpResponse(null, { status: 403 })))
-  setup()
+  await start()
   expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
   expect(screen.queryByRole('button', { name: 'Criar guild' })).toBeNull()
+})
+it('retries invitation loading without restarting the welcome or offering creation too early', async () => {
+  server.use(http.get('*/api/v1/guild-invites', () => new HttpResponse(null, { status: 503 })))
+  await start()
+  expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar suas guilds ou convites.')
+  expect(screen.queryByRole('button', { name: 'Criar guild' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Continuar' })).toBeNull()
+  server.use(http.get('*/api/v1/guild-invites', () => HttpResponse.json([])))
+  await userEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+  expect(await screen.findByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
 })
 it('ignores a creation response arriving after logout', async () => {
   let finish!: (response: Response) => void
   server.use(http.post('*/api/v1/guilds', async () => new Promise<Response>((resolve) => { finish = resolve })))
-  setup()
+  await start()
   await userEvent.type(await screen.findByRole('textbox', { name: 'Nome de exibição' }), 'Draft')
   await userEvent.click(screen.getByRole('button', { name: 'Criar guild' }))
   await waitFor(() => expect(finish).toBeTypeOf('function'))
@@ -78,7 +118,7 @@ it('ignores a creation response arriving after logout', async () => {
 it('lists all invitations and keeps the remaining one after a refusal', async () => {
   await invite()
   await apiClient('/api/v1/guilds/2/invites', { method: 'POST', headers: owner, body: { email: 'new@example.test' } })
-  setup()
+  await start()
   expect(await screen.findByRole('article', { name: 'Família Silva' })).toBeVisible()
   expect(screen.getByRole('article', { name: 'República dos Amigos' })).toBeVisible()
   await userEvent.click(screen.getAllByRole('button', { name: 'Negar' })[0]!)
@@ -90,7 +130,7 @@ it('lists all invitations and keeps the remaining one after a refusal', async ()
 it('validates the display name length before sending creation', async () => {
   let calls = 0
   server.use(http.post('*/api/v1/guilds', () => { calls++; return new HttpResponse(null, { status: 500 }) }))
-  setup()
+  await start()
   const input = await screen.findByRole('textbox', { name: 'Nome de exibição' })
   await userEvent.type(input, 'á'.repeat(71))
   await userEvent.click(screen.getByRole('button', { name: 'Criar guild' }))
@@ -104,7 +144,7 @@ it.each(['create', 'accept'])('does not overwrite an invitation 403 with a late 
   let client!: QueryClient
   function WithCache() { client = useQueryClient(); return <Probe /> }
   server.use(http.post(action === 'create' ? '*/api/v1/guilds' : '*/api/v1/guild-invites/:id/accept', async () => new Promise<Response>((resolve) => { finish = resolve })))
-  setup(<WithCache />)
+  await start(<WithCache />)
   if (action === 'create') {
     await userEvent.type(await screen.findByRole('textbox', { name: 'Nome de exibição' }), 'Draft')
     await userEvent.click(screen.getByRole('button', { name: 'Criar guild' }))
@@ -122,7 +162,7 @@ it.each(['create', 'accept'])('does not overwrite an invitation 403 with a late 
 
 it('disambiguates invitations with repeated visual names for sighted and screen reader users', async () => {
   server.use(http.get('*/api/v1/guild-invites', () => HttpResponse.json(guildsFixtures.map((guild, index) => ({ id: index+1, guild: { ...guild, display_name: 'Família' }, invited_by: { name: 'Ana', email: 'ana@example.test' } })))))
-  setup()
+  await start()
   expect(await screen.findByRole('article', { name: 'Família (familia-silva)' })).toHaveTextContent('familia-silva')
   expect(screen.getByRole('article', { name: 'Família (republica-amigos)' })).toHaveTextContent('republica-amigos')
 })

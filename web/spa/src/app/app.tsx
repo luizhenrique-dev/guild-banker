@@ -42,14 +42,14 @@ function AuthenticatedApp() {
   const { t } = useTranslation()
   if (phase !== 'ready') return <main role={phase.endsWith('error') ? 'alert' : 'status'} className="p-8"><h1>{t(`session.${phase}`)}</h1>{phase.endsWith('error') && <button onClick={retry}>{t('common.retry')}</button>}</main>
   if (!user) return <main className="p-8"><h1>{t('session.missing')}</h1></main>
-  return <>
+  return <div className="flex min-h-[100dvh] flex-col">
     <Header showGuildSwitcher={!!activeGuild && !isForbidden} />
     {activeGuild && !isForbidden ? <div className="flex flex-col md:flex-row">
       <Sidebar />
       <div className="min-w-0 flex-1 min-h-[calc(100vh-64px)]"><AppRoutes /></div>
     </div> : <GuildOnboarding showHomeLink={false} />}
     <Toaster />
-  </>
+  </div>
 }
 
 export function App({ initialUser = null, demo = false, auth }: { initialUser?: SessionUser | null; demo?: boolean; auth?: KeycloakSession }) {

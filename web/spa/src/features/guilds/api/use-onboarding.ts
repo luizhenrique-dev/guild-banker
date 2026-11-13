@@ -7,7 +7,7 @@ import { guildsApi } from './guilds.api'
 import type { components } from '@/src/shared/api/schema'
 
 type Invitation = components['schemas']['InvitationResponse']
-export function useOnboarding() {
+export function useOnboarding(started: boolean) {
   const session = useSession()
   const context = useActiveGuild()
   const qc = useQueryClient()
@@ -22,7 +22,7 @@ export function useOnboarding() {
   const invitations = useQuery({
     queryKey: key,
     queryFn: ({ signal }) => session.request((options) => guildsApi.invitations(options), signal),
-    enabled: !!session.user && !context.isLoading && !context.error && context.guilds.length === 0,
+    enabled: started && !!session.user && !context.isLoading && !context.error && context.guilds.length === 0,
   })
   const report = (error: unknown) => {
     if (!alive()) return
