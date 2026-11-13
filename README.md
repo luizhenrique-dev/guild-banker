@@ -118,6 +118,19 @@ initial import, manual client import and API user mapping.
 
 ## API – Golang
 
+### Persisted email addresses
+
+Invitation fields validate simple email addresses while typing and convert input to
+lowercase. The API applies the same rule to invitations and account writes: quoted
+addresses, display names and internal spaces are rejected. Supported addresses are
+trimmed and lowercased before persistence.
+
+Before serving requests, a single atomic SQL update lowercases existing account
+emails and trims outer spaces, updating only changed addresses. It has a 30-second
+timeout. If two accounts collide, startup stops without partial changes; accounts
+are never merged automatically. Existing unsupported addresses are neither
+reinterpreted nor deleted, and cannot be used in new invitations or authentication.
+
 ### Architecture
 See [go/architecture.md](./docs/go/architecture.md) for more details.
 

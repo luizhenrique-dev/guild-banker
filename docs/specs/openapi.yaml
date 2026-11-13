@@ -1056,6 +1056,7 @@ components:
         email:
           type: string
           format: email
+          description: Simple email address without quotes or a display name. Trimmed and converted to lowercase before persistence.
     GuildResponse:
       type: object
       required: [id, name, display_name, description, enabled]

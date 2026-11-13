@@ -23,6 +23,8 @@ import (
 	"github.com/luizhenrique-dev/guild-banker/api/internal/user"
 )
 
+const emailNormalizationTimeout = 30 * time.Second
+
 func main() {
 	logFile, err := os.OpenFile("guildbanker.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o666)
 	if err != nil {
@@ -73,6 +75,13 @@ func main() {
 		os.Exit(1)
 	}
 	slog.Info("migrations applied successfully")
+	emailCtx, emailCancel := context.WithTimeout(context.Background(), emailNormalizationTimeout)
+	err = user.NormalizeStoredEmails(emailCtx, db)
+	emailCancel()
+	if err != nil {
+		slog.Error("failed to normalize stored account emails", "error", err)
+		os.Exit(1)
+	}
 
 	authCtx, authCancel := context.WithTimeout(context.Background(), time.Duration(cfg.Keycloak.Timeout)*time.Second)
 	server, err := newServer(authCtx, cfg, db, logger)

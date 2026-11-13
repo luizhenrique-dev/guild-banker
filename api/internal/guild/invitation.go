@@ -2,8 +2,8 @@ package guild
 
 import (
 	"fmt"
-	"net/mail"
-	"strings"
+
+	"github.com/luizhenrique-dev/guild-banker/api/internal/emailaddress"
 )
 
 type Invitation struct {
@@ -14,9 +14,9 @@ type Invitation struct {
 }
 
 func invitationEmail(email string) (string, error) {
-	address, err := mail.ParseAddress(strings.TrimSpace(email))
+	address, err := emailaddress.Normalize(email)
 	if err != nil {
 		return "", fmt.Errorf("%w: invalid email", ErrInvalidInvitation)
 	}
-	return strings.ToLower(address.Address), nil
+	return address, nil
 }

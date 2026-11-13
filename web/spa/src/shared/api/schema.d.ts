@@ -401,7 +401,10 @@ export interface components {
             description?: string;
         };
         InviteUserRequest: {
-            /** Format: email */
+            /**
+             * Format: email
+             * @description Simple email address without quotes or a display name. Trimmed and converted to lowercase before persistence.
+             */
             email: string;
         };
         GuildResponse: {

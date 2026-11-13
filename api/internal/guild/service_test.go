@@ -223,7 +223,7 @@ func TestService_InviteUser(t *testing.T) {
 		storage.On("IsMember", mock.Anything, int64(1), int64(1)).Return(true, nil)
 		storage.On("InviteByEmail", mock.Anything, int64(1), "member@example.com", int64(1)).Return(nil)
 
-		err := svc.InviteUser(context.Background(), 1, 1, "member@example.com")
+		err := svc.InviteUser(context.Background(), 1, 1, " MEMBER@EXAMPLE.COM ")
 
 		assert.NoError(t, err)
 		storage.AssertExpectations(t)
@@ -238,6 +238,15 @@ func TestService_InviteUser(t *testing.T) {
 		assert.Error(t, err)
 		storage.AssertNotCalled(t, "InviteByEmail")
 	})
+	for _, email := range []string{`"member"@example.test`, "Member <member@example.test>", "member..name@example.test"} {
+		t.Run("rejects "+email, func(t *testing.T) {
+			svc, storage := newService(t)
+			storage.On("IsMember", mock.Anything, int64(1), int64(1)).Return(true, nil)
+			err := svc.InviteUser(context.Background(), 1, 1, email)
+			assert.ErrorIs(t, err, ErrInvalidInvitation)
+			storage.AssertNotCalled(t, "InviteByEmail")
+		})
+	}
 }
 
 func TestService_RemoveUser(t *testing.T) {

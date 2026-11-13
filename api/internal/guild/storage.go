@@ -9,7 +9,13 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/lib/pq/pqerror"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
+)
+
+const (
+	guildNameUniqueConstraint      = "guild_name_key"
+	guildNameLowerUniqueConstraint = "idx_guild_name_lower"
 )
 
 type Storage interface {
@@ -274,8 +280,8 @@ func toDomain(e guildEntity) *Guild {
 
 func isNameConflict(err error) bool {
 	var pqErr *pq.Error
-	if !errors.As(err, &pqErr) || pqErr.Code != "23505" {
+	if !errors.As(err, &pqErr) || pqErr.Code != pqerror.UniqueViolation {
 		return false
 	}
-	return pqErr.Constraint == "guild_name_key" || pqErr.Constraint == "idx_guild_name_lower"
+	return pqErr.Constraint == guildNameUniqueConstraint || pqErr.Constraint == guildNameLowerUniqueConstraint
 }

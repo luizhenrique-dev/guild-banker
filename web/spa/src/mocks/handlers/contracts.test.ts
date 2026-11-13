@@ -59,6 +59,10 @@ it('inviting only creates a pending invitation and distinguishes duplicate from 
   expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([])
 })
 
+it.each(['"member"@example.test', 'Member <member@example.test>', 'member..name@example.test'])('rejects unsupported invitation email %s in the mock API', async (email) => {
+  await expect(apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email } })).rejects.toMatchObject({ status: 400 })
+})
+
 it('invitation mock authorizes the recipient and grants access only after acceptance', async () => {
   type Invitation = components['schemas']['InvitationResponse']
   const recipient = { 'X-User-ID': '8', 'X-User-Email': 'new@example.test' }

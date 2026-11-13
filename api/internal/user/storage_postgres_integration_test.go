@@ -8,12 +8,14 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/emailaddress"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -60,6 +62,88 @@ func rowVersion(t *testing.T, db *sqlx.DB, id int64) string {
 	return version
 }
 
+func TestStorageCanonicalEmailPostgres(t *testing.T) {
+	db := postgresTestDB(t)
+	storage := NewStorage(db)
+	u, err := New("Member", ` MEMBER@example.test `, "member", "fixture")
+	require.NoError(t, err)
+	require.NoError(t, storage.Create(t.Context(), u))
+	require.Equal(t, "member@example.test", u.Email)
+	persisted, err := storage.GetByID(t.Context(), u.ID)
+	require.NoError(t, err)
+	require.Equal(t, u.Email, persisted.Email)
+
+	u.Sync("Updated", `UPDATED@example.test`, "fixture")
+	require.NoError(t, storage.Update(t.Context(), u))
+	found, err := storage.GetByEmail(t.Context(), ` Updated@EXAMPLE.test `)
+	require.NoError(t, err)
+	require.Equal(t, u.ID, found.ID)
+	require.Equal(t, "updated@example.test", found.Email)
+
+	candidate, err := New("Other", `OTHER@example.test`, "other", "fixture")
+	require.NoError(t, err)
+	other, err := storage.CreateIfAbsent(t.Context(), candidate)
+	require.NoError(t, err)
+	require.Equal(t, "other@example.test", other.Email)
+	other.Sync("Changed", ` CHANGED@example.test `, "fixture")
+	changed, err := storage.UpdateProfile(t.Context(), other)
+	require.NoError(t, err)
+	require.Equal(t, "changed@example.test", changed.Email)
+	version := rowVersion(t, db, changed.ID)
+	changed, err = NewService(storage).EnsureAccount(t.Context(), changed.ExternalID, changed.Name, `CHANGED@example.test`)
+	require.NoError(t, err)
+	require.Equal(t, "changed@example.test", changed.Email)
+	require.Equal(t, version, rowVersion(t, db, changed.ID), "equivalent claims must not rewrite the profile")
+
+	_, err = NewService(storage).EnsureAccount(t.Context(), "duplicate", "Duplicate", `CHANGED@example.test`)
+	require.ErrorIs(t, err, ErrEmailConflict)
+	_, err = NewService(storage).EnsureAccount(t.Context(), "invalid", "Invalid", "private invalid email")
+	require.ErrorIs(t, err, emailaddress.ErrInvalid)
+
+	u.Email = "private invalid email"
+	require.ErrorIs(t, storage.Update(t.Context(), u), emailaddress.ErrInvalid)
+	found, err = storage.GetByID(t.Context(), u.ID)
+	require.NoError(t, err)
+	require.Equal(t, "updated@example.test", found.Email)
+}
+
+func TestNormalizeStoredEmailsPostgres(t *testing.T) {
+	for _, tt := range []struct {
+		name, second string
+		wantErr      error
+	}{
+		{name: "normalizes and is idempotent", second: "other@example.test"},
+		{name: "collision rolls back", second: "member@example.test", wantErr: ErrEmailConflict},
+		{name: "keeps unsupported legacy syntax", second: ` "OTHER"@EXAMPLE.test `},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			db := postgresTestDB(t)
+			var firstID int64
+			require.NoError(t, db.Get(&firstID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('first','First',' MEMBER@example.test ','fixture') RETURNING id`))
+			_, err := db.Exec(`INSERT INTO user_account(external_id,name,email,created_by) VALUES ('second','Second',$1,'fixture')`, tt.second)
+			require.NoError(t, err)
+			version := rowVersion(t, db, firstID)
+			err = NormalizeStoredEmails(t.Context(), db)
+			if tt.wantErr != nil {
+				require.ErrorIs(t, err, tt.wantErr)
+				require.NotContains(t, err.Error(), tt.second)
+				require.Equal(t, version, rowVersion(t, db, firstID))
+				return
+			}
+			require.NoError(t, err)
+			u, err := NewStorage(db).GetByID(t.Context(), firstID)
+			require.NoError(t, err)
+			require.Equal(t, "member@example.test", u.Email)
+			var secondEmail string
+			require.NoError(t, db.Get(&secondEmail, "SELECT email FROM user_account WHERE external_id='second'"))
+			require.Equal(t, strings.ToLower(strings.TrimSpace(tt.second)), secondEmail)
+			version = rowVersion(t, db, firstID)
+			require.NoError(t, NormalizeStoredEmails(t.Context(), db))
+			require.Equal(t, version, rowVersion(t, db, firstID))
+		})
+	}
+}
+
 func TestStorageEnsureAccountPostgres(t *testing.T) {
 	db := postgresTestDB(t)
 	storage := NewStorage(db)
@@ -86,7 +170,7 @@ func TestStorageEnsureAccountPostgres(t *testing.T) {
 		assert.Equal(t, original.CreatedAt, u.CreatedAt)
 		assert.Equal(t, original.CreatedBy, u.CreatedBy)
 		assert.Equal(t, profile[0], u.Name)
-		assert.Equal(t, profile[1], u.Email)
+		assert.Equal(t, strings.ToLower(profile[1]), u.Email)
 		require.NotNil(t, u.UpdatedBy)
 		assert.Equal(t, u.Email, *u.UpdatedBy)
 	}

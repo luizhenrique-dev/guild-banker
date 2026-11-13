@@ -9,6 +9,34 @@ import i18n from '@/src/shared/lib/i18n'
 import { toast } from 'sonner'
 
 beforeEach(async () => { await i18n.changeLanguage('pt-BR') })
+it('lowercases the invitation field and sends the normalized email', async () => {
+  let submitted: unknown
+  server.use(http.post('*/api/v1/guilds/1/invites', async ({ request }) => {
+    submitted = await request.json()
+    return new HttpResponse(null, { status: 204 })
+  }))
+  render(<MemoryRouter initialEntries={['/guild?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  const user = userEvent.setup()
+  const input = await screen.findByRole('textbox', { name: 'Convidar membro' })
+  await user.type(input, 'Member.Name+bank@EXAMPLE.TEST')
+  expect(input).toHaveValue('member.name+bank@example.test')
+  await user.click(screen.getByRole('button', { name: 'Enviar convite' }))
+  await waitFor(() => expect(submitted).toEqual({ email: 'member.name+bank@example.test' }))
+})
+
+it('rejects quotes in the invitation field before making a request', async () => {
+  let calls = 0
+  server.use(http.post('*/api/v1/guilds/1/invites', () => { calls++; return new HttpResponse(null, { status: 204 }) }))
+  render(<MemoryRouter initialEntries={['/guild?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  const user = userEvent.setup()
+  const input = await screen.findByRole('textbox', { name: 'Convidar membro' })
+  await user.type(input, '"member"@example.test')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Informe um email válido.')
+  expect(input).toHaveAttribute('aria-invalid', 'true')
+  await user.click(screen.getByRole('button', { name: 'Enviar convite' }))
+  expect(calls).toBe(0)
+})
+
 it('keeps the invitation draft after failure and clears it only on success', async () => {
   let calls = 0
   server.use(http.post('*/api/v1/guilds/1/invites', () => { calls++; return new HttpResponse(null, { status: 500 }) }))

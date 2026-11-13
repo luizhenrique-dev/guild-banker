@@ -10,6 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/user"
 	"github.com/stretchr/testify/require"
 	"net/http/httptest"
 	"strings"
@@ -48,8 +49,9 @@ func TestInvitationLifecyclePostgres(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, service.InviteUser(t.Context(), ownerID, g.ID, "Recipient@example.test"))
 	// The account is provisioned after the invitation already exists.
-	require.NoError(t, db.Get(&recipientID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('recipient','Recipient','"recipient"@example.test','fixture') RETURNING id`))
-	recipient := audit.Actor{UserID: recipientID, Email: `"RECIPIENT"@example.test`}
+	require.NoError(t, db.Get(&recipientID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('recipient','Recipient',' RECIPIENT@example.test ','fixture') RETURNING id`))
+	require.NoError(t, user.NormalizeStoredEmails(t.Context(), db))
+	recipient := audit.Actor{UserID: recipientID, Email: " RECIPIENT@example.test "}
 	invitations, err := service.ListInvitations(t.Context(), recipient)
 	require.NoError(t, err)
 	require.Len(t, invitations, 1)
@@ -82,6 +84,33 @@ func TestInvitationLifecyclePostgres(t *testing.T) {
 	require.ErrorIs(t, service.InviteUser(t.Context(), ownerID, g.ID, "recipient@example.test"), ErrGuildMemberAlreadySet)
 }
 
+func TestInvitationRejectsUnsupportedEmailPostgres(t *testing.T) {
+	db := guildTestDB(t)
+	owner, err := user.NewService(user.NewStorage(db)).EnsureAccount(t.Context(), "owner", "Owner", "owner@example.test")
+	require.NoError(t, err)
+	service := NewService(NewStorage(db))
+	actor := audit.Actor{UserID: owner.ID, Email: owner.Email}
+	g, err := service.Create(t.Context(), "Invitation validation", "", actor)
+	require.NoError(t, err)
+	router := gin.New()
+	router.POST("/guilds/:guildID/invites", NewHandler(service).InviteUser)
+	for _, email := range []string{`"member"@example.test`, `"a b"@example.test`, `"a@b"@example.test`, "Member <member@example.test>", "member..name@example.test"} {
+		t.Run(email, func(t *testing.T) {
+			body, err := json.Marshal(map[string]string{"email": email})
+			require.NoError(t, err)
+			req := httptest.NewRequest("POST", fmt.Sprintf("/guilds/%d/invites", g.ID), strings.NewReader(string(body)))
+			req.Header.Set("Content-Type", "application/json")
+			req = req.WithContext(auth.WithPrincipal(req.Context(), auth.Principal{Actor: actor}))
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, req)
+			require.Equal(t, 400, recorder.Code, recorder.Body.String())
+		})
+	}
+	var count int
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_invitation"))
+	require.Zero(t, count)
+}
+
 func TestInvitationDecisionsRacePostgres(t *testing.T) {
 	for _, tt := range []struct {
 		name   string
@@ -91,7 +120,10 @@ func TestInvitationDecisionsRacePostgres(t *testing.T) {
 			db := guildTestDB(t)
 			var ownerID, recipientID int64
 			require.NoError(t, db.Get(&ownerID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('owner','Owner','owner@example.test','fixture') RETURNING id`))
-			require.NoError(t, db.Get(&recipientID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('recipient','Recipient','"recipient"@example.test','fixture') RETURNING id`))
+			recipientAccount, err := user.NewService(user.NewStorage(db)).EnsureAccount(t.Context(), "recipient", "Recipient", " RECIPIENT@example.test ")
+			require.NoError(t, err)
+			require.Equal(t, "recipient@example.test", recipientAccount.Email)
+			recipientID = recipientAccount.ID
 			service := NewService(NewStorage(db))
 			owner := audit.Actor{UserID: ownerID, Email: "owner@example.test"}
 			recipient := audit.Actor{UserID: recipientID, Email: "recipient@example.test"}
@@ -132,7 +164,10 @@ func TestInvitationEmissionVersusAcceptancePostgres(t *testing.T) {
 	db := guildTestDB(t)
 	var ownerID, recipientID int64
 	require.NoError(t, db.Get(&ownerID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('owner','Owner','owner@example.test','fixture') RETURNING id`))
-	require.NoError(t, db.Get(&recipientID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('recipient','Recipient','"recipient"@example.test','fixture') RETURNING id`))
+	recipientAccount, err := user.NewService(user.NewStorage(db)).EnsureAccount(t.Context(), "recipient", "Recipient", " RECIPIENT@example.test ")
+	require.NoError(t, err)
+	require.Equal(t, "recipient@example.test", recipientAccount.Email)
+	recipientID = recipientAccount.ID
 	service := NewService(NewStorage(db))
 	owner := audit.Actor{UserID: ownerID, Email: "owner@example.test"}
 	recipient := audit.Actor{UserID: recipientID, Email: "recipient@example.test"}
@@ -162,7 +197,10 @@ func TestInvitationHTTPPostgres(t *testing.T) {
 	db := guildTestDB(t)
 	var ownerID, recipientID int64
 	require.NoError(t, db.Get(&ownerID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('owner','Owner','owner@example.test','fixture') RETURNING id`))
-	require.NoError(t, db.Get(&recipientID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('recipient','Recipient','"recipient"@example.test','fixture') RETURNING id`))
+	recipientAccount, err := user.NewService(user.NewStorage(db)).EnsureAccount(t.Context(), "recipient", "Recipient", " RECIPIENT@example.test ")
+	require.NoError(t, err)
+	require.Equal(t, "recipient@example.test", recipientAccount.Email)
+	recipientID = recipientAccount.ID
 	service := NewService(NewStorage(db))
 	owner := audit.Actor{UserID: ownerID, Email: "owner@example.test"}
 	recipient := audit.Actor{UserID: recipientID, Email: "recipient@example.test"}
