@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -50,10 +51,14 @@ func TestProvisioningHTTPPostgres(t *testing.T) {
 	db, err := sqlx.Connect("postgres", parsed.String())
 	require.NoError(t, err)
 	defer func() { require.NoError(t, db.Close()) }()
-	migration, err := os.ReadFile("../../../migrations/000001_create_users_table.up.sql")
+	migrations, err := filepath.Glob("../../../migrations/*.up.sql")
 	require.NoError(t, err)
-	_, err = db.Exec(string(migration))
-	require.NoError(t, err)
+	for _, path := range migrations {
+		migration, err := os.ReadFile(path)
+		require.NoError(t, err)
+		_, err = db.Exec(string(migration))
+		require.NoError(t, err)
+	}
 	storage := user.NewStorage(db)
 	accounts := user.NewService(storage)
 	claims := auth.Claims{UserID: "secret-sub", Name: "Secret Name", Email: "secret@example.test", EmailVerified: true}
@@ -104,7 +109,12 @@ func TestProvisioningHTTPPostgres(t *testing.T) {
 	assert.Equal(t, local.ID, principal.Actor.UserID)
 	assert.Equal(t, local.Email, principal.Actor.Email)
 	assert.Nil(t, local.UpdatedAt)
+	var firstAccess time.Time
+	require.NoError(t, db.Get(&firstAccess, "SELECT last_access_at FROM user_account WHERE id=$1", local.ID))
 	request(204, ctx)
+	var lastAccess time.Time
+	require.NoError(t, db.Get(&lastAccess, "SELECT last_access_at FROM user_account WHERE id=$1", local.ID))
+	assert.True(t, lastAccess.After(firstAccess))
 	equal, err := storage.GetByID(ctx, local.ID)
 	require.NoError(t, err)
 	assert.Equal(t, local, equal)
@@ -117,10 +127,14 @@ func TestProvisioningHTTPPostgres(t *testing.T) {
 	assert.Equal(t, claims.Email, principal.Actor.Email)
 	assert.Equal(t, local.ID, principal.Actor.UserID)
 	assert.Equal(t, claims.Email, *changed.UpdatedBy)
+	require.NoError(t, db.Get(&lastAccess, "SELECT last_access_at FROM user_account WHERE id=$1", local.ID))
 	_, err = accounts.EnsureAccount(ctx, "other-sub", "Other", "other@example.test")
 	require.NoError(t, err)
 	claims.Email = "other@example.test"
 	request(403, ctx)
+	var rejectedAccess time.Time
+	require.NoError(t, db.Get(&rejectedAccess, "SELECT last_access_at FROM user_account WHERE id=$1", local.ID))
+	assert.Equal(t, lastAccess, rejectedAccess, "rejected requests must not record activity")
 	unchanged, err := storage.GetByID(ctx, local.ID)
 	require.NoError(t, err)
 	assert.Equal(t, changed, unchanged)

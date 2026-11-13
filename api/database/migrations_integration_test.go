@@ -38,13 +38,20 @@ func TestMigratePreservesApplicationPool(t *testing.T) {
 	app, err := sqlx.Connect("postgres", parsed.String())
 	require.NoError(t, err)
 	defer func() { require.NoError(t, app.Close()) }()
-	migration, err := os.ReadFile("../migrations/000001_create_users_table.up.sql")
+	migrations, err := filepath.Glob("../migrations/*.up.sql")
 	require.NoError(t, err)
 	temp := t.TempDir()
 	require.NoError(t, os.Mkdir(filepath.Join(temp, "migrations"), 0700))
-	require.NoError(t, os.WriteFile(filepath.Join(temp, "migrations", "000001_initial.up.sql"), migration, 0600))
+	for _, path := range migrations {
+		migration, err := os.ReadFile(path)
+		require.NoError(t, err)
+		require.NoError(t, os.WriteFile(filepath.Join(temp, "migrations", filepath.Base(path)), migration, 0600))
+	}
 	t.Chdir(temp)
 	require.NoError(t, Migrate(app, parsed.Path[1:]))
+	var accessColumns int
+	require.NoError(t, app.Get(&accessColumns, `SELECT count(*) FROM information_schema.columns WHERE table_schema=current_schema() AND table_name='user_account' AND column_name='last_access_at'`))
+	assert.Equal(t, 1, accessColumns)
 	require.NoError(t, app.PingContext(context.Background()), "migration cleanup must not close the application pool")
 	require.NoError(t, Migrate(app, parsed.Path[1:]), "no-change path must preserve pool too")
 	require.NoError(t, app.Ping())

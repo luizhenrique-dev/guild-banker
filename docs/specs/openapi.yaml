@@ -188,6 +188,29 @@ paths:
           $ref: "#/components/responses/NotFound"
 
   /api/v1/guilds/{id}/invites:
+    get:
+      operationId: listSentGuildInvitations
+      tags: [Guilds]
+      summary: Lista os convites pendentes enviados pela guild; requer membership.
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+      responses:
+        "200":
+          description: Lista ordenada por data e identificador.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SentInvitationResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
     post:
       operationId: inviteGuildMember
       tags: [Guilds]
@@ -223,6 +246,65 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guilds/{id}/invites/{inviteID}:
+    delete:
+      operationId: cancelGuildInvitation
+      tags: [Guilds]
+      summary: Cancela um convite pendente, preservando histórico; qualquer membro pode cancelar.
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+        - name: inviteID
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        "204":
+          description: Convite cancelado; não pode mais ser aceito. Novo convite é permitido.
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Convite já respondido ou cancelado; code invitation_already_answered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+
+  /api/v1/guilds/{id}/members:
+    get:
+      operationId: listGuildMembers
+      tags: [Guilds]
+      summary: Lista todos os membros, incluindo o requisitante; requer membership.
+      parameters:
+        - $ref: "#/components/parameters/GuildIDPath"
+      responses:
+        "200":
+          description: Lista ordenada por data e identificador.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/v1/guild-invites:
     get:
@@ -1093,6 +1175,50 @@ components:
             email:
               type: string
               format: email
+
+    MemberResponse:
+      type: object
+      required: [id, name, email, last_access_at, member_since]
+      properties:
+        id:
+          type: integer
+          format: int64
+        name:
+          type: string
+          description: Nome completo cadastrado.
+        email:
+          type: string
+          format: email
+        last_access_at:
+          type: [string, "null"]
+          format: date-time
+          description: Última requisição autenticada à API; null se ainda não registrado.
+        member_since:
+          type: string
+          format: date-time
+          description: Data de criação do vínculo com a guild, no aceite ou na criação da guild.
+    SentInvitationResponse:
+      type: object
+      required: [id, email, invited_by, created_at]
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        invited_by:
+          type: object
+          required: [name, email]
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+              format: email
+        created_at:
+          type: string
+          format: date-time
 
     # FixedExpenses
     FixedExpenseCategory:

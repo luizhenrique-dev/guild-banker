@@ -138,6 +138,24 @@ reinterpreted nor deleted, and cannot be used in new invitations or authenticati
 ### Architecture
 See [go/architecture.md](./docs/go/architecture.md) for more details.
 
+### Guild members and pending invitations
+
+`GET /api/v1/guilds/{id}/members` lists all current members, including the requester,
+with full name, email, `member_since` and nullable `last_access_at`. Membership starts
+when the guild is created or an invitation is accepted. Each authenticated API
+request records account access; existing accounts show no access history until
+their first authenticated request after migration `000004`.
+
+`GET /api/v1/guilds/{id}/invites` lists pending invitations with the recipient,
+inviter and creation date. Any current member can cancel a pending invitation using
+`DELETE /api/v1/guilds/{id}/invites/{inviteID}`. Cancellation preserves the record,
+actor and date, prevents acceptance, and permits a fresh invitation. Cancellation
+and acceptance are serialized; the first committed decision wins. Already decided
+invitations return 409; invitations from another guild return 404.
+
+The API applies migration `000004` at startup. Its rollback refuses to remove the
+`CANCELLED` status while cancelled invitations exist, preserving their history.
+
 ### Naming Conventions
 Always follow the naming defined in [go/naming.md](./docs/go/naming.md).
 

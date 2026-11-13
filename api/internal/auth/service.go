@@ -17,6 +17,7 @@ type tokenVerifier interface {
 
 type accountResolver interface {
 	EnsureAccount(ctx context.Context, externalID, name, email string) (*user.User, error)
+	RecordAccess(ctx context.Context, id int64) error
 }
 
 type Service struct {
@@ -54,6 +55,9 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (Principal, erro
 	}
 	if !u.Enabled {
 		return Principal{}, &RejectionError{Reason: ReasonUserDisabled}
+	}
+	if err := s.users.RecordAccess(ctx, u.ID); err != nil {
+		return Principal{}, fmt.Errorf("record authenticated access: %w", err)
 	}
 	return Principal{Claims: claims, Actor: audit.Actor{UserID: u.ID, Email: u.Email}}, nil
 }

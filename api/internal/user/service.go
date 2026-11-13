@@ -13,6 +13,16 @@ type Service struct {
 	storage Storage
 }
 
+func (s *Service) RecordAccess(ctx context.Context, id int64) error {
+	if id <= 0 {
+		return errors.New("record access: id is required")
+	}
+	if err := s.storage.RecordAccess(ctx, id); err != nil {
+		return fmt.Errorf("record access: %w", err)
+	}
+	return nil
+}
+
 func NewService(storage Storage) *Service {
 	return &Service{storage: storage}
 }

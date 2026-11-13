@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -21,6 +22,47 @@ type userLookupFunc func(context.Context, string, string, string) (*user.User, e
 
 func (f userLookupFunc) EnsureAccount(ctx context.Context, sub, name, email string) (*user.User, error) {
 	return f(ctx, sub, name, email)
+}
+
+func (f userLookupFunc) RecordAccess(context.Context, int64) error { return nil }
+
+type accessRecorder struct {
+	userLookupFunc
+	record func(context.Context, int64) error
+}
+
+func (r accessRecorder) RecordAccess(ctx context.Context, id int64) error { return r.record(ctx, id) }
+
+func TestServiceRecordsAuthenticatedAccess(t *testing.T) {
+	for _, disabled := range []bool{false, true} {
+		t.Run(fmt.Sprint("disabled=", disabled), func(t *testing.T) {
+			calls := 0
+			cause := errors.New("access persistence failed")
+			users := accessRecorder{
+				userLookupFunc: func(context.Context, string, string, string) (*user.User, error) {
+					return &user.User{ID: 42, Enabled: !disabled}, nil
+				},
+				record: func(ctx context.Context, id int64) error {
+					calls++
+					assert.Equal(t, t.Context(), ctx)
+					assert.EqualValues(t, 42, id)
+					return cause
+				},
+			}
+			verify := verifierFunc(func(context.Context, string) (Claims, error) {
+				return Claims{Name: "Member", Email: "member@example.test", EmailVerified: true}, nil
+			})
+			principal, err := NewService(verify, users).Authenticate(t.Context(), "token")
+			assert.Empty(t, principal)
+			if disabled {
+				assert.ErrorIs(t, err, ErrForbidden)
+				assert.Zero(t, calls)
+			} else {
+				assert.ErrorIs(t, err, cause)
+				assert.Equal(t, 1, calls)
+			}
+		})
+	}
 }
 
 func TestServiceAuthenticate(t *testing.T) {

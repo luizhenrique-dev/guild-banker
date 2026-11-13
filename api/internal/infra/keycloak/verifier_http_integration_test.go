@@ -34,6 +34,8 @@ type fixtureUsers struct {
 	disabled bool
 }
 
+func (u *fixtureUsers) RecordAccess(context.Context, int64) error { return nil }
+
 func (u *fixtureUsers) EnsureAccount(_ context.Context, sub, _, _ string) (*user.User, error) {
 	u.calls++
 	u.sub = sub

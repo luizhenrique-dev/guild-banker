@@ -15,6 +15,10 @@ type storageMock struct {
 	mock.Mock
 }
 
+func (m *storageMock) RecordAccess(ctx context.Context, id int64) error {
+	return m.Called(ctx, id).Error(0)
+}
+
 func (m *storageMock) Create(ctx context.Context, u *User) error {
 	args := m.Called(ctx, u)
 	return args.Error(0)
