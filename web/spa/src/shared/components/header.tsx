@@ -1,11 +1,12 @@
 'use client'
 import { useTranslation } from 'react-i18next'
 import { useSession } from '@/src/app/session-provider'
+import { guildLabel } from '@/src/features/guilds/guild-label'
 import { useActiveGuild } from '@/src/features/guilds/use-active-guild'
 import { LogOut, ChevronDown, Shield, Users } from 'lucide-react'
 import { useState, useRef, useEffect } from 'react'
 
-export function Header() {
+export function Header({ showGuildSwitcher = true }: { showGuildSwitcher?: boolean }) {
   const { t, i18n } = useTranslation()
   const { user, logout } = useSession()
   const { activeGuild, guilds, setActiveGuild, isForbidden } = useActiveGuild()
@@ -44,7 +45,7 @@ export function Header() {
         </div>
 
         {/* Guild Switcher */}
-        <div className="relative" ref={guildRef} onKeyDown={(e) => e.key === 'Escape' && setGuildOpen(false)}>
+        {showGuildSwitcher && <div className="relative" ref={guildRef} onKeyDown={(e) => e.key === 'Escape' && setGuildOpen(false)}>
           <button
             type="button"
             aria-expanded={guildOpen && !isForbidden}
@@ -53,7 +54,7 @@ export function Header() {
             className="flex items-center gap-2 rounded-full bg-[#eef0f3] px-3 py-1.5 text-[13px] font-semibold transition-colors hover:bg-[#dee1e6]"
           >
             <Users size={14} className="text-[#0052ff]" />
-            {activeGuild?.display_name ?? t('guild.select')}
+            {activeGuild ? guildLabel(activeGuild, guilds) : t('guild.select')}
             <ChevronDown size={12} className="text-[#7c828a]" />
           </button>
 
@@ -72,12 +73,12 @@ export function Header() {
                   }`}
                 >
                   <Users size={14} className="text-[#0052ff]" />
-                  {g.display_name}
+                  {guildLabel(g, guilds)}
                 </button>
               ))}
             </div>
           )}
-        </div>
+        </div>}
       </div>
 
       {/* Right: Language switcher + User + Logout */}

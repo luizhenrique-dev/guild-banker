@@ -4,9 +4,17 @@ package guild
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
+	"net/http/httptest"
 	"net/url"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,9 +23,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestStorageCreatePostgres(t *testing.T) {
+func guildTestDB(t *testing.T) *sqlx.DB {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+	t.Cleanup(cancel)
 	dsn := os.Getenv("GUILD_TEST_DATABASE_URL")
 	require.NotEmpty(t, dsn, "GUILD_TEST_DATABASE_URL must point to an isolated PostgreSQL 17+ test database")
 	parsed, err := url.Parse(dsn)
@@ -29,25 +38,37 @@ func TestStorageCreatePostgres(t *testing.T) {
 	schema := fmt.Sprintf("issue4_review_%d", time.Now().UnixNano())
 	_, err = admin.ExecContext(ctx, "CREATE SCHEMA "+pq.QuoteIdentifier(schema))
 	require.NoError(t, err)
-	defer func() {
+	t.Cleanup(func() {
 		_, cleanupErr := admin.ExecContext(context.Background(), "DROP SCHEMA "+pq.QuoteIdentifier(schema)+" CASCADE")
 		require.NoError(t, cleanupErr)
-	}()
+	})
 	params := parsed.Query()
 	params.Set("search_path", schema)
 	parsed.RawQuery = params.Encode()
 	db, err := sqlx.ConnectContext(ctx, "postgres", parsed.String())
 	require.NoError(t, err)
-	defer func() { require.NoError(t, db.Close()) }()
-	migration, err := os.ReadFile("../../migrations/000001_create_users_table.up.sql")
+	t.Cleanup(func() { require.NoError(t, db.Close()) })
+	migrations, err := filepath.Glob("../../migrations/*.up.sql")
 	require.NoError(t, err)
-	_, err = db.ExecContext(ctx, string(migration))
-	require.NoError(t, err)
+	for _, migrationPath := range migrations {
+		migration, err := os.ReadFile(migrationPath)
+		require.NoError(t, err)
+		_, err = db.ExecContext(ctx, string(migration))
+		require.NoError(t, err)
+	}
+	return db
+}
+
+func TestStorageCreatePostgres(t *testing.T) {
+	db := guildTestDB(t)
+	ctx := context.Background()
+	var err error
 	var id int64
 	err = db.GetContext(ctx, &id, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('review-probe','Review','review@example.test','review') RETURNING id`)
 	require.NoError(t, err)
 	g, err := New("review-probe", "Review probe", "review@example.test")
 	require.NoError(t, err)
+	g.Description = "Shared finances"
 	err = NewStorage(db).Create(ctx, g, id)
 	require.NoError(t, err, "guild creation must persist both the guild and its creator membership")
 	require.Positive(t, g.ID)
@@ -55,6 +76,15 @@ func TestStorageCreatePostgres(t *testing.T) {
 	persisted, err := storage.GetByID(ctx, g.ID)
 	require.NoError(t, err)
 	require.Equal(t, g.Name, persisted.Name)
+	require.Equal(t, g.Description, persisted.Description)
+	updated, err := NewService(storage).Update(ctx, g.ID, UpdateInput{DisplayName: "Repeated visual name"}, audit.Actor{UserID: id, Email: "review@example.test"})
+	require.NoError(t, err)
+	require.Equal(t, "review-probe", updated.Name)
+	require.Equal(t, "Shared finances", updated.Description)
+	empty := ""
+	updated, err = NewService(storage).Update(ctx, g.ID, UpdateInput{DisplayName: "Repeated visual name", Description: &empty}, audit.Actor{UserID: id, Email: "review@example.test"})
+	require.NoError(t, err)
+	require.Empty(t, updated.Description)
 	member, err := storage.IsMember(ctx, g.ID, id)
 	require.NoError(t, err)
 	require.True(t, member)
@@ -64,4 +94,117 @@ func TestStorageCreatePostgres(t *testing.T) {
 	exists, err := storage.NameExists(ctx, failed.Name, 0)
 	require.NoError(t, err)
 	require.False(t, exists, "membership failure must roll back guild creation")
+}
+
+func TestConcurrentGuildCreationPostgres(t *testing.T) {
+	db := guildTestDB(t)
+	var userID int64
+	require.NoError(t, db.Get(&userID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('creator','Creator','creator@example.test','fixture') RETURNING id`))
+	service := NewService(NewStorage(db))
+	actor := audit.Actor{UserID: userID, Email: "creator@example.test"}
+	var wg sync.WaitGroup
+	results := make(chan *Guild, 6)
+	failures := make(chan error, 6)
+	for range 6 {
+		wg.Go(func() {
+			g, err := service.Create(context.Background(), strings.Repeat("Á", 70), "Optional description", actor)
+			if err != nil {
+				failures <- err
+				return
+			}
+			results <- g
+		})
+	}
+	wg.Wait()
+	close(failures)
+	close(results)
+	for err := range failures {
+		require.NoError(t, err)
+	}
+	names := map[string]bool{}
+	for g := range results {
+		require.LessOrEqual(t, len(g.Name), 70)
+		require.False(t, names[g.Name])
+		names[g.Name] = true
+	}
+	require.Len(t, names, 6)
+	var count int
+	require.NoError(t, db.Get(&count, "SELECT COUNT(*) FROM guild_member WHERE user_id = $1", userID))
+	require.Equal(t, 6, count)
+}
+
+func TestGuildMetadataHTTPPostgres(t *testing.T) {
+	db := guildTestDB(t)
+	var userID int64
+	require.NoError(t, db.Get(&userID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('http-creator','Creator','creator@example.test','fixture') RETURNING id`))
+	actor := audit.Actor{UserID: userID, Email: "creator@example.test"}
+	router := gin.New()
+	router.Use(func(c *gin.Context) {
+		c.Request = c.Request.WithContext(auth.WithPrincipal(c.Request.Context(), auth.Principal{Actor: actor}))
+	})
+	handler := NewHandler(NewService(NewStorage(db)))
+	router.POST("/guilds", handler.Create)
+	router.PUT("/guilds/:guildID", handler.Update)
+	request := func(method, path, body string, status int) map[string]any {
+		t.Helper()
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		recorder := httptest.NewRecorder()
+		router.ServeHTTP(recorder, req)
+		require.Equal(t, status, recorder.Code, recorder.Body.String())
+		response := map[string]any{}
+		require.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &response))
+		return response
+	}
+	created := request("POST", "/guilds", `{"name":"spoofed","display_name":"Família Silva","description":"Casa"}`, 201)
+	require.Equal(t, "familia-silva", created["name"])
+	require.Equal(t, "Casa", created["description"])
+	path := fmt.Sprintf("/guilds/%.0f", created["id"])
+	updated := request("PUT", path, `{"name":"must-not-change","display_name":"Outro visual"}`, 200)
+	require.Equal(t, "familia-silva", updated["name"])
+	require.Equal(t, "Casa", updated["description"])
+	cleared := request("PUT", path, `{"display_name":"Outro visual","description":""}`, 200)
+	require.Empty(t, cleared["description"])
+	request("PUT", path, `{"name":"legacy-field-only"}`, 400)
+	request("POST", "/guilds", `{"display_name":"`+strings.Repeat("á", 71)+`"}`, 400)
+}
+
+func TestPendingInvitationsPostgres(t *testing.T) {
+	db := guildTestDB(t)
+	var userID int64
+	require.NoError(t, db.Get(&userID, `INSERT INTO user_account(external_id,name,email,created_by) VALUES ('inviter','Inviter','inviter@example.test','fixture') RETURNING id`))
+	service := NewService(NewStorage(db))
+	actor := audit.Actor{UserID: userID, Email: "inviter@example.test"}
+	g, err := service.Create(t.Context(), "Invitations", "", actor)
+	require.NoError(t, err)
+	require.NoError(t, service.InviteUser(t.Context(), userID, g.ID, "  NEW@example.test  "))
+	var email string
+	require.NoError(t, db.Get(&email, "SELECT recipient_email FROM guild_invitation WHERE guild_id=$1", g.ID))
+	require.Equal(t, "new@example.test", email)
+	var count int
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_member WHERE guild_id=$1", g.ID))
+	require.Equal(t, 1, count, "only the creator is a member")
+	require.ErrorIs(t, service.InviteUser(t.Context(), userID, g.ID, "new@example.test"), ErrInvitationAlreadyPending)
+	require.ErrorIs(t, service.InviteUser(t.Context(), userID, g.ID, "INVITER@example.test"), ErrGuildMemberAlreadySet)
+	require.ErrorIs(t, service.InviteUser(t.Context(), userID+100, g.ID, "someone@example.test"), ErrRequesterIsNotMember)
+	errors := make(chan error, 2)
+	var wg sync.WaitGroup
+	for range 2 {
+		wg.Go(func() { errors <- service.InviteUser(t.Context(), userID, g.ID, "race@example.test") })
+	}
+	wg.Wait()
+	close(errors)
+	successes := 0
+	for err := range errors {
+		if err == nil {
+			successes++
+			continue
+		}
+		require.ErrorIs(t, err, ErrInvitationAlreadyPending)
+	}
+	require.Equal(t, 1, successes)
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_invitation WHERE recipient_email='race@example.test'"))
+	require.Equal(t, 1, count)
+	require.NoError(t, db.Get(&count, "SELECT count(*) FROM guild_invitation WHERE recipient_email='someone@example.test'"))
+	require.Zero(t, count)
 }

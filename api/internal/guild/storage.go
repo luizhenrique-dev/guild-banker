@@ -5,18 +5,26 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/lib/pq/pqerror"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
+)
+
+const (
+	guildNameUniqueConstraint      = "guild_name_key"
+	guildNameLowerUniqueConstraint = "idx_guild_name_lower"
 )
 
 type Storage interface {
+	ListInvitations(ctx context.Context, email string) ([]Invitation, error)
+	RespondInvitation(ctx context.Context, id int64, actor audit.Actor, accept bool) (*Guild, error)
 	Create(ctx context.Context, g *Guild, creatorUserID int64) error
 	GetByID(ctx context.Context, id int64) (*Guild, error)
 	NameExists(ctx context.Context, name string, excludeID int64) (bool, error)
-	UpdateName(ctx context.Context, g *Guild) error
+	Update(ctx context.Context, g *Guild) error
 	Enable(ctx context.Context, id int64, by string, now time.Time) error
 	Disable(ctx context.Context, id int64, by string, now time.Time) error
 	ListByMember(ctx context.Context, userID int64) ([]*Guild, error)
@@ -29,6 +37,7 @@ type guildEntity struct {
 	ID          int64      `db:"id"`
 	Name        string     `db:"name"`
 	DisplayName string     `db:"display_name"`
+	Description string     `db:"description"`
 	Enabled     bool       `db:"enabled"`
 	CreatedAt   time.Time  `db:"created_at"`
 	CreatedBy   string     `db:"created_by"`
@@ -54,15 +63,15 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 	defer func() { _ = tx.Rollback() }()
 
 	const createGuildQuery = `
-		INSERT INTO guild (name, display_name, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		INSERT INTO guild (name, display_name, description, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 		RETURNING id
 	`
 	if err := tx.GetContext(ctx, &g.ID, createGuildQuery,
-		g.Name, g.DisplayName, g.CreatedAt, g.CreatedBy, g.Enabled,
+		g.Name, g.DisplayName, g.Description, g.CreatedAt, g.CreatedBy, g.Enabled,
 		g.UpdatedAt, g.UpdatedBy, g.DisabledAt, g.DisabledBy,
 	); err != nil {
-		if isUniqueViolation(err) {
+		if isNameConflict(err) {
 			return ErrGuildNameAlreadyUsed
 		}
 		return fmt.Errorf("create guild: %w", err)
@@ -85,7 +94,7 @@ func (s *postgresStorage) Create(ctx context.Context, g *Guild, creatorUserID in
 
 func (s *postgresStorage) GetByID(ctx context.Context, id int64) (*Guild, error) {
 	const query = `
-		SELECT id, name, display_name, enabled, created_at, created_by, updated_at, updated_by, disabled_at, disabled_by
+		SELECT id, name, display_name, description, enabled, created_at, created_by, updated_at, updated_by, disabled_at, disabled_by
 		FROM guild
 		WHERE id = $1
 	`
@@ -115,17 +124,18 @@ func (s *postgresStorage) NameExists(ctx context.Context, name string, excludeID
 	return exists, nil
 }
 
-func (s *postgresStorage) UpdateName(ctx context.Context, g *Guild) error {
+func (s *postgresStorage) Update(ctx context.Context, g *Guild) error {
 	const query = `
 		UPDATE guild
 		SET display_name = :display_name,
+ description = :description,
 		    updated_at   = :updated_at,
 		    updated_by   = :updated_by
 		WHERE id = :id
 	`
 	result, err := s.db.NamedExecContext(ctx, query, toEntity(g))
 	if err != nil {
-		if isUniqueViolation(err) {
+		if isNameConflict(err) {
 			return ErrGuildNameAlreadyUsed
 		}
 		return fmt.Errorf("update guild name: %w", err)
@@ -182,7 +192,7 @@ func (s *postgresStorage) Disable(ctx context.Context, id int64, by string, now 
 
 func (s *postgresStorage) ListByMember(ctx context.Context, userID int64) ([]*Guild, error) {
 	const query = `
-		SELECT g.id, g.name, g.display_name, g.enabled, g.created_at, g.created_by, g.updated_at, g.updated_by, g.disabled_at, g.disabled_by
+		SELECT g.id, g.name, g.display_name, g.description, g.enabled, g.created_at, g.created_by, g.updated_at, g.updated_by, g.disabled_at, g.disabled_by
 		FROM guild g
 		INNER JOIN guild_member gm ON gm.guild_id = g.id
 		WHERE gm.user_id = $1
@@ -216,31 +226,6 @@ func (s *postgresStorage) IsMember(ctx context.Context, guildID, userID int64) (
 	return exists, nil
 }
 
-func (s *postgresStorage) InviteByEmail(ctx context.Context, guildID int64, email string, invitedByUserID int64) error {
-	const query = `
-		INSERT INTO guild_member (guild_id, user_id, invited_at, invited_by)
-		SELECT $1, u.id, NOW(), $3
-		FROM users u
-		WHERE LOWER(u.email) = LOWER($2)
-	`
-	result, err := s.db.ExecContext(ctx, query, guildID, email, invitedByUserID)
-	if err != nil {
-		if isUniqueViolation(err) {
-			return ErrGuildMemberAlreadySet
-		}
-		err = mapFKViolation(err)
-		return fmt.Errorf("invite user by email: %w", err)
-	}
-	rowsAffected, err := result.RowsAffected()
-	if err != nil {
-		return fmt.Errorf("get affected rows in invite user: %w", err)
-	}
-	if rowsAffected == 0 {
-		return ErrUserNotFound
-	}
-	return nil
-}
-
 func (s *postgresStorage) RemoveMember(ctx context.Context, guildID, userID int64) error {
 	const query = `
 		DELETE FROM guild_member
@@ -266,6 +251,7 @@ func toEntity(g *Guild) guildEntity {
 		ID:          g.ID,
 		Name:        g.Name,
 		DisplayName: g.DisplayName,
+		Description: g.Description,
 		Enabled:     g.Enabled,
 		CreatedAt:   g.CreatedAt,
 		CreatedBy:   g.CreatedBy,
@@ -281,6 +267,7 @@ func toDomain(e guildEntity) *Guild {
 		ID:          e.ID,
 		Name:        e.Name,
 		DisplayName: e.DisplayName,
+		Description: e.Description,
 		Enabled:     e.Enabled,
 		CreatedAt:   e.CreatedAt,
 		CreatedBy:   e.CreatedBy,
@@ -291,19 +278,10 @@ func toDomain(e guildEntity) *Guild {
 	}
 }
 
-func isUniqueViolation(err error) bool {
+func isNameConflict(err error) bool {
 	var pqErr *pq.Error
-	return errors.As(err, &pqErr) && pqErr.Code == "23505"
-}
-
-func mapFKViolation(err error) error {
-	if pqErr, ok := errors.AsType[*pq.Error](err); ok && pqErr.Code == "23503" {
-		if strings.Contains(pqErr.Constraint, "guild") {
-			return ErrGuildNotFound
-		}
-		if strings.Contains(pqErr.Constraint, "user") {
-			return ErrUserNotFound
-		}
+	if !errors.As(err, &pqErr) || pqErr.Code != pqerror.UniqueViolation {
+		return false
 	}
-	return err
+	return pqErr.Constraint == guildNameUniqueConstraint || pqErr.Constraint == guildNameLowerUniqueConstraint
 }

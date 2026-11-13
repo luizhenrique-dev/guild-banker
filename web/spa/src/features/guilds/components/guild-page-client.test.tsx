@@ -9,6 +9,34 @@ import i18n from '@/src/shared/lib/i18n'
 import { toast } from 'sonner'
 
 beforeEach(async () => { await i18n.changeLanguage('pt-BR') })
+it('lowercases the invitation field and sends the normalized email', async () => {
+  let submitted: unknown
+  server.use(http.post('*/api/v1/guilds/1/invites', async ({ request }) => {
+    submitted = await request.json()
+    return new HttpResponse(null, { status: 204 })
+  }))
+  render(<MemoryRouter initialEntries={['/guild?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  const user = userEvent.setup()
+  const input = await screen.findByRole('textbox', { name: 'Convidar membro' })
+  await user.type(input, 'Member.Name+bank@EXAMPLE.TEST')
+  expect(input).toHaveValue('member.name+bank@example.test')
+  await user.click(screen.getByRole('button', { name: 'Enviar convite' }))
+  await waitFor(() => expect(submitted).toEqual({ email: 'member.name+bank@example.test' }))
+})
+
+it('rejects quotes in the invitation field before making a request', async () => {
+  let calls = 0
+  server.use(http.post('*/api/v1/guilds/1/invites', () => { calls++; return new HttpResponse(null, { status: 204 }) }))
+  render(<MemoryRouter initialEntries={['/guild?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  const user = userEvent.setup()
+  const input = await screen.findByRole('textbox', { name: 'Convidar membro' })
+  await user.type(input, '"member"@example.test')
+  expect(await screen.findByRole('alert')).toHaveTextContent('Informe um email válido.')
+  expect(input).toHaveAttribute('aria-invalid', 'true')
+  await user.click(screen.getByRole('button', { name: 'Enviar convite' }))
+  expect(calls).toBe(0)
+})
+
 it('keeps the invitation draft after failure and clears it only on success', async () => {
   let calls = 0
   server.use(http.post('*/api/v1/guilds/1/invites', () => { calls++; return new HttpResponse(null, { status: 500 }) }))
@@ -30,6 +58,8 @@ it('offers retry when guild listing fails', async () => {
   const retry = await screen.findByRole('button', { name: 'Tentar novamente' })
   server.resetHandlers()
   await userEvent.click(retry)
+  await screen.findByText('Selecione uma guild válida.')
+  await userEvent.click(screen.getByRole('button', { name: 'Entrar em Família Silva' }))
   expect(await screen.findByRole('textbox', { name: 'Convidar membro' })).toBeVisible()
 })
 it('shows the empty guild state without requesting financial data', async () => {
@@ -39,7 +69,9 @@ it('shows the empty guild state without requesting financial data', async () => 
     http.get('*/api/v1/guilds/:id/transactions', () => { financialRequests++; return HttpResponse.json([]) }),
   )
   render(<MemoryRouter initialEntries={['/transactions']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
-  expect(await screen.findByText('Nenhuma guild disponível.')).toBeVisible()
+  expect(await screen.findByRole('heading', { name: 'Olá, Ana!' })).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: 'Continuar' }))
+  expect(await screen.findByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
   expect(financialRequests).toBe(0)
 })
 
@@ -61,4 +93,19 @@ it.each(['invite', 'remove'])('reports forbidden guild %s without dropping state
   expect(calls).toBe(1); expect(success).not.toHaveBeenCalled()
   expect(screen.getByRole('heading', { name: 'Guild / Membros' })).toBeVisible()
   if (action === 'remove') expect(screen.getAllByRole('button', { name: /^Remover/ }).length).toBeGreaterThan(0)
+})
+
+it.each([
+  ['invitation_already_pending', 'O usuário já foi convidado para esta guild.'],
+  ['guild_member_already_set', 'O usuário já é membro desta guild.'],
+])('localizes %s without losing the invitation draft', async (code, message) => {
+  const error = vi.spyOn(toast, 'error')
+  server.use(http.post('*/api/v1/guilds/1/invites', () => HttpResponse.json({ error: 'conflict', code }, { status: 409 })))
+  render(<MemoryRouter initialEntries={['/guild?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  const user = userEvent.setup()
+  const input = await screen.findByRole('textbox', { name: 'Convidar membro' })
+  await user.type(input, 'draft@example.test')
+  await user.click(screen.getByRole('button', { name: 'Enviar convite' }))
+  await waitFor(() => expect(error).toHaveBeenCalledWith(message))
+  expect(input).toHaveValue('draft@example.test')
 })

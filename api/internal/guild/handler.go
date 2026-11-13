@@ -32,16 +32,16 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	g, err := h.service.Create(c.Request.Context(), req.Name, req.DisplayName, actor)
+	g, err := h.service.Create(c.Request.Context(), req.DisplayName, req.Description, actor)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusCreated, guildResponse{ID: g.ID, Name: g.Name, DisplayName: g.DisplayName, Enabled: g.Enabled})
+	c.JSON(http.StatusCreated, guildResponse{ID: g.ID, Name: g.Name, DisplayName: g.DisplayName, Description: g.Description, Enabled: g.Enabled})
 }
 
-func (h *Handler) UpdateName(c *gin.Context) {
+func (h *Handler) Update(c *gin.Context) {
 	guildID, err := parseIDParam(c, "guildID")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -60,13 +60,13 @@ func (h *Handler) UpdateName(c *gin.Context) {
 		return
 	}
 
-	g, err := h.service.UpdateName(c.Request.Context(), guildID, req.Name, actor)
+	g, err := h.service.Update(c.Request.Context(), guildID, UpdateInput(req), actor)
 	if err != nil {
 		h.handleError(c, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, guildResponse{ID: g.ID, Name: g.Name, DisplayName: g.DisplayName, Enabled: g.Enabled})
+	c.JSON(http.StatusOK, guildResponse{ID: g.ID, Name: g.Name, DisplayName: g.DisplayName, Description: g.Description, Enabled: g.Enabled})
 }
 
 func (h *Handler) Enable(c *gin.Context) {
@@ -92,7 +92,7 @@ func (h *Handler) ListByMember(c *gin.Context) {
 
 	resp := make([]guildResponse, 0, len(guilds))
 	for _, g := range guilds {
-		resp = append(resp, guildResponse{ID: g.ID, Name: g.Name, DisplayName: g.DisplayName, Enabled: g.Enabled})
+		resp = append(resp, guildResponse{ID: g.ID, Name: g.Name, DisplayName: g.DisplayName, Description: g.Description, Enabled: g.Enabled})
 	}
 
 	c.JSON(http.StatusOK, resp)
@@ -118,7 +118,7 @@ func (h *Handler) InviteUser(c *gin.Context) {
 	}
 
 	if err := h.service.InviteUser(c.Request.Context(), requesterUserID, guildID, req.Email); err != nil {
-		h.handleError(c, err)
+		h.handleInvitationError(c, err)
 		return
 	}
 
@@ -180,6 +180,8 @@ func (h *Handler) updateEnabledStatus(c *gin.Context, enable bool) {
 
 func (h *Handler) handleError(c *gin.Context, err error) {
 	switch {
+	case errors.Is(err, ErrNameGenerationUnavailable):
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "guild name generation temporarily unavailable"})
 	case errors.Is(err, ErrGuildNameAlreadyUsed):
 		c.JSON(http.StatusConflict, gin.H{"error": "guild name already used"})
 	case errors.Is(err, ErrRequesterIsNotMember):
@@ -214,4 +216,23 @@ func getRequesterActor(c *gin.Context) (audit.Actor, bool) {
 func getRequesterUserID(c *gin.Context) (int64, bool) {
 	principal, ok := auth.PrincipalFromContext(c.Request.Context())
 	return principal.Actor.UserID, ok
+}
+
+func (h *Handler) handleInvitationError(c *gin.Context, err error) {
+	switch {
+	case errors.Is(err, ErrInvitationNotFound):
+		c.JSON(http.StatusNotFound, gin.H{"error": "invitation not found"})
+	case errors.Is(err, ErrInvitationAlreadyAnswered):
+		c.JSON(http.StatusConflict, gin.H{"error": "invitation already answered", "code": "invitation_already_answered"})
+	case errors.Is(err, ErrInvitationAlreadyPending):
+		c.JSON(http.StatusConflict, gin.H{"error": "user already invited to guild", "code": "invitation_already_pending"})
+	case errors.Is(err, ErrGuildMemberAlreadySet):
+		c.JSON(http.StatusConflict, gin.H{"error": "user is already a guild member", "code": "guild_member_already_set"})
+	case errors.Is(err, ErrInvalidInvitation):
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid invitation email"})
+	case errors.Is(err, ErrRequesterIsNotMember), errors.Is(err, ErrGuildNotFound):
+		h.handleError(c, err)
+	default:
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "internal server error"})
+	}
 }

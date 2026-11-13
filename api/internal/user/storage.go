@@ -9,7 +9,12 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/lib/pq"
+	"github.com/lib/pq/pqerror"
+
+	"github.com/luizhenrique-dev/guild-banker/api/internal/emailaddress"
 )
+
+const userEmailUniqueConstraint = "user_account_email_key"
 
 type Storage interface {
 	CreateIfAbsent(ctx context.Context, u *User) (*User, error)
@@ -46,6 +51,9 @@ func NewStorage(db *sqlx.DB) Storage {
 }
 
 func (s *postgresStorage) Create(ctx context.Context, u *User) error {
+	if err := normalizeUserEmail(u); err != nil {
+		return err
+	}
 	const query = `
 		INSERT INTO user_account (external_id, name, email, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by)
 		VALUES (:external_id, :name, :email, :created_at, :created_by, :enabled, :updated_at, :updated_by, :disabled_at, :disabled_by)
@@ -54,7 +62,7 @@ func (s *postgresStorage) Create(ctx context.Context, u *User) error {
 	entity := toEntity(u)
 	rows, err := s.db.NamedQueryContext(ctx, query, entity)
 	if err != nil {
-		return fmt.Errorf("create user: %w", err)
+		return fmt.Errorf("create user: %w", profileError(err))
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -67,6 +75,9 @@ func (s *postgresStorage) Create(ctx context.Context, u *User) error {
 }
 
 func (s *postgresStorage) Update(ctx context.Context, u *User) error {
+	if err := normalizeUserEmail(u); err != nil {
+		return err
+	}
 	const query = `
 		UPDATE user_account
 		SET name        = :name,
@@ -79,7 +90,7 @@ func (s *postgresStorage) Update(ctx context.Context, u *User) error {
 		WHERE id = :id
 	`
 	if _, err := s.db.NamedExecContext(ctx, query, toEntity(u)); err != nil {
-		return fmt.Errorf("update user: %w", err)
+		return fmt.Errorf("update user: %w", profileError(err))
 	}
 	return nil
 }
@@ -103,12 +114,16 @@ func (s *postgresStorage) GetByExternalID(ctx context.Context, externalID string
 }
 
 func (s *postgresStorage) GetByEmail(ctx context.Context, email string) (*User, error) {
+	canonical, err := emailaddress.Normalize(email)
+	if err != nil {
+		return nil, fmt.Errorf("find user by email: %w", err)
+	}
 	const query = `
 		SELECT id, external_id, name, email, created_at, created_by, enabled, updated_at, updated_by, disabled_at, disabled_by
 		FROM user_account
 		WHERE email = $1
 	`
-	return s.get(ctx, query, email)
+	return s.get(ctx, query, canonical)
 }
 
 func (s *postgresStorage) Enable(ctx context.Context, id int64) error {
@@ -179,6 +194,9 @@ func toDomain(e userEntity) *User {
 }
 
 func (s *postgresStorage) CreateIfAbsent(ctx context.Context, u *User) (*User, error) {
+	if err := normalizeUserEmail(u); err != nil {
+		return nil, err
+	}
 	const query = `INSERT INTO user_account (external_id, name, email, created_at, created_by, enabled)
  VALUES ($1, $2, $3, $4, $5, $6)
  ON CONFLICT (external_id) DO NOTHING
@@ -197,6 +215,9 @@ func (s *postgresStorage) CreateIfAbsent(ctx context.Context, u *User) (*User, e
 }
 
 func (s *postgresStorage) UpdateProfile(ctx context.Context, u *User) (*User, error) {
+	if err := normalizeUserEmail(u); err != nil {
+		return nil, err
+	}
 	const query = `UPDATE user_account
  SET name=$1, email=$2, updated_at=$3, updated_by=$4
  WHERE id=$5 AND enabled AND (name IS DISTINCT FROM $1 OR email IS DISTINCT FROM $2)
@@ -221,8 +242,17 @@ func (s *postgresStorage) UpdateProfile(ctx context.Context, u *User) (*User, er
 }
 
 func profileError(err error) error {
-	if pgErr, ok := errors.AsType[*pq.Error](err); ok && pgErr.Code == "23505" && pgErr.Constraint == "user_account_email_key" {
+	if pgErr, ok := errors.AsType[*pq.Error](err); ok && pgErr.Code == pqerror.UniqueViolation && pgErr.Constraint == userEmailUniqueConstraint {
 		return ErrEmailConflict
 	}
 	return err
+}
+
+func normalizeUserEmail(u *User) error {
+	canonical, err := emailaddress.Normalize(u.Email)
+	if err != nil {
+		return fmt.Errorf("normalize account email: %w", err)
+	}
+	u.Email = canonical
+	return nil
 }

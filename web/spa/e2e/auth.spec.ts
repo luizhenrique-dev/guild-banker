@@ -12,9 +12,26 @@ async function login(page: Page) {
   await page.locator('#kc-login').click()
 }
 
+async function completeHomeOnboarding(page: Page) {
+  await expect(page.getByRole('heading', { name: /^(Bem-vindo\(a\)|Olá,|Seja bem-vindo|Crie sua guild|Escolha sua guild)/ })).toBeVisible()
+  if (await page.getByRole('button', { name: 'Continuar', exact: true }).isVisible()) {
+    await page.getByRole('button', { name: 'Continuar', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'Crie sua guild' })).toBeVisible()
+  }
+  if (await page.getByRole('heading', { name: 'Crie sua guild' }).isVisible()) {
+    if (process.env.E2E_ALLOW_GUILD_CREATE !== 'true') throw new Error('Provide test membership or E2E_ALLOW_GUILD_CREATE=true in a dedicated environment')
+    await page.getByRole('textbox', { name: 'Nome de exibição' }).fill('Auth test ' + Date.now())
+    await page.getByRole('button', { name: 'Criar guild', exact: true }).click()
+  } else if (await page.getByRole('heading', { name: 'Escolha sua guild' }).isVisible()) {
+    await page.getByRole('button', { name: /^Entrar em / }).first().click()
+  }
+  await expect(page.getByRole('heading', { name: `Bem-vindo(a) ${welcome}` })).toBeVisible()
+}
+
 test('real login opens Home, reuses SSO on reload and UI logout ends SSO', async ({ page, context }) => {
   await page.goto('/')
   await login(page)
+  await completeHomeOnboarding(page)
   await expect(page.getByRole('heading', { name: `Bem-vindo(a) ${welcome}` })).toBeVisible()
   await expect(page).toHaveURL(/\/home(?:\?|$)/)
   expect(context.serviceWorkers()).toHaveLength(0)
@@ -37,10 +54,15 @@ test('real deep link preserves business query and sends only Bearer to the API',
   expect(Boolean(request.headers().authorization?.startsWith('Bearer '))).toBe(true)
   expect(Boolean(request.headers()['x-user-id'] || request.headers()['x-user-email'])).toBe(false)
   await expect(page).toHaveURL(/\/transactions\?guild=999&category=OTHER$/)
-  await expect(page.getByRole('navigation')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Escolha sua guild' })).toBeVisible()
+  await expect(page.getByRole('navigation')).toHaveCount(0)
   await page.reload()
-  await expect(page.getByRole('navigation')).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Escolha sua guild' })).toBeVisible()
   await expect(page).toHaveURL(/\/transactions\?guild=999&category=OTHER$/)
+  await page.getByRole('button', { name: /^Entrar em / }).first().click()
+  await expect(page.getByRole('navigation')).toBeVisible()
+  expect(new URL(page.url()).searchParams.get('category')).toBe('OTHER')
+  expect(new URL(page.url()).searchParams.get('guild')).not.toBe('999')
 })
 
 test('real API provisions and authorizes a verified identity', async ({ page }) => {
@@ -51,15 +73,11 @@ test('real API provisions and authorizes a verified identity', async ({ page }) 
   let guild = guilds[0]
   if (!guild) {
     if (process.env.E2E_ALLOW_GUILD_CREATE !== 'true') throw new Error('Provide test membership or E2E_ALLOW_GUILD_CREATE=true in a dedicated environment')
-    // Reuse the authenticated public request headers only inside the browser.
-    const request = (await guildResponse).request()
-    const headers = { authorization: (await request.allHeaders()).authorization! }
-    guild = await page.evaluate(async ({ headers }) => {
-      const response = await fetch('/api/v1/guilds', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'issue4-test-' + Date.now(), display_name: 'Issue 4 test' }) })
-      if (!response.ok) throw new Error('Unable to create dedicated test guild: HTTP ' + response.status)
-      return response.json()
-    }, { headers })
-  }
+    const created = page.waitForResponse((r) => r.url().endsWith('/api/v1/guilds') && r.request().method() === 'POST')
+    await completeHomeOnboarding(page)
+    guild = await (await created).json()
+  } else await completeHomeOnboarding(page)
+
   expect(guild && Number.isSafeInteger(guild.id) && guild.id > 0).toBe(true)
   const api = page.waitForResponse((r) => r.url().endsWith('/api/v1/guilds/' + guild!.id + '/fixed-expenses'))
   await page.goto('/fixed-expenses?guild=' + guild!.id)
@@ -73,6 +91,7 @@ test('real token renewal occurs on expiration without changing the server sessio
   await page.goto('/home')
   const issued = page.waitForResponse((r) => r.url().endsWith(tokenEndpoint) && r.request().postData()?.includes('grant_type=authorization_code') === true)
   await login(page)
+  await completeHomeOnboarding(page)
   const lifetime = Number((await (await issued).json()).expires_in)
   expect(Number.isFinite(lifetime) && lifetime > 0).toBe(true)
   await expect(page.getByRole('heading', { name: `Bem-vindo(a) ${welcome}` })).toBeVisible()
@@ -87,6 +106,7 @@ test('an expired token requires login after SSO is ended in another tab', async 
   await page.goto('/home')
   const issued = page.waitForResponse((r) => r.url().endsWith(tokenEndpoint) && r.request().postData()?.includes('grant_type=authorization_code') === true)
   await login(page)
+  await completeHomeOnboarding(page)
   const lifetime = Number((await (await issued).json()).expires_in)
   await expect(page.getByRole('heading', { name: `Bem-vindo(a) ${welcome}` })).toBeVisible()
   const otherTab = await context.newPage()
@@ -102,6 +122,7 @@ test('an expired token requires login after SSO is ended in another tab', async 
 test('logout transport failure keeps local content closed and permits explicit retry', async ({ page }) => {
   await page.goto('/home')
   await login(page)
+  await completeHomeOnboarding(page)
   await expect(page.getByRole('button', { name: 'Sair', exact: true })).toBeVisible()
   const discovery = '**/realms/guild-banker/.well-known/openid-configuration'
   await page.route(discovery, (route) => route.abort())

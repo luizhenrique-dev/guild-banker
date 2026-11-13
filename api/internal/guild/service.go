@@ -2,9 +2,14 @@ package guild
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"strings"
+	"unicode"
+
 	"errors"
 	"fmt"
-	"net/mail"
+	"golang.org/x/text/unicode/norm"
 	"time"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
@@ -20,34 +25,45 @@ func NewService(storage Storage) *Service {
 
 func (s *Service) Create(
 	ctx context.Context,
-	name, displayName string,
+	displayName, description string,
 	actor audit.Actor,
 ) (*Guild, error) {
 	if err := actor.Validate(); err != nil {
 		return nil, fmt.Errorf("create guild: %w", err)
 	}
-
-	exists, err := s.storage.NameExists(ctx, name, 0)
-	if err != nil {
-		return nil, fmt.Errorf("check guild name in create: %w", err)
-	}
-	if exists {
-		return nil, ErrGuildNameAlreadyUsed
-	}
-
-	g, err := New(name, displayName, actor.Email)
+	displayName = strings.TrimSpace(displayName)
+	base := generatedName(displayName)
+	g, err := New(base, displayName, actor.Email)
 	if err != nil {
 		return nil, fmt.Errorf("create guild: %w", err)
 	}
-
-	if err := s.storage.Create(ctx, g, actor.UserID); err != nil {
-		return nil, fmt.Errorf("create guild: %w", err)
+	g.Description = description
+	for attempt := range 6 {
+		if attempt > 0 {
+			suffix := make([]byte, 4)
+			if _, err := rand.Read(suffix); err != nil {
+				return nil, fmt.Errorf("generate guild name: %w", err)
+			}
+			prefix := base[:min(len(base), 61)]
+			g.Name = strings.TrimRight(prefix, "-") + "-" + hex.EncodeToString(suffix)
+		}
+		err = s.storage.Create(ctx, g, actor.UserID)
+		if err == nil {
+			return g, nil
+		}
+		if !errors.Is(err, ErrGuildNameAlreadyUsed) {
+			return nil, fmt.Errorf("create guild: %w", err)
+		}
 	}
-
-	return g, nil
+	return nil, ErrNameGenerationUnavailable
 }
 
-func (s *Service) UpdateName(ctx context.Context, guildID int64, displayName string, actor audit.Actor) (*Guild, error) {
+type UpdateInput struct {
+	DisplayName string
+	Description *string
+}
+
+func (s *Service) Update(ctx context.Context, guildID int64, input UpdateInput, actor audit.Actor) (*Guild, error) {
 	if err := actor.Validate(); err != nil {
 		return nil, fmt.Errorf("update guild name: %w", err)
 	}
@@ -63,24 +79,20 @@ func (s *Service) UpdateName(ctx context.Context, guildID int64, displayName str
 		return nil, ErrRequesterIsNotMember
 	}
 
-	exists, err := s.storage.NameExists(ctx, displayName, guildID)
-	if err != nil {
-		return nil, fmt.Errorf("check guild name in update: %w", err)
-	}
-	if exists {
-		return nil, ErrGuildNameAlreadyUsed
-	}
-
 	g, err := s.storage.GetByID(ctx, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("get guild by id in update guild name: %w", err)
 	}
 
-	if err := g.Rename(displayName, actor.Email); err != nil {
+	if err := g.Rename(strings.TrimSpace(input.DisplayName), actor.Email); err != nil {
 		return nil, fmt.Errorf("rename guild: %w", err)
 	}
 
-	if err := s.storage.UpdateName(ctx, g); err != nil {
+	if input.Description != nil {
+		g.Description = *input.Description
+	}
+
+	if err := s.storage.Update(ctx, g); err != nil {
 		return nil, fmt.Errorf("persist update guild name: %w", err)
 	}
 
@@ -142,11 +154,9 @@ func (s *Service) InviteUser(ctx context.Context, requesterUserID, guildID int64
 	if err := s.ensureRequesterMember(ctx, requesterUserID, guildID, "invite user"); err != nil {
 		return err
 	}
-	if email == "" {
-		return errors.New("invite user: email is required")
-	}
-	if _, err := mail.ParseAddress(email); err != nil {
-		return fmt.Errorf("invite user: invalid email: %w", err)
+	email, err := invitationEmail(email)
+	if err != nil {
+		return err
 	}
 	if err := s.storage.InviteByEmail(ctx, guildID, email, requesterUserID); err != nil {
 		return fmt.Errorf("invite user: %w", err)
@@ -185,4 +195,32 @@ func (s *Service) ensureRequesterMember(ctx context.Context, requesterUserID, gu
 		return ErrRequesterIsNotMember
 	}
 	return nil
+}
+
+func generatedName(displayName string) string {
+	var name strings.Builder
+	separator := false
+	for _, r := range norm.NFD.String(strings.ToLower(displayName)) {
+		if unicode.Is(unicode.Mn, r) {
+			continue
+		}
+		if unicode.IsSpace(r) || r == '-' {
+			separator = name.Len() > 0
+			continue
+		}
+		if r < 'a' || r > 'z' {
+			if r < '0' || r > '9' {
+				continue
+			}
+		}
+		if separator {
+			name.WriteByte('-')
+			separator = false
+		}
+		name.WriteRune(r)
+	}
+	if name.Len() == 0 {
+		return "guild"
+	}
+	return name.String()
 }

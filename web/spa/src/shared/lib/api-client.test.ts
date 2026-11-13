@@ -74,3 +74,8 @@ it('normalizes a configured API origin with a trailing slash', async () => {
   server.use(http.get('http://api.example/api/test', () => HttpResponse.json({ ok: true })))
   expect(await apiClient('/api/test')).toEqual({ ok: true })
 })
+
+it('preserves optional machine-readable error codes', async () => {
+  server.use(http.post('*/api/test', () => HttpResponse.json({ error: 'already invited', code: 'invitation_already_pending' }, { status: 409 })))
+  await expect(apiClient('/api/test', { method: 'POST' })).rejects.toMatchObject({ status: 409, code: 'invitation_already_pending' })
+})

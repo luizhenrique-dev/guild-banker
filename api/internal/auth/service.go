@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/emailaddress"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/user"
 )
 
@@ -40,6 +41,9 @@ func (s *Service) Authenticate(ctx context.Context, raw string) (Principal, erro
 	}
 	u, err := s.users.EnsureAccount(ctx, claims.UserID, claims.Name, claims.Email)
 	if err != nil {
+		if errors.Is(err, emailaddress.ErrInvalid) {
+			return Principal{}, &RejectionError{Reason: ReasonIncompleteProfile}
+		}
 		if errors.Is(err, user.ErrDisabled) {
 			return Principal{}, &RejectionError{Reason: ReasonUserDisabled}
 		}

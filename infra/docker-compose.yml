@@ -24,7 +24,7 @@ services:
       # Optional hardening (safe defaults for local dev)
       POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres/init/01-init-multiple-dbs.sql:/docker-entrypoint-initdb.d/01-init-multiple-dbs.sql:ro
@@ -37,7 +37,7 @@ services:
       - guildbanker-net
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.7.5
+    image: quay.io/keycloak/keycloak:26.8.2
     container_name: guildbanker-keycloak
     restart: unless-stopped
     depends_on:

@@ -4,6 +4,9 @@ import type { Guild } from '../types'
 import type { components } from '@/src/shared/api/schema'
 
 export const guildsApi = {
+  create: (body: components['schemas']['CreateGuildRequest'], options: RequestOptions) => apiClient<Guild>('/api/v1/guilds', { ...options, method: 'POST', body }),
+  invitations: (options: RequestOptions) => apiClient<components['schemas']['InvitationResponse'][]>('/api/v1/guild-invites', options),
+  respond: (id: number, accept: boolean, options: RequestOptions) => apiClient<Guild | undefined>(`/api/v1/guild-invites/${safeID(id)}/${accept ? 'accept' : 'decline'}`, { ...options, method: 'POST' }),
   list: (options: RequestOptions) => apiClient<Guild[]>('/api/v1/guilds', options),
   invite: (guildId: number, email: string, options: RequestOptions) => {
     const body: components['schemas']['InviteUserRequest'] = { email }

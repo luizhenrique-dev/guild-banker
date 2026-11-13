@@ -38,3 +38,6 @@ test('expenses close the old guild modal and preserve selection through history'
   await expect(page.getByText('Selecione uma guild válida.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Nova despesa fixa' })).toHaveCount(0)
 })
+
+// Existing business journeys begin with an explicit saved guild preference.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('guildbanker:last-guild:demo:1', '1')) })

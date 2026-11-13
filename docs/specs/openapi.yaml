@@ -49,7 +49,7 @@ paths:
       tags: [Guilds]
       summary: Cria um novo guild
       description: >-
-        Cria um guild com o usuário local autenticado como membro criador. Falha com 409 se o nome já estiver em uso.
+        Cria uma guild e associa o criador atomicamente. O identificador name é gerado pela API a partir de display_name, com sufixo automático em colisões.
       requestBody:
         required: true
         content:
@@ -71,8 +71,8 @@ paths:
           $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
-        "409":
-          description: Nome de guild já utilizado.
+        "503":
+          description: Não foi possível reservar um identificador após as tentativas limitadas.
           content:
             application/json:
               schema:
@@ -105,9 +105,8 @@ paths:
       tags: [Guilds]
       summary: Atualiza o nome de exibição de um guild
       description: >-
-        TODO: o campo `name` do corpo é, na implementação atual, aplicado ao
-        atributo displayName do guild (ver OPENAPI_GAPS.md). Requer que o
-        requisitante seja membro do guild.
+        Atualiza display_name e description. name é imutável. Requer membership.
+        Descrição omitida é preservada; string vazia limpa a descrição.
       parameters:
         - $ref: "#/components/parameters/GuildIDPath"
       requestBody:
@@ -137,12 +136,6 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
         "404":
           $ref: "#/components/responses/NotFound"
-        "409":
-          description: Nome de guild já utilizado.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/guilds/{id}/enable:
     patch:
@@ -211,7 +204,7 @@ paths:
         "500":
           $ref: "#/components/responses/InternalServerError"
         "204":
-          description: Usuário convidado/adicionado com sucesso.
+          description: Convite pendente criado; não concede membership.
         "400":
           $ref: "#/components/responses/BadRequest"
         "401":
@@ -225,11 +218,100 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
         "409":
-          description: Usuário já é membro do guild.
+          description: Convite já pendente ou usuário já membro; code identifica a causa.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/guild-invites:
+    get:
+      operationId: listGuildInvitations
+      tags: [Guilds]
+      summary: Lista convites pendentes do e-mail verificado do usuário autenticado
+      responses:
+        "200":
+          description: Convites pendentes.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/InvitationResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/guild-invites/{id}/accept:
+    post:
+      operationId: acceptGuildInvitation
+      tags: [Guilds]
+      summary: Responde convite destinado ao usuário autenticado
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        "200":
+          description: Aceite e membership confirmados atomicamente.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GuildResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Convite já respondido; code invitation_already_answered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
+  /api/v1/guild-invites/{id}/decline:
+    post:
+      operationId: declineGuildInvitation
+      tags: [Guilds]
+      summary: Responde convite destinado ao usuário autenticado
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+      responses:
+        "204":
+          description: Recusa persistida, sem membership.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Convite já respondido; code invitation_already_answered.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /api/v1/guilds/{id}/members/{userID}:
     delete:
@@ -941,28 +1023,32 @@ components:
       properties:
         error:
           type: string
+        code:
+          type: string
+          description: Código estável opcional para feedback localizado.
 
     # Guilds
     CreateGuildRequest:
       type: object
-      required: [name, display_name]
+      required: [display_name]
       properties:
-        name:
-          type: string
-          description: Nome único do guild (chave de negócio).
         display_name:
           type: string
-          description: Nome de exibição do guild.
+          minLength: 1
+          maxLength: 70
+        description:
+          type: string
     UpdateGuildRequest:
       type: object
-      required: [name]
-      description: >-
-        TODO: apesar do campo se chamar `name`, o valor é aplicado ao atributo
-        displayName do guild na implementação atual (guild/service.go,
-        guild/guild.go Rename). Ver OPENAPI_GAPS.md.
+      required: [display_name]
       properties:
-        name:
+        display_name:
           type: string
+          minLength: 1
+          maxLength: 70
+        description:
+          type: string
+          description: Omitir preserva; string vazia limpa.
     InviteUserRequest:
       type: object
       required: [email]
@@ -970,19 +1056,43 @@ components:
         email:
           type: string
           format: email
+          description: Simple email address without quotes or a display name. Trimmed and converted to lowercase before persistence.
     GuildResponse:
       type: object
-      required: [id, name, display_name, enabled]
+      required: [id, name, display_name, description, enabled]
       properties:
         id:
           type: integer
           format: int64
         name:
           type: string
+          readOnly: true
+          maxLength: 70
         display_name:
+          type: string
+        description:
           type: string
         enabled:
           type: boolean
+
+    InvitationResponse:
+      type: object
+      required: [id, guild, invited_by]
+      properties:
+        id:
+          type: integer
+          format: int64
+        guild:
+          $ref: "#/components/schemas/GuildResponse"
+        invited_by:
+          type: object
+          required: [name, email]
+          properties:
+            name:
+              type: string
+            email:
+              type: string
+              format: email
 
     # FixedExpenses
     FixedExpenseCategory:

@@ -35,3 +35,49 @@ it.each(['GET', 'POST', 'PATCH', 'deactivate'])('denies non member %s in demo', 
   const path = '/api/v1/guilds/1/fixed-expenses' + (method === 'PATCH' ? '/1' : '') + (operation === 'deactivate' ? '/deactivate' : '')
   await expect(apiClient(path, { method, headers: { 'X-User-ID': '2', 'X-User-Email': 'b@example.test' }, ...(method === 'GET' ? {} : { body: { status: 'PAUSED' } }) })).rejects.toMatchObject({ status: 403 })
 })
+
+it('guild mock generates unique names, retains creator membership and edits only mutable fields', async () => {
+  type Guild = components['schemas']['GuildResponse']
+  const create = () => apiClient<Guild>('/api/v1/guilds', { method: 'POST', headers, body: { name: 'ignored', display_name: 'Á&B  Amigos', description: 'Casa' } })
+  const first = await create()
+  const second = await create()
+  expect(first).toMatchObject({ name: 'ab-amigos', display_name: 'Á&B  Amigos', description: 'Casa' })
+  expect(second.name).toMatch(/^ab-amigos-[a-f0-9]{8}$/)
+  expect(await apiClient<Guild[]>('/api/v1/guilds', { headers })).toContainEqual(first)
+  const updated = await apiClient<Guild>('/api/v1/guilds/' + first.id, { method: 'PUT', headers, body: { name: 'ignored-again', display_name: 'Novo visual' } })
+  expect(updated).toMatchObject({ name: first.name, description: 'Casa' })
+  const cleared = await apiClient<Guild>('/api/v1/guilds/' + first.id, { method: 'PUT', headers, body: { display_name: 'Novo visual', description: '' } })
+  expect(cleared.description).toBe('')
+  await expect(apiClient('/api/v1/guilds', { method: 'POST', headers, body: { display_name: 'á'.repeat(71) } })).rejects.toMatchObject({ status: 400 })
+})
+
+it('inviting only creates a pending invitation and distinguishes duplicate from existing member', async () => {
+  await apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'new@example.test' } })
+  await expect(apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'NEW@example.test' } })).rejects.toMatchObject({ status: 409, code: 'invitation_already_pending' })
+  await expect(apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'ana@familia.com' } })).rejects.toMatchObject({ status: 409, code: 'guild_member_already_set' })
+  const recipient = { 'X-User-ID': '8', 'X-User-Email': 'new@example.test' }
+  expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([])
+})
+
+it.each(['"member"@example.test', 'Member <member@example.test>', 'member..name@example.test'])('rejects unsupported invitation email %s in the mock API', async (email) => {
+  await expect(apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email } })).rejects.toMatchObject({ status: 400 })
+})
+
+it('invitation mock authorizes the recipient and grants access only after acceptance', async () => {
+  type Invitation = components['schemas']['InvitationResponse']
+  const recipient = { 'X-User-ID': '8', 'X-User-Email': 'new@example.test' }
+  const emit = () => apiClient('/api/v1/guilds/1/invites', { method: 'POST', headers, body: { email: 'new@example.test' } })
+  await emit()
+  const pending = await apiClient<Invitation[]>('/api/v1/guild-invites', { headers: recipient })
+  expect(pending).toHaveLength(1)
+  expect(pending[0]?.invited_by).toEqual({ name: 'Ana Silva', email: headers['X-User-Email'] })
+  const root = '/api/v1/guild-invites/' + pending[0]!.id
+  await expect(apiClient(root + '/accept', { method: 'POST', headers })).rejects.toMatchObject({ status: 404 })
+  await apiClient(root + '/decline', { method: 'POST', headers: recipient })
+  expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([])
+  await emit()
+  const again = await apiClient<Invitation[]>('/api/v1/guild-invites', { headers: recipient })
+  await apiClient('/api/v1/guild-invites/' + again[0]!.id + '/accept', { method: 'POST', headers: recipient })
+  expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([expect.objectContaining({ id: 1 })])
+  expect(await apiClient('/api/v1/guild-invites', { headers: recipient })).toEqual([])
+})

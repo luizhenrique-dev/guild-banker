@@ -16,17 +16,19 @@ it.each(['/', '/home', '/fixed-expenses', '/transactions', '/import', '/guild'])
   fetchSpy.mockRestore()
 })
 it('handles unknown routes', async () => {
-  render(<MemoryRouter initialEntries={['/missing']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.com' }} demo /></MemoryRouter>)
+  render(<MemoryRouter initialEntries={['/missing?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.com' }} demo /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Página não encontrada' })).toBeVisible()
 })
 
-it('opens Home from root and menu, preserving query without requiring a guild', async () => {
-  render(<MemoryRouter initialEntries={['/?guild=999']}><App initialUser={{ id: 99, name: '<b>Ana</b>', email: 'ana@example.com' }} demo /></MemoryRouter>)
-  expect(await screen.findByRole('heading', { name: 'Bem-vindo(a) <b>Ana</b>' })).toBeVisible()
+it('opens Home only after choosing a guild and escapes the session name', async () => {
+  render(<MemoryRouter initialEntries={['/?guild=999']}><App initialUser={{ id: 1, name: '<b>Ana</b>', email: 'ana@example.com' }} demo /></MemoryRouter>)
+  expect(await screen.findByRole('heading', { name: 'Escolha sua guild' })).toBeVisible()
+  expect(screen.queryByRole('navigation')).toBeNull()
+  fireEvent.click(screen.getByRole('button', { name: 'Entrar em Família Silva' }))
+  const heading = await screen.findByRole('heading', { name: 'Bem-vindo(a) <b>Ana</b>' })
+  expect(heading.querySelector('b')).toBeNull()
   const home = screen.getByRole('link', { name: 'Início' })
-  expect(home).toHaveAttribute('href', '/home?guild=999')
-  fireEvent.click(home)
-  expect(screen.getByRole('heading', { name: 'Bem-vindo(a) <b>Ana</b>' }).querySelector('b')).toBeNull()
+  expect(home).toHaveAttribute('href', '/home?guild=1')
 })
 
 it('does not mount the shell even on unknown routes without a session', async () => {
@@ -44,28 +46,30 @@ import * as queryClients from '../shared/lib/query-client'
 
 afterEach(() => vi.restoreAllMocks())
 const demoUser = { id: 1, name: 'Ana', email: 'ana@example.test' }
-it.each(['/fixed-expenses', '/transactions?guild=1', '/import?guild=1', '/guild?guild=1'])('keeps shell and Home for forbidden loading on %s', async (path) => {
+it.each(['/fixed-expenses?guild=1', '/transactions?guild=1', '/import?guild=1', '/guild?guild=1'])('keeps identity controls for forbidden loading on %s', async (path) => {
   let calls = 0
   const endpoint = path.startsWith('/fixed-expenses') ? '*/api/v1/guilds/:guildID/fixed-expenses' : '*/api/v1/guilds'
   server.use(http.get(endpoint, () => { calls++; return HttpResponse.json({ error: 'secret internal cause' }, { status: 403 }) }))
   render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
   expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
-  expect(screen.getByRole('navigation')).toBeVisible()
+  if (path.startsWith('/fixed-expenses')) expect(screen.getByRole('navigation')).toBeVisible()
+  else expect(screen.queryByRole('navigation')).toBeNull()
   expect(screen.getByRole('button', { name: 'Sair' })).toBeEnabled()
   expect(screen.queryByText('secret internal cause')).toBeNull()
   expect(calls).toBe(1)
-  fireEvent.click(screen.getByRole('link', { name: 'Voltar ao início' }))
-  expect(await screen.findByRole('heading', { name: 'Bem-vindo(a) Ana' })).toBeVisible()
+  if (path.startsWith('/fixed-expenses')) {
+    fireEvent.click(screen.getByRole('link', { name: 'Voltar ao início' }))
+    expect(await screen.findByRole('heading', { name: 'Bem-vindo(a) Ana' })).toBeVisible()
+  } else expect(screen.queryByRole('link', { name: 'Voltar ao início' })).toBeNull()
   fireEvent.click(screen.getByRole('button', { name: 'Sair' }))
   expect(await screen.findByRole('heading', { name: 'Sessão encerrada' })).toBeVisible()
 })
-it.each(['/home'])('does not block independent %s when guilds are forbidden', async (path) => {
+it('blocks Home when memberships are forbidden', async () => {
   server.use(http.get('*/api/v1/guilds', () => new HttpResponse(null, { status: 403 })))
-  render(<MemoryRouter initialEntries={[path]}><App initialUser={demoUser} demo /></MemoryRouter>)
-  const title = path === '/home' ? 'Bem-vindo(a) Ana' : 'Despesas fixas da guild'
-  expect(await screen.findByRole('heading', { name: title })).toBeVisible()
-  if (path === '/fixed-expenses') expect(await screen.findByRole('row', { name: /Aluguel/ })).toBeVisible()
-  expect(screen.queryByRole('heading', { name: 'Acesso negado' })).toBeNull()
+  render(<MemoryRouter initialEntries={['/home']}><App initialUser={demoUser} demo /></MemoryRouter>)
+  expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
+  expect(screen.queryByRole('heading', { name: 'Bem-vindo(a) Ana' })).toBeNull()
+  expect(screen.queryByRole('navigation')).toBeNull()
 })
 it('removes refused guild cache and stops dependent loading after refetch', async () => {
   const client = queryClients.makeQueryClient()

@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/luizhenrique-dev/guild-banker/api/internal/emailaddress"
 )
 
 type Service struct {
@@ -116,6 +118,10 @@ func (s *Service) EnsureAccount(ctx context.Context, externalID, name, email str
 	}
 	if strings.TrimSpace(email) == "" {
 		return nil, errors.New("ensure account: email is required")
+	}
+	email, err := emailaddress.Normalize(email)
+	if err != nil {
+		return nil, fmt.Errorf("ensure account: %w", err)
 	}
 	u, err := s.storage.GetByExternalID(ctx, externalID)
 	if errors.Is(err, ErrNotFound) {

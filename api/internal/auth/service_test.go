@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
+	"github.com/luizhenrique-dev/guild-banker/api/internal/emailaddress"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/user"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,6 +33,7 @@ func TestServiceAuthenticate(t *testing.T) {
 		{name: "active"},
 		{name: "invalid token", verifyErr: &RejectionError{Reason: ReasonInvalidToken}, wantErr: ErrInvalidToken},
 		{name: "email conflict", lookupErr: user.ErrEmailConflict, wantErr: ErrForbidden},
+		{name: "invalid email profile", lookupErr: emailaddress.ErrInvalid, wantErr: ErrForbidden},
 		{name: "disabled resolution", lookupErr: user.ErrDisabled, wantErr: ErrForbidden},
 		{name: "persistence canceled", lookupErr: context.Canceled, wantErr: context.Canceled},
 		{name: "disabled user", disabled: true, wantErr: ErrForbidden},

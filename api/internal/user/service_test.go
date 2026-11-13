@@ -3,6 +3,7 @@ package user
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -384,16 +385,17 @@ func TestServiceEnsureAccount(t *testing.T) {
 			storage.On("GetByExternalID", ctx, "ext-123").Return(existing, lookupErr).Once()
 			if tt.missing {
 				storage.On("CreateIfAbsent", ctx, mock.MatchedBy(func(u *User) bool {
-					return u.ExternalID == "ext-123" && u.Name == name && u.Email == email && u.CreatedBy == email && u.Enabled && u.UpdatedAt == nil
+					return u.ExternalID == "ext-123" && u.Name == name && u.Email == strings.ToLower(email) && u.CreatedBy == strings.ToLower(email) && u.Enabled && u.UpdatedAt == nil
 				})).Return(existing, tt.createErr).Once()
 			}
-			changed := name != existing.Name || email != existing.Email
+			canonical := strings.ToLower(email)
+			changed := name != existing.Name || canonical != existing.Email
 			persisted := *existing
 			persisted.Name = name
-			persisted.Email = email
+			persisted.Email = canonical
 			if lookupErr == nil && !tt.disabled && changed {
 				storage.On("UpdateProfile", ctx, mock.MatchedBy(func(u *User) bool {
-					return u.ID == 42 && u.ExternalID == before.ExternalID && u.CreatedAt.Equal(before.CreatedAt) && u.CreatedBy == before.CreatedBy && u.Name == name && u.Email == email && u.UpdatedBy != nil && *u.UpdatedBy == email
+					return u.ID == 42 && u.ExternalID == before.ExternalID && u.CreatedAt.Equal(before.CreatedAt) && u.CreatedBy == before.CreatedBy && u.Name == name && u.Email == canonical && u.UpdatedBy != nil && *u.UpdatedBy == canonical
 				})).Return(&persisted, tt.updateErr).Once()
 			}
 			got, err := svc.EnsureAccount(ctx, "ext-123", name, email)

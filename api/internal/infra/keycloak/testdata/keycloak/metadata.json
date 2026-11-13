@@ -1,5 +1,5 @@
 {
-  "keycloak_version": "26.7.5",
+  "keycloak_version": "26.8.2",
   "issuer": "http://localhost:8080/realms/guild-banker",
   "audience": "guild-banker-api",
   "kid": "2ndw2tqa2omNMRBEvkAPMgZzKpBrkXhBXjgwnfy4JsM",

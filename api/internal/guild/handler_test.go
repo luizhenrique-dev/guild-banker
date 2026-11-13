@@ -4,10 +4,13 @@ package guild
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -87,5 +90,40 @@ func testIdentityRequest(t *testing.T, router *gin.Engine, method, path, body st
 		if !authenticated {
 			assert.JSONEq(t, `{"error":"unauthorized"}`, w.Body.String())
 		}
+	}
+}
+
+func TestNameGenerationExhaustionReturnsUnavailable(t *testing.T) {
+	service, storage := newService(t)
+	storage.On("Create", mock.Anything, mock.Anything, int64(42)).Return(ErrGuildNameAlreadyUsed).Times(6)
+	handler := NewHandler(service)
+	router := gin.New()
+	router.POST("/api/guilds", handler.Create)
+	testIdentityRequest(t, router, "POST", "/api/guilds", `{"display_name":"Repeated"}`, 503)
+	storage.AssertExpectations(t)
+}
+
+func TestInvitationErrorCodes(t *testing.T) {
+	for _, tt := range []struct {
+		name   string
+		err    error
+		status int
+		code   string
+	}{
+		{name: "pending", err: ErrInvitationAlreadyPending, status: 409, code: "invitation_already_pending"},
+		{name: "member", err: ErrGuildMemberAlreadySet, status: 409, code: "guild_member_already_set"},
+		{name: "invalid", err: ErrInvalidInvitation, status: 400},
+		{name: "technical", err: errors.New("private database details"), status: 500},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			recorder := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(recorder)
+			(&Handler{}).handleInvitationError(c, tt.err)
+			assert.Equal(t, tt.status, recorder.Code)
+			payload := map[string]string{}
+			assert.NoError(t, json.Unmarshal(recorder.Body.Bytes(), &payload))
+			assert.Equal(t, tt.code, payload["code"])
+			assert.NotContains(t, recorder.Body.String(), "private database details")
+		})
 	}
 }

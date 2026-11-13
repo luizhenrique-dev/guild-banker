@@ -1,7 +1,7 @@
 'use client'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { inviteSchema, type InviteInput } from '../schemas/invite.schema'
+import { inviteSchema, inviteEmailPattern, maxInviteEmailLength, type InviteInput } from '../schemas/invite.schema'
 import { useSession } from '@/src/app/session-provider'
 import { useTranslation } from 'react-i18next'
 import { useActiveGuild } from '../use-active-guild'
@@ -15,7 +15,8 @@ export function GuildPageClient() {
   const { data: mockMembers = [] } = useDemoMembers(activeGuild!.id)
   const inviteMutation = useInviteMember()
   const removeMutation = useRemoveMember()
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<InviteInput>({ resolver: zodResolver(inviteSchema), defaultValues: { email: '' } })
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<InviteInput>({ resolver: zodResolver(inviteSchema), mode: 'onChange', defaultValues: { email: '' } })
+  const emailField = register('email')
   const inviteEmail = watch('email')
   const handleInvite = handleSubmit(async ({ email }) => {
     if (!activeGuild) return
@@ -69,16 +70,24 @@ export function GuildPageClient() {
         <form onSubmit={handleInvite} className="flex flex-wrap gap-3">
           <input
             type="email"
+            required
+            pattern={inviteEmailPattern.source}
+            maxLength={maxInviteEmailLength}
+            autoCapitalize="none"
             aria-label={t('guild.invite')}
             aria-invalid={!!errors.email}
             aria-describedby={errors.email ? 'invite-error' : undefined}
-            {...register('email')}
+            {...emailField}
+            onChange={(event) => {
+              event.target.value = event.target.value.toLowerCase()
+              void emailField.onChange(event)
+            }}
             placeholder={t('guild.invitePlaceholder')}
             className="min-w-0 flex-1 rounded-xl border border-[#dee1e6] px-4 py-2.5 text-[14px] outline-none focus:border-[#0052ff]"
           />
           <button
             type="submit"
-            disabled={inviteMutation.isPending || !inviteEmail}
+            disabled={inviteMutation.isPending || !inviteEmail || !!errors.email}
             className="rounded-full bg-[#0052ff] px-5 py-2.5 text-[14px] font-semibold text-white transition-colors hover:bg-[#003ecc] disabled:opacity-50"
           >
             {t('guild.inviteButton')}

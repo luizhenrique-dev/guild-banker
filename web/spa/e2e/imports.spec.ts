@@ -53,3 +53,6 @@ test('forbidden confirmation keeps the import review', async ({ page }) => {
   await expect(page).toHaveURL(/\/import\?guild=1$/)
   await expect(page.getByRole('button', { name: 'Sair' })).toBeEnabled()
 })
+
+// Existing business journeys begin with an explicit saved guild preference.
+test.beforeEach(async ({ page }) => { await page.addInitScript(() => localStorage.setItem('guildbanker:last-guild:demo:1', '1')) })

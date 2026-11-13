@@ -22,26 +22,10 @@ Headers de identidade não são aceitos como fonte de autenticação; parâmetro
 removidos do OpenAPI. Ausente/inativo recebe403; falha técnica500 sanitizado.
 Integração OIDC real da SPA e CI permanecem em issues separadas.
 
-## 3. Inconsistência de nomenclatura em `PUT /api/v1/guilds/{id}`
+## 3. Atualização de guild — resolvida pela ISSUE-5
 
-- **Endpoint/componente afetado**: `updateGuildName` /
-  `UpdateGuildRequest`.
-- **Informação faltante**: se o campo deveria se chamar `display_name` (para
-  consistência com `CreateGuildRequest`) ou se `name` é intencional.
-- **Motivo da incerteza**: o handler (`guild/handler.go`) lê `req.Name` e
-  chama `service.UpdateName(ctx, guildID, req.Name, actor)`, mas o método
-  `Service.UpdateName` (`guild/service.go`) trata esse valor como
-  `displayName` e o repassa para `Guild.Rename`, que altera o campo
-  `DisplayName` (`guild/guild.go`). O nome de negócio (`Name`) do guild nunca
-  é alterado por esse endpoint, apesar do nome do campo JSON sugerir o
-  contrário.
-- **Arquivo(s) a revisar**: `api/internal/guild/dto.go`,
-  `api/internal/guild/handler.go`, `api/internal/guild/service.go`,
-  `api/internal/guild/guild.go`.
-- **Recomendação**: renomear o campo do DTO para `display_name` (alinhado ao
-  `CreateGuildRequest`) ou renomear as funções internas para refletir que o
-  endpoint realmente atualiza o `name`. Até a decisão, a especificação
-  documenta o comportamento real observado no código.
+PUT recebe display_name e description; name é gerado na criação e imutável.
+Descrição omitida é preservada; string vazia limpa o conteúdo.
 
 ## 4. Semântica de `UpdateTransactionRequest` com campos opcionais
 

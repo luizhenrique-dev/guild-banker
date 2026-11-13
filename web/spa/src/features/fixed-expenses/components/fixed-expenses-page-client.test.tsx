@@ -16,7 +16,7 @@ import * as queryClients from '@/src/shared/lib/query-client'
 beforeEach(async () => { await i18n.changeLanguage('pt-BR') })
 afterEach(() => vi.restoreAllMocks())
 function page() {
-  return render(<MemoryRouter initialEntries={['/fixed-expenses']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
+  return render(<MemoryRouter initialEntries={['/fixed-expenses?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
 }
 async function fill() {
   const user = userEvent.setup()

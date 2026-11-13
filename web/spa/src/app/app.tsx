@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { KeycloakSession } from './keycloak-session'
 import { useSession, type SessionUser } from './session-provider'
 import { useActiveGuild } from '../features/guilds/use-active-guild'
+import { GuildOnboarding } from '../features/guilds/components/guild-onboarding'
 import { GuildSelectionState } from '../features/guilds/components/guild-selection-state'
 import { ThemeProvider } from '@/components/theme-provider'
 import { Toaster } from '@/components/ui/sonner'
@@ -37,17 +38,18 @@ function AppRoutes() {
 
 function AuthenticatedApp() {
   const { user, phase, retry } = useSession()
+  const { activeGuild, isForbidden } = useActiveGuild()
   const { t } = useTranslation()
   if (phase !== 'ready') return <main role={phase.endsWith('error') ? 'alert' : 'status'} className="p-8"><h1>{t(`session.${phase}`)}</h1>{phase.endsWith('error') && <button onClick={retry}>{t('common.retry')}</button>}</main>
   if (!user) return <main className="p-8"><h1>{t('session.missing')}</h1></main>
-  return <>
-    <Header />
-    <div className="flex flex-col md:flex-row">
+  return <div className="flex min-h-[100dvh] flex-col">
+    <Header showGuildSwitcher={!!activeGuild && !isForbidden} />
+    {activeGuild && !isForbidden ? <div className="flex flex-col md:flex-row">
       <Sidebar />
       <div className="min-w-0 flex-1 min-h-[calc(100vh-64px)]"><AppRoutes /></div>
-    </div>
+    </div> : <GuildOnboarding showHomeLink={false} />}
     <Toaster />
-  </>
+  </div>
 }
 
 export function App({ initialUser = null, demo = false, auth }: { initialUser?: SessionUser | null; demo?: boolean; auth?: KeycloakSession }) {

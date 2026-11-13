@@ -33,7 +33,7 @@ export interface paths {
         put?: never;
         /**
          * Cria um novo guild
-         * @description Cria um guild com o usuário local autenticado como membro criador. Falha com 409 se o nome já estiver em uso.
+         * @description Cria uma guild e associa o criador atomicamente. O identificador name é gerado pela API a partir de display_name, com sufixo automático em colisões.
          */
         post: operations["createGuild"];
         delete?: never;
@@ -52,7 +52,7 @@ export interface paths {
         get?: never;
         /**
          * Atualiza o nome de exibição de um guild
-         * @description TODO: o campo `name` do corpo é, na implementação atual, aplicado ao atributo displayName do guild (ver OPENAPI_GAPS.md). Requer que o requisitante seja membro do guild.
+         * @description Atualiza display_name e description. name é imutável. Requer membership. Descrição omitida é preservada; string vazia limpa a descrição.
          */
         put: operations["updateGuildName"];
         post?: never;
@@ -107,6 +107,57 @@ export interface paths {
         put?: never;
         /** Convida um usuário para o guild pelo e-mail */
         post: operations["inviteGuildMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guild-invites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista convites pendentes do e-mail verificado do usuário autenticado */
+        get: operations["listGuildInvitations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guild-invites/{id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Responde convite destinado ao usuário autenticado */
+        post: operations["acceptGuildInvitation"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guild-invites/{id}/decline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Responde convite destinado ao usuário autenticado */
+        post: operations["declineGuildInvitation"];
         delete?: never;
         options?: never;
         head?: never;
@@ -337,27 +388,42 @@ export interface components {
         /** @description Envelope padrão de erro utilizado por todos os handlers (gin.H{"error": ...}). */
         ErrorResponse: {
             error: string;
+            /** @description Código estável opcional para feedback localizado. */
+            code?: string;
         };
         CreateGuildRequest: {
-            /** @description Nome único do guild (chave de negócio). */
-            name: string;
-            /** @description Nome de exibição do guild. */
             display_name: string;
+            description?: string;
         };
-        /** @description TODO: apesar do campo se chamar `name`, o valor é aplicado ao atributo displayName do guild na implementação atual (guild/service.go, guild/guild.go Rename). Ver OPENAPI_GAPS.md. */
         UpdateGuildRequest: {
-            name: string;
+            display_name: string;
+            /** @description Omitir preserva; string vazia limpa. */
+            description?: string;
         };
         InviteUserRequest: {
-            /** Format: email */
+            /**
+             * Format: email
+             * @description Simple email address without quotes or a display name. Trimmed and converted to lowercase before persistence.
+             */
             email: string;
         };
         GuildResponse: {
             /** Format: int64 */
             id: number;
-            name: string;
+            readonly name: string;
             display_name: string;
+            description: string;
             enabled: boolean;
+        };
+        InvitationResponse: {
+            /** Format: int64 */
+            id: number;
+            guild: components["schemas"]["GuildResponse"];
+            invited_by: {
+                name: string;
+                /** Format: email */
+                email: string;
+            };
         };
         /** @enum {string} */
         FixedExpenseCategory: "HOUSING" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER";
@@ -671,8 +737,9 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
-            /** @description Nome de guild já utilizado. */
-            409: {
+            500: components["responses"]["InternalServerError"];
+            /** @description Não foi possível reservar um identificador após as tentativas limitadas. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -680,7 +747,6 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
-            500: components["responses"]["InternalServerError"];
         };
     };
     updateGuildName: {
@@ -720,15 +786,6 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            /** @description Nome de guild já utilizado. */
-            409: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ErrorResponse"];
-                };
-            };
             500: components["responses"]["InternalServerError"];
         };
     };
@@ -816,7 +873,7 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Usuário convidado/adicionado com sucesso. */
+            /** @description Convite pendente criado; não concede membership. */
             204: {
                 headers: {
                     [name: string]: unknown;
@@ -835,7 +892,100 @@ export interface operations {
                 };
             };
             404: components["responses"]["NotFound"];
-            /** @description Usuário já é membro do guild. */
+            /** @description Convite já pendente ou usuário já membro; code identifica a causa. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    listGuildInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Convites pendentes. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InvitationResponse"][];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    acceptGuildInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Aceite e membership confirmados atomicamente. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GuildResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Convite já respondido; code invitation_already_answered. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    declineGuildInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Recusa persistida, sem membership. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Convite já respondido; code invitation_already_answered. */
             409: {
                 headers: {
                     [name: string]: unknown;

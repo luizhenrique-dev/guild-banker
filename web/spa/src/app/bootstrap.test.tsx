@@ -1,3 +1,6 @@
+import { http, HttpResponse } from 'msw'
+import { server } from '../mocks/server'
+import { guildsFixtures } from '../mocks/fixtures/guilds'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 import { act, screen } from '@testing-library/react'
 import { createRoot, type Root } from 'react-dom/client'
@@ -12,6 +15,7 @@ let root: Root
 beforeEach(async () => { await i18n.changeLanguage('pt-BR'); vi.clearAllMocks(); const el = document.createElement('div'); document.body.append(el); root = createRoot(el) })
 afterEach(() => { act(() => root.unmount()) })
 it('does not mount shell or issue financial requests until OIDC resolves', async () => {
+  server.use(http.get('*/api/v1/guilds', () => HttpResponse.json([guildsFixtures[0]])))
   let resolve!: (user: { id: string; name: string; email: string }) => void
   const auth = { initialize: vi.fn(() => new Promise((r) => { resolve = r })), getToken: vi.fn().mockResolvedValue('access'), accepted: vi.fn(), onExpiration: () => () => {} }
   vi.mocked(createKeycloakSession).mockReturnValue(auth as unknown as ReturnType<typeof createKeycloakSession>)
