@@ -2,10 +2,12 @@ import { http, HttpResponse, delay } from 'msw'
 import { mockUserID, mockGuildMember, addMockGuildMember, resetMockMemberships, mockGuildMemberByEmail } from '../request-context'
 import { guildsFixtures } from '../fixtures/guilds'
 import type { Guild } from '@/src/features/guilds/types'
+import { membersByGuild } from '../fixtures/members'
 import { inviteSchema } from '@/src/features/guilds/schemas/invite.schema'
 
 let guilds = structuredClone(guildsFixtures)
-let invitations: { id: number; guildID: number; email: string; invitedBy: number; inviterEmail: string; status: string }[] = []
+let members = structuredClone(membersByGuild)
+let invitations: { id: number; guildID: number; email: string; invitedBy: number; inviterEmail: string; createdAt: string; status: string }[] = []
 
 export const guildsHandlers = [
   // operationId: listGuildsByMember
@@ -34,6 +36,7 @@ export const guildsHandlers = [
       enabled: true,
     }
     guilds.push(newGuild)
+    members[newGuild.id] = [{ id: mockUserID(request), name: request.headers.get('X-User-Email') ?? '', email: request.headers.get('X-User-Email') ?? '', member_since: new Date().toISOString(), last_access_at: new Date().toISOString() }]
     addMockGuildMember(mockUserID(request), newGuild.id)
     return HttpResponse.json(newGuild, { status: 201 })
   }),
@@ -69,6 +72,32 @@ export const guildsHandlers = [
     return new HttpResponse(null, { status: 204 })
   }),
 
+  // operationId: listGuildMembers
+  http.get('*/api/v1/guilds/:id/members', ({ params, request }) => {
+    const guildID = Number(params['id'])
+    if (!mockGuildMember(request, guildID)) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
+    return HttpResponse.json(members[guildID] ?? [])
+  }),
+  // operationId: listSentGuildInvitations
+  http.get('*/api/v1/guilds/:id/invites', ({ params, request }) => {
+    const guildID = Number(params['id'])
+    if (!mockGuildMember(request, guildID)) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
+    return HttpResponse.json(invitations.filter((invite) => invite.guildID === guildID && invite.status === 'PENDING').map((invite) => ({
+      id: invite.id, email: invite.email, created_at: invite.createdAt,
+      invited_by: { name: Object.values(members).flat().find((member) => member.id === invite.invitedBy)?.name ?? invite.inviterEmail, email: invite.inviterEmail },
+    })))
+  }),
+  // operationId: cancelGuildInvitation
+  http.delete('*/api/v1/guilds/:id/invites/:inviteID', ({ params, request }) => {
+    const guildID = Number(params['id'])
+    if (!mockGuildMember(request, guildID)) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
+    const invitation = invitations.find((invite) => invite.guildID === guildID && invite.id === Number(params['inviteID']))
+    if (!invitation) return HttpResponse.json({ error: 'invitation not found' }, { status: 404 })
+    if (invitation.status !== 'PENDING') return HttpResponse.json({ error: 'invitation already answered', code: 'invitation_already_answered' }, { status: 409 })
+    invitation.status = 'CANCELLED'
+    return new HttpResponse(null, { status: 204 })
+  }),
+
   // operationId: inviteGuildMember
   http.post('*/api/v1/guilds/:id/invites', async ({ params, request }) => {
     if (!mockGuildMember(request, Number(params['id']))) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
@@ -79,7 +108,7 @@ export const guildsHandlers = [
     const { email } = parsed.data
     if (mockGuildMemberByEmail(email, guildID)) return HttpResponse.json({ error: 'user is already a guild member', code: 'guild_member_already_set' }, { status: 409 })
     if (invitations.some((invite) => invite.guildID === guildID && invite.email === email && invite.status === 'PENDING')) return HttpResponse.json({ error: 'user already invited to guild', code: 'invitation_already_pending' }, { status: 409 })
-    invitations.push({ id: invitations.length + 1, guildID, email, invitedBy: mockUserID(request), inviterEmail: request.headers.get('X-User-Email') ?? '', status: 'PENDING' })
+    invitations.push({ id: invitations.length + 1, guildID, email, invitedBy: mockUserID(request), inviterEmail: request.headers.get('X-User-Email') ?? '', createdAt: new Date().toISOString(), status: 'PENDING' })
     await delay(400)
     return new HttpResponse(null, { status: 204 })
   }),
@@ -102,12 +131,15 @@ export const guildsHandlers = [
   http.delete('*/api/v1/guilds/:id/members/:userID', async ({ params, request }) => {
     if (!mockGuildMember(request, Number(params['id'])) || Number(params['userID']) === mockUserID(request)) return HttpResponse.json({ error: 'forbidden' }, { status: 403 })
     await delay(400)
+    const guildID = Number(params['id'])
+    members[guildID] = (members[guildID] ?? []).filter((member) => member.id !== Number(params['userID']))
     return new HttpResponse(null, { status: 204 })
   }),
 ]
 
 export function resetGuildsMocks() {
   guilds = structuredClone(guildsFixtures)
+  members = structuredClone(membersByGuild)
   resetMockMemberships()
   invitations = []
 }
@@ -122,5 +154,8 @@ function respondInvitation(request: Request, id: number, accept: boolean) {
   invitation.status = accept ? 'ACCEPTED' : 'DECLINED'
   if (!accept) return new HttpResponse(null, { status: 204 })
   addMockGuildMember(userID, invitation.guildID)
+  if (!(members[invitation.guildID] ?? []).some((member) => member.id === userID)) {
+    members[invitation.guildID] = [...(members[invitation.guildID] ?? []), { id: userID, name: email ?? '', email: email ?? '', member_since: new Date().toISOString(), last_access_at: new Date().toISOString() }]
+  }
   return HttpResponse.json(guilds.find((guild) => guild.id === invitation.guildID))
 }
