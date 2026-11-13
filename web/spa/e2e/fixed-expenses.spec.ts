@@ -1,5 +1,81 @@
 import { expect, test } from '@playwright/test'
 
+test('new fixed expense fades in continuously from its first rendered frame', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'no-preference' })
+  await page.goto('/fixed-expenses')
+  await expect(page.getByRole('button', { name: 'Nova despesa fixa', exact: true })).toBeVisible()
+  const frames = await page.evaluate(async () => {
+    const samples: { elapsed: number; opacity: number; overlayOpacity: number; x: number; y: number }[] = []
+    const start = performance.now()
+    const button = [...document.querySelectorAll('button')].find((element) => element.textContent?.includes('Nova despesa fixa'))!
+    button.click()
+    await new Promise<void>((resolve) => {
+      const sample = () => {
+        const dialog = document.querySelector('[role="dialog"]')
+        if (dialog) {
+          const box = dialog.getBoundingClientRect()
+          const overlay = dialog.previousElementSibling!
+          samples.push({ elapsed: performance.now() - start, opacity: Number(getComputedStyle(dialog).opacity), overlayOpacity: Number(getComputedStyle(overlay).opacity), x: box.x + box.width / 2, y: box.y + box.height / 2 })
+        }
+        if (performance.now() - start < 500) requestAnimationFrame(sample)
+        else resolve()
+      }
+      requestAnimationFrame(sample)
+    })
+    return samples
+  })
+  expect(frames[0]!.opacity, JSON.stringify(frames)).toBeLessThan(0.1)
+  expect(frames.some((frame) => frame.elapsed >= 100 && frame.opacity > 0 && frame.opacity < 0.9), JSON.stringify(frames)).toBe(true)
+  for (let i = 1; i < frames.length; i++) {
+    expect(frames[i]!.opacity).toBeGreaterThanOrEqual(frames[i - 1]!.opacity)
+    expect(Math.abs(frames[i]!.opacity - frames[i]!.overlayOpacity)).toBeLessThan(0.1)
+  }
+  expect(frames.at(-1)!.opacity).toBe(1)
+})
+
+for (const width of [375, 1280]) {
+  test(`new fixed expense stays centered throughout its fade-in at ${width}px`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.emulateMedia({ reducedMotion: 'no-preference' })
+    await page.goto('/fixed-expenses')
+    await page.getByRole('button', { name: 'Nova despesa fixa', exact: true }).click()
+    const frames = await page.getByRole('dialog').evaluate((element) => {
+      const animation = element.getAnimations()[0]
+      if (!animation) throw new Error('Expected an opening animation')
+      animation.pause()
+      const duration = Number(animation.effect!.getTiming().duration)
+      const samples = [0, duration / 2, duration].map((time) => {
+        animation.currentTime = time
+        const box = element.getBoundingClientRect()
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2, opacity: Number(getComputedStyle(element).opacity) }
+      })
+      animation.finish()
+      return samples
+    })
+    for (const frame of frames) {
+      expect(Math.abs(frame.x - width / 2)).toBeLessThan(1)
+      expect(Math.abs(frame.y - 450)).toBeLessThan(1)
+    }
+    expect(frames[0]!.opacity).toBe(0)
+    expect(frames[1]!.opacity).toBeGreaterThan(0)
+    expect(frames[1]!.opacity).toBeLessThan(1)
+    expect(frames[2]!.opacity).toBe(1)
+  })
+}
+
+test('new fixed expense opens centered without animation when reduced motion is requested', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await page.goto('/fixed-expenses')
+  await page.getByRole('button', { name: 'Nova despesa fixa', exact: true }).click()
+  const state = await page.getByRole('dialog').evaluate((element) => {
+    const box = element.getBoundingClientRect()
+    return { x: box.x + box.width / 2, y: box.y + box.height / 2, width: innerWidth, height: innerHeight, animations: element.getAnimations().length }
+  })
+  expect(state.animations).toBe(0)
+  expect(Math.abs(state.x - state.width / 2)).toBeLessThan(1)
+  expect(Math.abs(state.y - state.height / 2)).toBeLessThan(1)
+})
+
 for (const width of [375, 1280]) {
   test(`fixed expense CRUD, keyboard focus and local table scroll at ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 900 })
