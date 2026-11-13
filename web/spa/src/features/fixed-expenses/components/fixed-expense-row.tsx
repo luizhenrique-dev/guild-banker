@@ -14,19 +14,33 @@ import {
   Receipt,
   MoreHorizontal,
   Pencil,
-  Power,
+  Trash2,
+  Pause,
+  Play,
+  ShoppingBasket,
+  Zap,
+  Utensils,
+  Clapperboard,
+  ShoppingBag,
+  PawPrint,
+  Plane,
+  TrendingUp,
 } from 'lucide-react'
-import type { FixedExpenseResponse, FixedExpenseCategory } from '../types'
+import { CATEGORY_ICONS, type FixedExpenseResponse, type FixedExpenseCategory } from '../types'
+import { useSetFixedExpenseStatus } from '../api/use-fixed-expenses'
+import { APIError } from '@/src/shared/lib/api-client'
 
 interface Props {
   expense: FixedExpenseResponse
   onEdit: (expense: FixedExpenseResponse) => void
-  onDeactivate: (expense: FixedExpenseResponse) => void
+  onDelete: (expense: FixedExpenseResponse) => void
 }
 
 // 📌 PADRÃO: Mapa de ícones por categoria (Lucide React)
 const categoryIconMap: Record<FixedExpenseCategory, React.ReactNode> = {
+  GROCERY: <ShoppingBasket size={16} />,
   HOUSING: <Home size={16} />,
+  UTILITIES: <Zap size={16} />,
   SUBSCRIPTIONS: <Monitor size={16} />,
   INSURANCE: <HeartPulse size={16} />,
   EDUCATION: <GraduationCap size={16} />,
@@ -35,6 +49,12 @@ const categoryIconMap: Record<FixedExpenseCategory, React.ReactNode> = {
   PERSONAL: <User size={16} />,
   TAXES: <Receipt size={16} />,
   OTHER: <MoreHorizontal size={16} />,
+  FOOD_AND_DINING: <Utensils size={16} />,
+  ENTERTAINMENT: <Clapperboard size={16} />,
+  SHOPPING: <ShoppingBag size={16} />,
+  PETS: <PawPrint size={16} />,
+  TRAVEL: <Plane size={16} />,
+  INVESTMENTS: <TrendingUp size={16} />,
 }
 
 // 📌 PADRÃO: Formatação monetária BRL com Intl.NumberFormat
@@ -47,12 +67,13 @@ function formatBRL(amount: string): string {
   }).format(num)
 }
 
-export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
+export function FixedExpenseRow({ expense, onEdit, onDelete }: Props) {
   const { t } = useTranslation()
+  const statusMutation = useSetFixedExpenseStatus()
 
   const icon = categoryIconMap[expense.category] ?? <MoreHorizontal size={16} />
   const categoryLabel = t(`category.${expense.category}`)
-  const statusColor = expense.status === 'ACTIVE' ? '#05b169' : '#7c828a'
+  const statusColor = expense.status === 'ACTIVE' ? '#05b169' : expense.status === 'PAUSED' ? '#a16207' : '#7c828a'
 
   return (
     <tr className="transition-colors hover:bg-muted/50">
@@ -68,7 +89,8 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
 
       {/* Categoria badge */}
       <td className="py-4">
-        <span className="rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold text-secondary-foreground">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold text-secondary-foreground">
+          <span aria-hidden="true">{CATEGORY_ICONS[expense.category]}</span>
           {categoryLabel}
         </span>
       </td>
@@ -110,13 +132,24 @@ export function FixedExpenseRow({ expense, onEdit, onDeactivate }: Props) {
         </button>
         <button
           type="button"
-          onClick={() => onDeactivate(expense)}
-          className="text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-destructive"
-          title={t('fx.deactivate.action', { name: expense.name })}
-          aria-label={t('fx.deactivate.action', { name: expense.name })}
+          disabled={statusMutation.isPending}
+          onClick={() => statusMutation.mutate({ guildId: expense.guild_id, id: expense.id, status: expense.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE' })}
+          className="mr-2 text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-primary disabled:opacity-50"
+          title={t(expense.status === 'ACTIVE' ? 'fx.pause.action' : 'fx.resume.action', { name: expense.name })}
+          aria-label={t(expense.status === 'ACTIVE' ? 'fx.pause.action' : 'fx.resume.action', { name: expense.name })}
         >
-          <Power size={15} />
+          {expense.status === 'ACTIVE' ? <Pause size={15} /> : <Play size={15} />}
         </button>
+        <button
+          type="button"
+          onClick={() => onDelete(expense)}
+          className="text-muted-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring hover:text-destructive"
+          title={t('fx.delete.action', { name: expense.name })}
+          aria-label={t('fx.delete.action', { name: expense.name })}
+        >
+          <Trash2 size={15} />
+        </button>
+        {statusMutation.error && <p role="alert" className="mt-2 text-sm text-destructive">{t(statusMutation.error instanceof APIError && statusMutation.error.status === 403 ? 'permission.denied' : 'fx.toast.error')}</p>}
       </td>
     </tr>
   )

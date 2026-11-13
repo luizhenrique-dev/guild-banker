@@ -12,7 +12,9 @@ export type FixedExpenseResponse = components['schemas']['FixedExpenseResponse']
 
 // Constante com todas as categorias para iteração
 export const FIXED_EXPENSE_CATEGORIES: FixedExpenseCategory[] = [
+  'GROCERY',
   'HOUSING',
+  'UTILITIES',
   'SUBSCRIPTIONS',
   'INSURANCE',
   'EDUCATION',
@@ -21,17 +23,31 @@ export const FIXED_EXPENSE_CATEGORIES: FixedExpenseCategory[] = [
   'PERSONAL',
   'TAXES',
   'OTHER',
+  'FOOD_AND_DINING',
+  'ENTERTAINMENT',
+  'SHOPPING',
+  'PETS',
+  'TRAVEL',
+  'INVESTMENTS',
 ]
 
-// 📌 PADRÃO: Mapa de ícones por categoria para o componente de tabela
+// Emojis para apresentar as categorias no select nativo do formulário.
 export const CATEGORY_ICONS: Record<FixedExpenseCategory, string> = {
-  HOUSING: 'Home',
-  SUBSCRIPTIONS: 'Monitor',
-  INSURANCE: 'HeartPulse',
-  EDUCATION: 'GraduationCap',
-  TRANSPORTATION: 'Car',
-  HEALTH: 'HeartPulse',
-  PERSONAL: 'User',
-  TAXES: 'Receipt',
-  OTHER: 'MoreHorizontal',
+  GROCERY: '🛒',
+  HOUSING: '🏠',
+  UTILITIES: '💡',
+  SUBSCRIPTIONS: '🔁',
+  INSURANCE: '🛡️',
+  EDUCATION: '🎓',
+  TRANSPORTATION: '🚗',
+  HEALTH: '🩺',
+  PERSONAL: '👤',
+  TAXES: '🧾',
+  OTHER: '📦',
+  FOOD_AND_DINING: '🍽️',
+  ENTERTAINMENT: '🎬',
+  SHOPPING: '🛍️',
+  PETS: '🐾',
+  TRAVEL: '✈️',
+  INVESTMENTS: '📈',
 }

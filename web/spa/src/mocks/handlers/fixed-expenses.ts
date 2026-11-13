@@ -19,7 +19,7 @@ export const fixedExpensesHandlers = [
     const guildID = Number(params['guildID'])
     if (!mockGuildMember(request, guildID)) return forbidden()
     await delay(600)
-    return HttpResponse.json(guildExpenses(guildID).filter((expense) => expense.status === 'ACTIVE').sort((a, b) => a.due_day - b.due_day || a.name.localeCompare(b.name)))
+    return HttpResponse.json(guildExpenses(guildID).filter((expense) => expense.status === 'ACTIVE' || new URL(request.url).searchParams.get('include_paused') === 'true' && expense.status === 'PAUSED').sort((a, b) => a.due_day - b.due_day || a.name.localeCompare(b.name)))
   }),
   // operationId: createFixedExpense
   http.post(root, async ({ request, params }) => {
@@ -44,6 +44,17 @@ export const fixedExpensesHandlers = [
     const updated = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category, status: body.status ?? existing.status }
     expenses[index] = updated
     return HttpResponse.json(updated)
+  }),
+  // operationId: deleteFixedExpense
+  http.delete(root + '/:id', async ({ request, params }) => {
+    const guildID = Number(params['guildID'])
+    if (!mockGuildMember(request, guildID)) return forbidden()
+    await delay(400)
+    const expenses = guildExpenses(guildID)
+    const index = expenses.findIndex((expense) => expense.id === Number(params['id']))
+    if (index < 0) return notFound()
+    expenses.splice(index, 1)
+    return new HttpResponse(null, { status: 204 })
   }),
   // operationId: deactivateFixedExpense
   http.patch(root + '/:id/deactivate', async ({ request, params }) => {

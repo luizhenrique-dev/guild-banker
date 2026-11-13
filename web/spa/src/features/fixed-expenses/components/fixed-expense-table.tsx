@@ -11,11 +11,12 @@ import { Repeat } from 'lucide-react'
 
 interface Props {
   expenses: FixedExpenseResponse[]
+  filtered?: boolean
   onEdit: (expense: FixedExpenseResponse) => void
-  onDeactivate: (expense: FixedExpenseResponse) => void
+  onDelete: (expense: FixedExpenseResponse) => void
 }
 
-export function FixedExpenseTable({ expenses, onEdit, onDeactivate }: Props) {
+export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false }: Props) {
   const { t } = useTranslation()
 
   // Empty state
@@ -25,8 +26,8 @@ export function FixedExpenseTable({ expenses, onEdit, onDeactivate }: Props) {
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
           <Repeat size={28} className="text-muted-foreground" />
         </div>
-        <p className="text-[15px] font-medium text-secondary-foreground">{t('fx.empty')}</p>
-        <p className="text-[13px] text-muted-foreground">{t('fx.emptyHint')}</p>
+        <p className="text-[15px] font-medium text-secondary-foreground">{t(filtered ? 'fx.emptyFilter' : 'fx.empty')}</p>
+        <p className="text-[13px] text-muted-foreground">{t(filtered ? 'fx.emptyFilterHint' : 'fx.emptyHint')}</p>
       </div>
     )
   }
@@ -50,7 +51,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDeactivate }: Props) {
               key={expense.id}
               expense={expense}
               onEdit={onEdit}
-              onDeactivate={onDeactivate}
+              onDelete={onDelete}
             />
           ))}
         </tbody>

@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/src/shared/components/modal'
 import { createFixedExpenseSchema, updateFixedExpenseSchema, type UpdateFixedExpenseInput } from '../schemas/fixed-expense.schema'
-import { FIXED_EXPENSE_CATEGORIES, type FixedExpenseResponse } from '../types'
+import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, type FixedExpenseResponse } from '../types'
 import { useCreateFixedExpense, useUpdateFixedExpense } from '../api/use-fixed-expenses'
 
 interface Props {
@@ -63,40 +63,40 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
     'aria-invalid': !!errors[name],
     'aria-describedby': errors[name] ? `expense-${name}-error` : undefined,
   })
-  const error = (name: keyof FormValues) => errors[name] && <p id={`expense-${name}-error`} className="mt-1 text-[12px] text-destructive">{t(errors[name]?.message ?? '')}</p>
+  const error = (name: keyof FormValues) => errors[name] && <p id={`expense-${name}-error`} className="mt-1 text-[14px] text-destructive">{t(errors[name]?.message ?? '')}</p>
   const mutationError = isEditing ? updateMutation.error : createMutation.error
   const permissionDenied = mutationError instanceof APIError && mutationError.status === 403
-  const inputClass = 'h-auto rounded-xl px-4 py-2.5 text-[14px]'
+  const inputClass = 'h-auto rounded-xl px-4 py-2.5 text-[16px]'
   return <Modal open={open} onOpenChange={(value) => { if (!value && !isSubmitting) onClose() }} title={t(isEditing ? 'fx.modal.editTitle' : 'fx.modal.createTitle')}>
     <form onSubmit={onSubmit} noValidate className="space-y-4">
       <fieldset disabled={isSubmitting} className="space-y-4">
         <div>
-          <Label htmlFor="expense-name" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.name')}</Label>
+          <Label htmlFor="expense-name" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.modal.name')}</Label>
           <Input {...field('name')} readOnly={isEditing} {...register('name')} placeholder={t('fx.modal.namePlaceholder')} className={inputClass} />
           {error('name')}
         </div>
         <div>
-          <Label htmlFor="expense-amount" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.amount')}</Label>
+          <Label htmlFor="expense-amount" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.modal.amount')}</Label>
           <Input {...field('amount')} inputMode="decimal" {...register('amount')} placeholder={t('fx.modal.amountPlaceholder')} className={`${inputClass} font-mono`} />
           {error('amount')}
         </div>
         <div>
-          <Label htmlFor="expense-due_day" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.dueDay')}</Label>
+          <Label htmlFor="expense-due_day" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.modal.dueDay')}</Label>
           <Input {...field('due_day')} type="number" min={1} max={31} step={1} {...register('due_day', { valueAsNumber: true })} placeholder={t('fx.modal.dueDayPlaceholder')} className={inputClass} />
           {error('due_day')}
         </div>
         <div>
-          <Label htmlFor="expense-category" className="mb-1 block text-[13px] text-secondary-foreground">{t('fx.modal.category')}</Label>
-          <select {...field('category')} {...register('category')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-[14px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            {FIXED_EXPENSE_CATEGORIES.map((cat) => <option key={cat} value={cat}>{t(`category.${cat}`)}</option>)}
+          <Label htmlFor="expense-category" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.modal.category')}</Label>
+          <select {...field('category')} {...register('category')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            {FIXED_EXPENSE_CATEGORIES.map((cat) => <option key={cat} value={cat} aria-label={t(`category.${cat}`)}>{CATEGORY_ICONS[cat]} {t(`category.${cat}`)}</option>)}
           </select>
           {error('category')}
         </div>
       </fieldset>
-      {mutationError && <p role="alert" className="text-sm text-destructive">{t(permissionDenied ? 'permission.denied' : 'fx.toast.error')}</p>}
+      {mutationError && <p role="alert" className="text-base text-destructive">{t(permissionDenied ? 'permission.denied' : 'fx.toast.error')}</p>}
       <div className="flex justify-end gap-3 pt-2">
-        <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5">{t('fx.modal.cancel')}</Button>
-        <Button type="submit" disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5">{t(isSubmitting ? isEditing ? 'fx.modal.saving' : 'fx.modal.creating' : 'fx.modal.save')}</Button>
+        <Button type="button" variant="secondary" onClick={onClose} disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5 text-[16px]">{t('fx.modal.cancel')}</Button>
+        <Button type="submit" disabled={isSubmitting} className="h-auto rounded-full px-5 py-2.5 text-[16px]">{t(isSubmitting ? isEditing ? 'fx.modal.saving' : 'fx.modal.creating' : 'fx.modal.save')}</Button>
       </div>
     </form>
   </Modal>
