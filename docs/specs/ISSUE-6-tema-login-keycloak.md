@@ -100,7 +100,7 @@ Sintaxe Mermaid não validada. Rastreabilidade consolidada na matriz de verifica
 | Task | Título | Status | Validação | Depende de | Risco | Repositório |
 |---|---|---|---|---|---|---|
 | T1 | Tema de login e erros com identidade GuildBanker | ✅ concluida | impedida | nenhuma | alto | `.` |
-| T2 | Aplicação automática no setup de realms novos e existentes | ⬜ pendente | pendente | T1 | alto | `.` |
+| T2 | Aplicação automática no setup de realms novos e existentes | ✅ concluida | impedida | T1 | alto | `.` |
 
 ### T1 — Tema de login e erros com identidade GuildBanker
 - **Entrega:** Tema Login disponível na distribuição local, com login e erros personalizados, recursos locais e fallback nativo nas demais telas. Pode ser selecionado em instância isolada antes da automação de T2.
