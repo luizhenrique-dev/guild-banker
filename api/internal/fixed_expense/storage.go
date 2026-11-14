@@ -8,21 +8,23 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/lib/pq"
 	"github.com/shopspring/decimal"
 )
 
 type fixedExpenseEntity struct {
-	ID        int64           `db:"id"`
-	GuildID   int64           `db:"guild_id"`
-	Name      string          `db:"name"`
-	Amount    decimal.Decimal `db:"amount"`
-	DueDay    int             `db:"due_day"`
-	Category  string          `db:"category"`
-	Status    string          `db:"status"`
-	CreatedAt time.Time       `db:"created_at"`
-	CreatedBy string          `db:"created_by"`
-	UpdatedAt *time.Time      `db:"updated_at"`
-	UpdatedBy *string         `db:"updated_by"`
+	ResponsibleUserID *int64          `db:"responsible_user_id"`
+	ID                int64           `db:"id"`
+	GuildID           int64           `db:"guild_id"`
+	Name              string          `db:"name"`
+	Amount            decimal.Decimal `db:"amount"`
+	DueDay            int             `db:"due_day"`
+	Category          string          `db:"category"`
+	Status            string          `db:"status"`
+	CreatedAt         time.Time       `db:"created_at"`
+	CreatedBy         string          `db:"created_by"`
+	UpdatedAt         *time.Time      `db:"updated_at"`
+	UpdatedBy         *string         `db:"updated_by"`
 }
 
 type postgresStorage struct {
@@ -35,27 +37,28 @@ func NewStorage(db *sqlx.DB) Storage {
 
 func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense) error {
 	const query = `
-		INSERT INTO fixed_expense (guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by)
-		VALUES (:guild_id, :name, :amount, :due_day, :category, :status, :created_at, :created_by, :updated_at, :updated_by)
+		INSERT INTO fixed_expense (guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id)
+		VALUES (:guild_id, :name, :amount, :due_day, :category, :status, :created_at, :created_by, :updated_at, :updated_by, :responsible_user_id)
 		RETURNING id
 	`
 
 	params := map[string]any{
-		"guild_id":   fixedExpense.GuildID,
-		"name":       fixedExpense.Name,
-		"amount":     fixedExpense.Amount,
-		"due_day":    fixedExpense.DueDay,
-		"category":   string(fixedExpense.Category),
-		"status":     string(fixedExpense.Status),
-		"created_at": fixedExpense.CreatedAt,
-		"created_by": fixedExpense.CreatedBy,
-		"updated_at": fixedExpense.UpdatedAt,
-		"updated_by": fixedExpense.UpdatedBy,
+		"responsible_user_id": fixedExpense.ResponsibleUserID,
+		"guild_id":            fixedExpense.GuildID,
+		"name":                fixedExpense.Name,
+		"amount":              fixedExpense.Amount,
+		"due_day":             fixedExpense.DueDay,
+		"category":            string(fixedExpense.Category),
+		"status":              string(fixedExpense.Status),
+		"created_at":          fixedExpense.CreatedAt,
+		"created_by":          fixedExpense.CreatedBy,
+		"updated_at":          fixedExpense.UpdatedAt,
+		"updated_by":          fixedExpense.UpdatedBy,
 	}
 
 	rows, err := s.db.NamedQueryContext(ctx, query, params)
 	if err != nil {
-		return fmt.Errorf("create fixed expense: %w", err)
+		return fmt.Errorf("create fixed expense: %w", responsibleStorageError(err))
 	}
 	defer func() { _ = rows.Close() }()
 
@@ -73,7 +76,7 @@ func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense
 
 func (s *postgresStorage) GetByIDAndGuild(ctx context.Context, id, guildID int64) (*FixedExpense, error) {
 	const query = `
-		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
+		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id
 		FROM fixed_expense
 		WHERE id = $1 AND guild_id = $2
 	`
@@ -102,7 +105,7 @@ func (s *postgresStorage) listByGuild(ctx context.Context, guildID int64, includ
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	const query = `
-		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
+		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id
 		FROM fixed_expense
 		WHERE guild_id = $1 AND (status = $2 OR ($3 AND status = $4))
 		ORDER BY due_day ASC, name ASC
@@ -129,7 +132,8 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 			category = $3,
 			status = $4,
 			updated_at = $5,
-			updated_by = $6
+			updated_by = $6,
+ responsible_user_id = $9
 		WHERE id = $7 AND guild_id = $8
 	`
 
@@ -144,9 +148,10 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 		fixedExpense.UpdatedBy,
 		fixedExpense.ID,
 		fixedExpense.GuildID,
+		fixedExpense.ResponsibleUserID,
 	)
 	if err != nil {
-		return fmt.Errorf("update fixed expense: %w", err)
+		return fmt.Errorf("update fixed expense: %w", responsibleStorageError(err))
 	}
 
 	rowsAffected, err := result.RowsAffected()
@@ -179,17 +184,18 @@ func (s *postgresStorage) Delete(ctx context.Context, id, guildID int64) error {
 
 func toDomain(entity fixedExpenseEntity) *FixedExpense {
 	return &FixedExpense{
-		ID:        entity.ID,
-		GuildID:   entity.GuildID,
-		Name:      entity.Name,
-		Amount:    entity.Amount,
-		DueDay:    entity.DueDay,
-		Category:  Category(entity.Category),
-		Status:    Status(entity.Status),
-		CreatedAt: entity.CreatedAt,
-		CreatedBy: entity.CreatedBy,
-		UpdatedAt: entity.UpdatedAt,
-		UpdatedBy: entity.UpdatedBy,
+		ResponsibleUserID: entity.ResponsibleUserID,
+		ID:                entity.ID,
+		GuildID:           entity.GuildID,
+		Name:              entity.Name,
+		Amount:            entity.Amount,
+		DueDay:            entity.DueDay,
+		Category:          Category(entity.Category),
+		Status:            Status(entity.Status),
+		CreatedAt:         entity.CreatedAt,
+		CreatedBy:         entity.CreatedBy,
+		UpdatedAt:         entity.UpdatedAt,
+		UpdatedBy:         entity.UpdatedBy,
 	}
 }
 
@@ -200,4 +206,12 @@ func (s *postgresStorage) IsGuildMember(ctx context.Context, guildID, userID int
 		return false, fmt.Errorf("check guild membership: %w", err)
 	}
 	return isMember, nil
+}
+
+func responsibleStorageError(err error) error {
+	var databaseError *pq.Error
+	if errors.As(err, &databaseError) && databaseError.Code == "23503" && databaseError.Constraint == "fixed_expense_responsible_member_fk" {
+		return fmt.Errorf("%w: responsible user is not a guild member", ErrInvalidInput)
+	}
+	return err
 }

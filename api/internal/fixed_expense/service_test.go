@@ -420,3 +420,63 @@ func TestServiceGuildAuthorization(t *testing.T) {
 		}
 	}
 }
+
+type responsibleStorage struct {
+	*storageMock
+	responsibleMember bool
+	responsibleErr    error
+}
+
+func (s *responsibleStorage) IsGuildMember(_ context.Context, guildID, userID int64) (bool, error) {
+	if userID == validActor().UserID {
+		return true, nil
+	}
+	return s.responsibleMember && guildID == 1, s.responsibleErr
+}
+
+func TestResponsibleAssignmentValidation(t *testing.T) {
+	technical := errors.New("membership database unavailable")
+	for _, tt := range []struct {
+		name       string
+		id         int64
+		member     bool
+		storageErr error
+		want       error
+	}{
+		{name: "member", id: 2, member: true},
+		{name: "non member", id: 2, want: ErrInvalidInput},
+		{name: "zero", want: ErrInvalidInput},
+		{name: "negative", id: -1, want: ErrInvalidInput},
+		{name: "technical", id: 2, storageErr: technical, want: technical},
+	} {
+		for _, operation := range []string{"create", "update"} {
+			t.Run(operation+"/"+tt.name, func(t *testing.T) {
+				storage := &responsibleStorage{storageMock: &storageMock{}, responsibleMember: tt.member, responsibleErr: tt.storageErr}
+				service := NewService(storage)
+				expense := stubFixedExpense()
+				if operation == "update" {
+					storage.On("GetByIDAndGuild", mock.Anything, int64(1), int64(1)).Return(expense, nil)
+				}
+				if tt.want == nil {
+					storage.On(map[string]string{"create": "Create", "update": "Update"}[operation], mock.Anything, mock.MatchedBy(func(expense *FixedExpense) bool {
+						return expense.ResponsibleUserID != nil && *expense.ResponsibleUserID == tt.id
+					})).Return(nil)
+				}
+				var err error
+				if operation == "create" {
+					_, err = service.CreateWithResponsible(context.Background(), 1, "Rent", decimal.NewFromInt(10), 1, CategoryOther, &tt.id, validActor())
+				} else {
+					_, err = service.Update(context.Background(), 1, 1, UpdateInput{ResponsibleUserID: &tt.id, SetResponsible: true}, validActor())
+				}
+				if tt.want == nil {
+					assert.NoError(t, err)
+				} else {
+					assert.ErrorIs(t, err, tt.want)
+					storage.AssertNotCalled(t, "Create")
+					storage.AssertNotCalled(t, "Update")
+				}
+				storage.AssertExpectations(t)
+			})
+		}
+	}
+}

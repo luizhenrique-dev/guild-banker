@@ -12,7 +12,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     amount: '2500.00',
     due_day: 10,
     category: 'HOUSING',
-    status: 'ACTIVE',
+    responsible_user_id: null, status: 'ACTIVE',
   },
   {
     guild_id: 1,
@@ -21,7 +21,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     amount: '55.90',
     due_day: 15,
     category: 'SUBSCRIPTIONS',
-    status: 'ACTIVE',
+    responsible_user_id: null, status: 'ACTIVE',
   },
   {
     guild_id: 1,
@@ -30,7 +30,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     amount: '320.00',
     due_day: 5,
     category: 'INSURANCE',
-    status: 'ACTIVE',
+    responsible_user_id: null, status: 'ACTIVE',
   },
   {
     guild_id: 1,
@@ -39,7 +39,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     amount: '89.90',
     due_day: 1,
     category: 'HEALTH',
-    status: 'PAUSED',
+    responsible_user_id: null, status: 'PAUSED',
   },
   {
     guild_id: 1,
@@ -48,10 +48,10 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     amount: '180.00',
     due_day: 20,
     category: 'INSURANCE',
-    status: 'ACTIVE',
+    responsible_user_id: null, status: 'ACTIVE',
   },
 ]
 
 export const sharedFixedExpensesFixtures: FixedExpenseResponse[] = [
- { id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, category: 'OTHER', status: 'ACTIVE' },
+ { id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' },
 ]

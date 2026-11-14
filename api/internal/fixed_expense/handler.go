@@ -37,7 +37,7 @@ func (h *Handler) Create(c *gin.Context) {
 		return
 	}
 
-	fixedExpense, err := h.service.Create(c.Request.Context(), guildID, req.Name, req.Amount, req.DueDay, req.Category, actor)
+	fixedExpense, err := h.service.CreateWithResponsible(c.Request.Context(), guildID, req.Name, req.Amount, req.DueDay, req.Category, req.ResponsibleUserID, actor)
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -109,7 +109,10 @@ func (h *Handler) Update(c *gin.Context) {
 		return
 	}
 
-	fixedExpense, err := h.service.Update(c.Request.Context(), guildID, id, UpdateInput(req), actor)
+	fixedExpense, err := h.service.Update(c.Request.Context(), guildID, id, UpdateInput{
+		Amount: req.Amount, DueDay: req.DueDay, Category: req.Category, Status: req.Status,
+		ResponsibleUserID: req.ResponsibleUserID.value, SetResponsible: req.ResponsibleUserID.present,
+	}, actor)
 	if err != nil {
 		h.handleError(c, err)
 		return

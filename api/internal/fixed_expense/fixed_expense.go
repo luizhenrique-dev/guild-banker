@@ -40,13 +40,14 @@ const (
 )
 
 type FixedExpense struct {
-	ID       int64
-	GuildID  int64
-	Name     string
-	Amount   decimal.Decimal
-	DueDay   int
-	Category Category
-	Status   Status
+	ResponsibleUserID *int64
+	ID                int64
+	GuildID           int64
+	Name              string
+	Amount            decimal.Decimal
+	DueDay            int
+	Category          Category
+	Status            Status
 	audit.Entry
 }
 
@@ -100,6 +101,9 @@ func (f *FixedExpense) Deactivate(status Status, changedBy string) error {
 }
 
 func (f *FixedExpense) Validate() error {
+	if f.ResponsibleUserID != nil && *f.ResponsibleUserID <= 0 {
+		return errors.New("responsible user id must be positive")
+	}
 	if f.GuildID <= 0 {
 		return errors.New("guildID must be positive")
 	}

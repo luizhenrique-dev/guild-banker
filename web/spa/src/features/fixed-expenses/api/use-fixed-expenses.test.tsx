@@ -41,7 +41,7 @@ it('a late mutation invalidates only its origin and never toasts after unmount',
   act(() => { pending = mutation.mutateAsync({ guildId: 1, input: { name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING' } }) })
   await waitFor(() => expect(finish).toBeTypeOf('function'))
   view.rerender(<></>)
-  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING', status: 'ACTIVE' }); await pending })
+  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING', responsible_user_id: null, status: 'ACTIVE' }); await pending })
   expect(invalidate).toHaveBeenCalledExactlyOnceWith({ queryKey: ['fixed-expenses', 1, 1] })
   expect(success).not.toHaveBeenCalled()
 })

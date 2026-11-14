@@ -24,10 +24,12 @@ type Service struct {
 }
 
 type UpdateInput struct {
-	Amount   *decimal.Decimal
-	DueDay   *int
-	Category *Category
-	Status   *Status
+	ResponsibleUserID *int64
+	SetResponsible    bool
+	Amount            *decimal.Decimal
+	DueDay            *int
+	Category          *Category
+	Status            *Status
 }
 
 func NewService(storage Storage) *Service {
@@ -43,15 +45,26 @@ func (s *Service) Create(
 	category Category,
 	actor audit.Actor,
 ) (*FixedExpense, error) {
+	return s.CreateWithResponsible(ctx, guildID, name, amount, dueDay, category, nil, actor)
+}
+
+func (s *Service) CreateWithResponsible(
+	ctx context.Context, guildID int64, name string, amount decimal.Decimal,
+	dueDay int, category Category, responsibleUserID *int64, actor audit.Actor,
+) (*FixedExpense, error) {
 	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", err)
 	}
 
+	if err := s.validateResponsible(ctx, guildID, responsibleUserID); err != nil {
+		return nil, fmt.Errorf("create fixed expense: %w", err)
+	}
 	fixedExpense, err := New(guildID, name, amount, dueDay, category, actor.Email)
 	if err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", invalidInput(err))
 	}
 
+	fixedExpense.ResponsibleUserID = responsibleUserID
 	if err := s.storage.Create(ctx, fixedExpense); err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", err)
 	}
@@ -94,6 +107,13 @@ func (s *Service) Update(ctx context.Context, guildID, id int64, input UpdateInp
 	fixedExpense, err := s.storage.GetByIDAndGuild(ctx, id, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("update fixed expense: get by id: %w", err)
+	}
+
+	if input.SetResponsible {
+		if err := s.validateResponsible(ctx, guildID, input.ResponsibleUserID); err != nil {
+			return nil, fmt.Errorf("update fixed expense: %w", err)
+		}
+		fixedExpense.ResponsibleUserID = input.ResponsibleUserID
 	}
 
 	amount := fixedExpense.Amount
@@ -179,6 +199,23 @@ func (s *Service) authorizeGuildMember(ctx context.Context, guildID int64, actor
 	}
 	if !isMember {
 		return ErrRequesterIsNotMember
+	}
+	return nil
+}
+
+func (s *Service) validateResponsible(ctx context.Context, guildID int64, userID *int64) error {
+	if userID == nil {
+		return nil
+	}
+	if *userID <= 0 {
+		return fmt.Errorf("%w: responsible user id must be positive", ErrInvalidInput)
+	}
+	isMember, err := s.storage.IsGuildMember(ctx, guildID, *userID)
+	if err != nil {
+		return fmt.Errorf("check responsible membership: %w", err)
+	}
+	if !isMember {
+		return fmt.Errorf("%w: responsible user is not a guild member", ErrInvalidInput)
 	}
 	return nil
 }

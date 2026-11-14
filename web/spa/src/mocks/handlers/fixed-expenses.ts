@@ -27,7 +27,7 @@ export const fixedExpensesHandlers = [
     if (!mockGuildMember(request, guildID)) return forbidden()
     await delay(500)
     const body = await request.json() as FixedExpenseResponse
-    const expense: FixedExpenseResponse = { id: nextId++, guild_id: guildID, name: body.name, amount: body.amount, due_day: body.due_day, category: body.category, status: 'ACTIVE' }
+    const expense: FixedExpenseResponse = { id: nextId++, guild_id: guildID, name: body.name, amount: body.amount, due_day: body.due_day, category: body.category, status: 'ACTIVE', responsible_user_id: body.responsible_user_id ?? null }
     guildExpenses(guildID).push(expense)
     return HttpResponse.json(expense, { status: 201 })
   }),
@@ -41,7 +41,7 @@ export const fixedExpensesHandlers = [
     const existing = expenses[index]
     if (!existing) return notFound()
     const body = await request.json() as Partial<FixedExpenseResponse>
-    const updated = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category, status: body.status ?? existing.status }
+    const updated = { ...existing, amount: body.amount ?? existing.amount, due_day: body.due_day ?? existing.due_day, category: body.category ?? existing.category, status: body.status ?? existing.status, responsible_user_id: body.responsible_user_id === undefined ? existing.responsible_user_id : body.responsible_user_id }
     expenses[index] = updated
     return HttpResponse.json(updated)
   }),
