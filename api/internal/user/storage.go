@@ -17,6 +17,7 @@ import (
 const userEmailUniqueConstraint = "user_account_email_key"
 
 type Storage interface {
+	RecordAccess(ctx context.Context, id int64) error
 	CreateIfAbsent(ctx context.Context, u *User) (*User, error)
 	UpdateProfile(ctx context.Context, u *User) (*User, error)
 	Create(ctx context.Context, u *User) error

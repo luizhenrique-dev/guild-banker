@@ -19,6 +19,9 @@ const (
 )
 
 type Storage interface {
+	ListMembers(ctx context.Context, guildID int64) ([]Member, error)
+	ListSentInvitations(ctx context.Context, guildID int64) ([]SentInvitation, error)
+	CancelInvitation(ctx context.Context, guildID, invitationID, requesterID int64) error
 	ListInvitations(ctx context.Context, email string) ([]Invitation, error)
 	RespondInvitation(ctx context.Context, id int64, actor audit.Actor, accept bool) (*Guild, error)
 	Create(ctx context.Context, g *Guild, creatorUserID int64) error

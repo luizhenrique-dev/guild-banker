@@ -45,3 +45,11 @@ export function useUpdateFixedExpense() {
 export function useDeactivateFixedExpense() {
   return useExpenseMutation(({ id, status, guildId }: { guildId: number; id: number; status: 'PAUSED' | 'CANCELLED' }, options) => fixedExpensesApi.deactivate(id, status, options, guildId), 'fx.toast.deactivated')
 }
+
+export function useSetFixedExpenseStatus() {
+  return useExpenseMutation(({ id, status, guildId }: { guildId: number; id: number; status: 'ACTIVE' | 'PAUSED' }, options) => fixedExpensesApi.setStatus(id, status, options, guildId), 'fx.toast.statusUpdated')
+}
+
+export function useDeleteFixedExpense() {
+  return useExpenseMutation(({ id, guildId }: { guildId: number; id: number }, options) => fixedExpensesApi.delete(id, options, guildId), 'fx.toast.deleted')
+}

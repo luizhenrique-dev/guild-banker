@@ -2,19 +2,16 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { inviteSchema, inviteEmailPattern, maxInviteEmailLength, type InviteInput } from '../schemas/invite.schema'
-import { useSession } from '@/src/app/session-provider'
 import { useTranslation } from 'react-i18next'
 import { useActiveGuild } from '../use-active-guild'
-import { useInviteMember, useRemoveMember, useDemoMembers } from '../api/use-guilds'
-import { Users, Mail, Trash2, CheckCircle, XCircle } from 'lucide-react'
+import { useInviteMember } from '../api/use-guilds'
+import { GuildMembers } from './guild-members'
+import { Users, Mail, CheckCircle, XCircle } from 'lucide-react'
 
 export function GuildPageClient() {
   const { t } = useTranslation()
   const { activeGuild } = useActiveGuild()
-  const { user } = useSession()
-  const { data: mockMembers = [] } = useDemoMembers(activeGuild!.id)
   const inviteMutation = useInviteMember()
-  const removeMutation = useRemoveMember()
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<InviteInput>({ resolver: zodResolver(inviteSchema), mode: 'onChange', defaultValues: { email: '' } })
   const emailField = register('email')
   const inviteEmail = watch('email')
@@ -96,49 +93,7 @@ export function GuildPageClient() {
         {errors.email && <p id="invite-error" role="alert">{t(errors.email.message ?? 'validation.email')}</p>}
       </div>
 
-      {/* Membros */}
-      <div className="rounded-[24px] border border-[#dee1e6] bg-white">
-        <div className="border-b border-[#dee1e6] px-6 py-4">
-          <h3 className="flex items-center gap-2 text-[15px] font-semibold">
-            <Users size={18} className="text-[#0052ff]" />
-            {t('guild.demoMembers')}
-          </h3>
-        </div>
-        <div className="divide-y divide-[#eef0f3]">
-          {mockMembers.map((member) => (
-            <div key={member.id} className="flex flex-wrap gap-2 items-center justify-between px-6 py-4">
-              <div className="flex items-center gap-3">
-                <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#0052ff] text-[13px] font-semibold text-white">
-                  {member.name.split(' ').map((n) => n[0]).join('').slice(0, 2)}
-                </span>
-                <div>
-                  <p className="text-[14px] font-medium">{member.name}</p>
-                  <p className="text-[12px] text-[#7c828a]">{member.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="rounded-full bg-[#eef0f3] px-2.5 py-1 text-[11px] font-semibold text-[#5b616e]">
-                  {member.role}
-                </span>
-                {member.id !== user?.id && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      activeGuild &&
-                      removeMutation.mutate({ guildId: activeGuild.id, userId: member.id })
-                    }
-                    className="text-[#7c828a] transition-colors hover:text-[#cf202f]"
-                    aria-label={t('guild.remove') + ' ' + member.name} disabled={removeMutation.isPending}
-                    title={t('guild.remove')}
-                  >
-                    <Trash2 size={15} />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      <GuildMembers key={activeGuild!.id} guildID={activeGuild!.id} />
     </main>
   )
 }

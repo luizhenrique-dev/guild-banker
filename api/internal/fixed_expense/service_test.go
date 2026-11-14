@@ -21,6 +21,15 @@ type storageMock struct {
 	membershipUserID  int64
 }
 
+func (m *storageMock) ListByGuild(ctx context.Context, guildID int64) ([]*FixedExpense, error) {
+	args := m.Called(ctx, guildID)
+	return args.Get(0).([]*FixedExpense), args.Error(1)
+}
+
+func (m *storageMock) Delete(ctx context.Context, id, guildID int64) error {
+	return m.Called(ctx, id, guildID).Error(0)
+}
+
 func (m *storageMock) Create(ctx context.Context, fixedExpense *FixedExpense) error {
 	args := m.Called(ctx, fixedExpense)
 	return args.Error(0)

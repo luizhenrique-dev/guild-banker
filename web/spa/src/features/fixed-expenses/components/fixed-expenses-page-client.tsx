@@ -11,23 +11,26 @@ import { Button } from '@/components/ui/button'
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog'
 import { useTranslation } from 'react-i18next'
 import { Plus, Info } from 'lucide-react'
-import { useFixedExpenses, useDeactivateFixedExpense } from '../api/use-fixed-expenses'
+import { useFixedExpenses, useDeleteFixedExpense } from '../api/use-fixed-expenses'
 import { FixedExpenseTable } from './fixed-expense-table'
 import { FixedExpenseModal } from './fixed-expense-modal'
 import { TableSkeleton } from '@/src/shared/components/loading-skeleton'
 import { ErrorBoundary } from '@/src/shared/components/error-boundary'
-import type { FixedExpenseResponse } from '../types'
+import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, type FixedExpenseCategory, type FixedExpenseResponse } from '../types'
+import { monthlyTotal } from '../monthly-total'
 
 export function FixedExpensesPageClient() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { activeGuild } = useActiveGuild()
   const { data: expenses, isLoading, error, refetch, isFetching } = useFixedExpenses()
-  const deactivateMutation = useDeactivateFixedExpense()
+  const deleteMutation = useDeleteFixedExpense()
+  const [category, setCategory] = useState<FixedExpenseCategory | ''>('')
+  const filteredExpenses = (expenses ?? []).filter((expense) => !category || expense.category === category)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<FixedExpenseResponse | null>(null)
 
-  const [deactivating, setDeactivating] = useState<FixedExpenseResponse | null>(null)
+  const [deleting, setDeleting] = useState<FixedExpenseResponse | null>(null)
   const [saved, setSaved] = useState(false)
   const returnFocus = useRef<HTMLElement | null>(null)
   const newButton = useRef<HTMLButtonElement | null>(null)
@@ -37,10 +40,10 @@ export function FixedExpensesPageClient() {
     setModalOpen(true)
   }
 
-  const handleDeactivate = (expense: FixedExpenseResponse) => {
+  const handleDelete = (expense: FixedExpenseResponse) => {
     returnFocus.current = document.activeElement as HTMLElement
-    deactivateMutation.reset()
-    setDeactivating(expense)
+    deleteMutation.reset()
+    setDeleting(expense)
   }
 
   const handleCloseModal = () => {
@@ -83,6 +86,21 @@ export function FixedExpensesPageClient() {
           {t('fx.info')}
         </div>
 
+        <section aria-label={t('fx.summary')} className="mb-6 flex flex-wrap items-end justify-between gap-5 rounded-3xl border border-border bg-card p-6">
+          <div>
+            <h2 className="text-sm text-secondary-foreground">{t('fx.expectedMonth', { month: new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(new Date()) })}</h2>
+            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
+            <p className="mt-2 text-sm text-muted-foreground">{t('fx.totalHint')}</p>
+          </div>
+          <div className="w-full sm:w-auto sm:max-w-sm">
+            <label htmlFor="fixed-expense-category-filter" className="mb-2 block text-sm font-medium">{t('fx.filterCategory')}</label>
+            <select id="fixed-expense-category-filter" value={category} onChange={(event) => setCategory(event.target.value as FixedExpenseCategory | '')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base">
+              <option value="">{t('fx.allCategories')}</option>
+              {FIXED_EXPENSE_CATEGORIES.map((value) => <option key={value} value={value} aria-label={t(`category.${value}`)}>{CATEGORY_ICONS[value]} {t(`category.${value}`)}</option>)}
+            </select>
+          </div>
+        </section>
+
         {/* Tabela */}
         {isLoading ? (
           <div role="status" aria-label={t('common.loading')}><TableSkeleton rows={3} /></div>
@@ -93,9 +111,10 @@ export function FixedExpensesPageClient() {
           </div>
         ) : (
           <FixedExpenseTable
-            expenses={expenses ?? []}
+            expenses={filteredExpenses}
+            filtered={!!category}
             onEdit={handleEdit}
-            onDeactivate={handleDeactivate}
+            onDelete={handleDelete}
           />
         )}
 
@@ -106,24 +125,24 @@ export function FixedExpensesPageClient() {
           onSaved={() => setSaved(true)}
           editingExpense={editingExpense}
         />
-        <AlertDialog open={!!deactivating} onOpenChange={(open) => { if (!open && !deactivateMutation.isPending) setDeactivating(null) }}>
+        <AlertDialog open={!!deleting} onOpenChange={(open) => { if (!open && !deleteMutation.isPending) setDeleting(null) }}>
           <AlertDialogContent className="w-[calc(100%-2rem)] rounded-2xl" onCloseAutoFocus={(event) => {
             event.preventDefault()
             const target = returnFocus.current
-            if (deactivateMutation.isSuccess) newButton.current?.focus()
+            if (deleteMutation.isSuccess) newButton.current?.focus()
             else if (target?.isConnected) target.focus()
             else newButton.current?.focus()
           }}>
-            <AlertDialogTitle>{t('fx.deactivate.title')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('fx.deactivate.message', { name: deactivating?.name })}</AlertDialogDescription>
-            {deactivateMutation.error && <p role="alert" className="text-sm text-destructive">{t(deactivateMutation.error instanceof APIError && deactivateMutation.error.status === 403 ? 'permission.denied' : 'fx.toast.error')}</p>}
+            <AlertDialogTitle>{t('fx.delete.title')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('fx.delete.message', { name: deleting?.name })}</AlertDialogDescription>
+            {deleteMutation.error && <p role="alert" className="text-sm text-destructive">{t(deleteMutation.error instanceof APIError && deleteMutation.error.status === 403 ? 'permission.denied' : 'fx.toast.error')}</p>}
             <AlertDialogFooter>
-              <AlertDialogCancel disabled={deactivateMutation.isPending}>{t('fx.modal.cancel')}</AlertDialogCancel>
-              <AlertDialogAction disabled={deactivateMutation.isPending} onClick={(event) => {
+              <AlertDialogCancel disabled={deleteMutation.isPending}>{t('fx.modal.cancel')}</AlertDialogCancel>
+              <AlertDialogAction disabled={deleteMutation.isPending} onClick={(event) => {
                 event.preventDefault()
-                if (!activeGuild || !deactivating || deactivateMutation.isPending) return
-                deactivateMutation.mutate({ guildId: activeGuild.id, id: deactivating.id, status: 'PAUSED' }, { onSuccess: () => { setSaved(true); setDeactivating(null) } })
-              }}>{t('fx.deactivate.confirm')}</AlertDialogAction>
+                if (!activeGuild || !deleting || deleteMutation.isPending) return
+                deleteMutation.mutate({ guildId: activeGuild.id, id: deleting.id }, { onSuccess: () => { setSaved(true); setDeleting(null) } })
+              }}>{t('fx.delete.confirm')}</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

@@ -10,7 +10,7 @@ if (!process.env.E2E_PASSWORD && !process.env.KC_TEST_USER_PASSWORD) {
 
 export default defineConfig({
   testDir: './e2e',
-  testMatch: '**/auth.spec.ts',
+  testMatch: ['**/auth.spec.ts', '**/keycloak-theme.spec.ts'],
   workers: 1,
   timeout: 45000,
   // Authentication artifacts must never record passwords, codes or tokens.

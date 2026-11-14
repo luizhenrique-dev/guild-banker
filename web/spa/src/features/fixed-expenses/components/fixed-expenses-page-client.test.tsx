@@ -26,6 +26,40 @@ async function fill() {
   await user.type(dialog.getByRole('textbox', { name: 'Valor (R$)' }), '123,45')
   return { user, dialog }
 }
+
+it('filters the monthly forecast and keeps paused expenses visible for manual resumption', async () => {
+  page()
+  const total = await screen.findByRole('status', { name: 'Total previsto no mês' })
+  await waitFor(() => expect(total).toHaveTextContent('3.055,90'))
+  const filter = screen.getByRole('combobox', { name: 'Filtrar por categoria' })
+  await userEvent.selectOptions(filter, 'INSURANCE')
+  expect(total).toHaveTextContent('500,00')
+  expect(screen.queryByRole('row', { name: /Aluguel/ })).toBeNull()
+  await userEvent.selectOptions(filter, 'HEALTH')
+  expect(total).toHaveTextContent('0,00')
+  let row = await screen.findByRole('row', { name: /Academia/ })
+  expect(within(row).getByText('Pausada')).toBeVisible()
+  expect(within(row).getByText('Saúde').querySelector('[aria-hidden="true"]')).toHaveTextContent('🩺')
+  await userEvent.click(within(row).getByRole('button', { name: 'Reativar Academia' }))
+  await waitFor(() => expect(total).toHaveTextContent('89,90'), { timeout: 3000 })
+  row = screen.getByRole('row', { name: /Academia/ })
+  await userEvent.click(within(row).getByRole('button', { name: 'Pausar Academia' }))
+  await waitFor(() => expect(total).toHaveTextContent('0,00'), { timeout: 3000 })
+  expect(within(screen.getByRole('row', { name: /Academia/ })).getByText('Pausada')).toBeVisible()
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir Academia' }))
+  await userEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: /^Excluir$/ }))
+  expect(await screen.findByText('Nenhuma despesa nesta categoria.', {}, { timeout: 3000 })).toBeVisible()
+}, 10000)
+
+it('preserves the active forecast when pausing is forbidden', async () => {
+  server.use(http.patch('*/api/v1/guilds/:guildID/fixed-expenses/:id', () => new HttpResponse(null, { status: 403 })))
+  page()
+  const row = await screen.findByRole('row', { name: /Aluguel/ })
+  await userEvent.click(within(row).getByRole('button', { name: 'Pausar Aluguel' }))
+  expect(await within(row).findByRole('alert')).toHaveTextContent('Você não tem permissão')
+  expect(within(row).getByText('Ativa')).toBeVisible()
+  expect(screen.getByRole('status', { name: 'Total previsto no mês' })).toHaveTextContent('3.055,90')
+})
 it('shows loading, a GET error with manual retry and an empty list', async () => {
   let finish!: (rows: FixedExpenseResponse[]) => void
   const list = vi.spyOn(fixedExpensesApi, 'list').mockImplementationOnce(() => new Promise((resolve) => { finish = resolve })).mockRejectedValueOnce(new Error('offline')).mockResolvedValue([])
@@ -107,11 +141,11 @@ it('replaces cached personal expenses with access denied after forbidden refetch
 })
 
 
-it.each(['create', 'edit', 'deactivate'])('preserves local state on forbidden expense %s', async (action) => {
+it.each(['create', 'edit', 'delete'])('preserves local state on forbidden expense %s', async (action) => {
   const success = vi.spyOn(toast, 'success')
   let calls = 0
   const denied = () => { calls++; return HttpResponse.json({ error: 'private cause' }, { status: 403 }) }
-  server.use(http.post('*/api/v1/guilds/:guildID/fixed-expenses', denied), http.patch('*/api/v1/guilds/:guildID/fixed-expenses/:id', denied), http.patch('*/api/v1/guilds/:guildID/fixed-expenses/:id/deactivate', denied))
+  server.use(http.post('*/api/v1/guilds/:guildID/fixed-expenses', denied), http.patch('*/api/v1/guilds/:guildID/fixed-expenses/:id', denied), http.delete('*/api/v1/guilds/:guildID/fixed-expenses/:id', denied))
   page()
   const user = userEvent.setup()
   if (action === 'create') {
@@ -123,7 +157,7 @@ it.each(['create', 'edit', 'deactivate'])('preserves local state on forbidden ex
     expect(dialog.getByRole('alert')).toHaveTextContent('You do not have permission to perform this action.')
   } else {
     await screen.findByRole('row', { name: /Aluguel/ })
-    await user.click(screen.getByRole('button', { name: `${action === 'edit' ? 'Editar' : 'Desativar'} Aluguel` }))
+    await user.click(screen.getByRole('button', { name: `${action === 'edit' ? 'Editar' : 'Excluir'} Aluguel` }))
     const dialog = within(screen.getByRole(action === 'edit' ? 'dialog' : 'alertdialog'))
     if (action === 'edit') {
       const amount = dialog.getByRole('textbox', { name: 'Valor (R$)' })
@@ -132,7 +166,7 @@ it.each(['create', 'edit', 'deactivate'])('preserves local state on forbidden ex
       expect(await dialog.findByRole('alert')).toHaveTextContent('Você não tem permissão para realizar esta ação.')
       expect(amount).toHaveValue('321,00')
     } else {
-      await user.click(dialog.getByRole('button', { name: 'Desativar' }))
+      await user.click(dialog.getByRole('button', { name: 'Excluir' }))
       expect(await dialog.findByRole('alert')).toHaveTextContent('Você não tem permissão para realizar esta ação.')
       expect(screen.getByRole('alertdialog')).toBeVisible()
     }
@@ -167,12 +201,12 @@ it('a late create from G1 leaves the new G2 draft intact and invalidates only G1
   expect(invalidate).toHaveBeenCalledExactlyOnceWith({ queryKey: ['fixed-expenses', 1, 1] })
   expect(success).not.toHaveBeenCalled()
 })
-it('changing guild closes the previous deactivation confirmation', async () => {
+it('changing guild closes the previous deletion confirmation', async () => {
   let navigate!: ReturnType<typeof useNavigate>
   function Navigation() { navigate = useNavigate(); return null }
   render(<MemoryRouter initialEntries={['/fixed-expenses?guild=1']}><Navigation /><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.test' }} demo /></MemoryRouter>)
   await screen.findByRole('row', { name: /Aluguel/ })
-  await userEvent.click(screen.getByRole('button', { name: 'Desativar Aluguel' }))
+  await userEvent.click(screen.getByRole('button', { name: 'Excluir Aluguel' }))
   expect(screen.getByRole('alertdialog')).toBeVisible()
   act(() => navigate('/fixed-expenses?guild=2'))
   expect(screen.queryByRole('alertdialog')).toBeNull()

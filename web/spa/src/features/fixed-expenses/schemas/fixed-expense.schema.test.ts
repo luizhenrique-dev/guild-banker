@@ -2,6 +2,10 @@ import { expect, it } from 'vitest'
 import { createFixedExpenseSchema, updateFixedExpenseSchema } from './fixed-expense.schema'
 
 const valid = { name: ' Internet ', amount: '123,45', due_day: 1, category: 'OTHER' }
+it.each(['GROCERY', 'UTILITIES', 'FOOD_AND_DINING', 'ENTERTAINMENT', 'SHOPPING', 'PETS', 'TRAVEL', 'INVESTMENTS', 'PERSONAL'])('accepts category %s for both creation and editing', (category) => {
+  expect(createFixedExpenseSchema.parse({ ...valid, category }).category).toBe(category)
+  expect(updateFixedExpenseSchema.parse({ ...valid, category }).category).toBe(category)
+})
 it.each(['0', '0.00', '00,00', '-1', '1.234', '1,234', '', '1e2', '1.2.3'])('rejects invalid or nonpositive amount %s', (amount) => {
   expect(createFixedExpenseSchema.safeParse({ ...valid, amount }).success).toBe(false)
 })

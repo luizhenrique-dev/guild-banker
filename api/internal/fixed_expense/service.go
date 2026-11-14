@@ -10,6 +10,8 @@ import (
 )
 
 type Storage interface {
+	Delete(ctx context.Context, id, guildID int64) error
+	ListByGuild(ctx context.Context, guildID int64) ([]*FixedExpense, error)
 	IsGuildMember(ctx context.Context, guildID, userID int64) (bool, error)
 	Create(ctx context.Context, fixedExpense *FixedExpense) error
 	GetByIDAndGuild(ctx context.Context, id, guildID int64) (*FixedExpense, error)
@@ -68,6 +70,17 @@ func (s *Service) ListActiveByGuild(ctx context.Context, guildID int64, actor au
 	}
 
 	return fixedExpenses, nil
+}
+
+func (s *Service) ListByGuild(ctx context.Context, guildID int64, actor audit.Actor) ([]*FixedExpense, error) {
+	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
+		return nil, fmt.Errorf("list fixed expenses: %w", err)
+	}
+	expenses, err := s.storage.ListByGuild(ctx, guildID)
+	if err != nil {
+		return nil, fmt.Errorf("list fixed expenses: %w", err)
+	}
+	return expenses, nil
 }
 
 func (s *Service) Update(ctx context.Context, guildID, id int64, input UpdateInput, actor audit.Actor) (*FixedExpense, error) {
@@ -135,6 +148,19 @@ func (s *Service) Deactivate(ctx context.Context, guildID, id int64, status Stat
 		return fmt.Errorf("deactivate fixed expense: persist update: %w", err)
 	}
 
+	return nil
+}
+
+func (s *Service) Delete(ctx context.Context, guildID, id int64, actor audit.Actor) error {
+	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
+		return fmt.Errorf("delete fixed expense: %w", err)
+	}
+	if id <= 0 {
+		return fmt.Errorf("%w: id must be positive", ErrInvalidInput)
+	}
+	if err := s.storage.Delete(ctx, id, guildID); err != nil {
+		return fmt.Errorf("delete fixed expense: %w", err)
+	}
 	return nil
 }
 

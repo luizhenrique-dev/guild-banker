@@ -10,6 +10,8 @@ services:
       KC_TEST_USER_PASSWORD: ${KC_TEST_USER_PASSWORD:?Set KC_TEST_USER_PASSWORD in infra/.env or your environment}
     volumes:
       - ./keycloak/import:/opt/keycloak/data/import:ro
+      - ./keycloak/themes/guild-banker:/opt/keycloak/themes/guild-banker:ro
+      - ./keycloak/apply-login-theme.sh:/opt/keycloak/setup/apply-login-theme.sh:ro
     healthcheck:
       test:
         - CMD-SHELL

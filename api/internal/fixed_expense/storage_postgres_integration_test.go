@@ -76,6 +76,65 @@ func TestFixedExpenseGuildSchema(t *testing.T) {
 	}
 }
 
+func TestFixedExpensePauseResumeAndDeletePostgres(t *testing.T) {
+	db := postgresTestDB(t)
+	_, err := db.Exec(`INSERT INTO user_account(id,external_id,name,email,created_by) VALUES (1,'owner','Owner','owner@example.test','fixture'),(2,'other','Other','other@example.test','fixture');
+	 INSERT INTO guild(id,name,display_name,created_by) VALUES (1,'g1','G1','fixture'),(2,'g2','G2','fixture');
+	 INSERT INTO guild_member(guild_id,user_id,invited_by) VALUES (1,1,1),(2,1,1),(2,2,2);
+	 INSERT INTO fixed_expense(id,guild_id,name,amount,due_day,category,status,created_by) VALUES
+	 (1,1,'Grocery',10.10,1,'GROCERY','ACTIVE','fixture'),
+	 (2,1,'Internet',20.20,2,'UTILITIES','PAUSED','fixture'),
+	 (3,1,'Old',30,3,'OTHER','CANCELLED','fixture'),
+	 (4,2,'Other guild',99,1,'OTHER','ACTIVE','fixture')`)
+	require.NoError(t, err)
+	handler := NewHandler(NewService(NewStorage(db)))
+	router := gin.New()
+	router.GET("/guilds/:guildID/fixed-expenses", handler.ListActiveByGuild)
+	router.PATCH("/guilds/:guildID/fixed-expenses/:id", handler.Update)
+	router.DELETE("/guilds/:guildID/fixed-expenses/:id", handler.Delete)
+	request := func(userID int64, method, path, body string, status int) *httptest.ResponseRecorder {
+		t.Helper()
+		req := httptest.NewRequest(method, path, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		if userID != 0 {
+			req = req.WithContext(auth.WithPrincipal(req.Context(), auth.Principal{Actor: audit.Actor{UserID: userID, Email: "fixture@example.test"}}))
+		}
+		out := httptest.NewRecorder()
+		router.ServeHTTP(out, req)
+		require.Equal(t, status, out.Code, out.Body.String())
+		return out
+	}
+	const listPath = "/guilds/1/fixed-expenses"
+	var expenses []fixedExpenseResponse
+	require.NoError(t, json.Unmarshal(request(1, "GET", listPath, "", 200).Body.Bytes(), &expenses))
+	require.Len(t, expenses, 1)
+	require.EqualValues(t, 1, expenses[0].ID)
+	require.NoError(t, json.Unmarshal(request(1, "GET", listPath+"?include_paused=true", "", 200).Body.Bytes(), &expenses))
+	require.Len(t, expenses, 2)
+	require.Equal(t, StatusPaused, expenses[1].Status)
+	request(1, "GET", listPath+"?include_paused=invalid", "", 400)
+	request(2, "GET", listPath+"?include_paused=true", "", 403)
+	request(0, "DELETE", listPath+"/1", "", 401)
+	request(2, "DELETE", listPath+"/1", "", 403)
+	request(1, "DELETE", "/guilds/2/fixed-expenses/1", "", 404)
+	request(1, "PATCH", listPath+"/1", `{"status":"PAUSED"}`, 200)
+	request(1, "PATCH", listPath+"/2", `{"status":"ACTIVE"}`, 200)
+	require.NoError(t, json.Unmarshal(request(1, "GET", listPath, "", 200).Body.Bytes(), &expenses))
+	require.Len(t, expenses, 1)
+	require.EqualValues(t, 2, expenses[0].ID)
+	// A fresh read preserves manual pause; the expense stays available for resumption.
+	require.NoError(t, json.Unmarshal(request(1, "GET", listPath+"?include_paused=true", "", 200).Body.Bytes(), &expenses))
+	require.Len(t, expenses, 2)
+	require.Equal(t, StatusPaused, expenses[0].Status)
+	request(1, "DELETE", listPath+"/1", "", 204)
+	request(1, "DELETE", listPath+"/1", "", 404)
+	var remaining int
+	require.NoError(t, db.Get(&remaining, "SELECT count(*) FROM fixed_expense WHERE id=1"))
+	require.Zero(t, remaining)
+	require.NoError(t, db.Get(&remaining, "SELECT count(*) FROM fixed_expense WHERE guild_id=2"))
+	require.Equal(t, 1, remaining)
+}
+
 func TestFixedExpenseSharingPostgres(t *testing.T) {
 	db := postgresTestDB(t)
 	ctx := context.Background()

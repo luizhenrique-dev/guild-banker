@@ -79,6 +79,7 @@ func TestAPIPrefixProtection(t *testing.T) {
 		"GET /api/v1/guilds/:guildID/fixed-expenses",
 		"POST /api/v1/guilds/:guildID/fixed-expenses",
 		"PATCH /api/v1/guilds/:guildID/fixed-expenses/:id",
+		"DELETE /api/v1/guilds/:guildID/fixed-expenses/:id",
 		"PATCH /api/v1/guilds/:guildID/fixed-expenses/:id/deactivate",
 	}, routes)
 

@@ -72,6 +72,7 @@ keycloak/validate: ## Validate the separate Keycloak JSON definitions without wr
 
 keycloak/up: keycloak/prepare ## Start Postgres and Keycloak with initial realm import
 	cd $(INFRA_DIR) && $(DOCKER_COMPOSE) -f docker-compose.yml -f keycloak/docker-compose.import.yml up -d --wait --wait-timeout 180 postgres keycloak
+	cd $(INFRA_DIR) && $(DOCKER_COMPOSE) -f docker-compose.yml -f keycloak/docker-compose.import.yml exec -T keycloak bash /opt/keycloak/setup/apply-login-theme.sh
 
 # ==============================================================================
 # API (Go)

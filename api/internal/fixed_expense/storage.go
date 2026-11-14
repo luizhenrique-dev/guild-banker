@@ -91,16 +91,26 @@ func (s *postgresStorage) GetByIDAndGuild(ctx context.Context, id, guildID int64
 }
 
 func (s *postgresStorage) ListActiveByGuild(ctx context.Context, guildID int64) ([]*FixedExpense, error) {
+	return s.listByGuild(ctx, guildID, false)
+}
+
+func (s *postgresStorage) ListByGuild(ctx context.Context, guildID int64) ([]*FixedExpense, error) {
+	return s.listByGuild(ctx, guildID, true)
+}
+
+func (s *postgresStorage) listByGuild(ctx context.Context, guildID int64, includePaused bool) ([]*FixedExpense, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
 	const query = `
 		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by
 		FROM fixed_expense
-		WHERE guild_id = $1 AND status = $2
+		WHERE guild_id = $1 AND (status = $2 OR ($3 AND status = $4))
 		ORDER BY due_day ASC, name ASC
 	`
 
 	entities := make([]fixedExpenseEntity, 0)
-	if err := s.db.SelectContext(ctx, &entities, query, guildID, StatusActive); err != nil {
-		return nil, fmt.Errorf("list active fixed expenses by guild: %w", err)
+	if err := s.db.SelectContext(ctx, &entities, query, guildID, StatusActive, includePaused, StatusPaused); err != nil {
+		return nil, fmt.Errorf("list fixed expenses by guild: %w", err)
 	}
 
 	fixedExpenses := make([]*FixedExpense, 0, len(entities))
@@ -147,6 +157,23 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 		return ErrFixedExpenseNotFound
 	}
 
+	return nil
+}
+
+func (s *postgresStorage) Delete(ctx context.Context, id, guildID int64) error {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	result, err := s.db.ExecContext(ctx, "DELETE FROM fixed_expense WHERE id=$1 AND guild_id=$2", id, guildID)
+	if err != nil {
+		return fmt.Errorf("delete fixed expense: %w", err)
+	}
+	count, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("count deleted fixed expenses: %w", err)
+	}
+	if count == 0 {
+		return ErrFixedExpenseNotFound
+	}
 	return nil
 }
 

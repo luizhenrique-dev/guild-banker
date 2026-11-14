@@ -103,10 +103,45 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** Lista os convites pendentes enviados pela guild; requer membership. */
+        get: operations["listSentGuildInvitations"];
         put?: never;
         /** Convida um usuário para o guild pelo e-mail */
         post: operations["inviteGuildMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guilds/{id}/invites/{inviteID}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Cancela um convite pendente, preservando histórico; qualquer membro pode cancelar. */
+        delete: operations["cancelGuildInvitation"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/guilds/{id}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Lista todos os membros, incluindo o requisitante; requer membership. */
+        get: operations["listGuildMembers"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -212,7 +247,8 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /** Exclui permanentemente uma despesa fixa da guild; requer membership. */
+        delete: operations["deleteFixedExpense"];
         options?: never;
         head?: never;
         /** Atualiza uma despesa fixa */
@@ -425,8 +461,42 @@ export interface components {
                 email: string;
             };
         };
-        /** @enum {string} */
-        FixedExpenseCategory: "HOUSING" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER";
+        MemberResponse: {
+            /** Format: int64 */
+            id: number;
+            /** @description Nome completo cadastrado. */
+            name: string;
+            /** Format: email */
+            email: string;
+            /**
+             * Format: date-time
+             * @description Última requisição autenticada à API; null se ainda não registrado.
+             */
+            last_access_at: string | null;
+            /**
+             * Format: date-time
+             * @description Data de criação do vínculo com a guild, no aceite ou na criação da guild.
+             */
+            member_since: string;
+        };
+        SentInvitationResponse: {
+            /** Format: int64 */
+            id: number;
+            /** Format: email */
+            email: string;
+            invited_by: {
+                name: string;
+                /** Format: email */
+                email: string;
+            };
+            /** Format: date-time */
+            created_at: string;
+        };
+        /**
+         * @description Categorias de despesas fixas. PERSONAL representa cuidados pessoais e preserva compatibilidade com registros existentes.
+         * @enum {string}
+         */
+        FixedExpenseCategory: "GROCERY" | "HOUSING" | "UTILITIES" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER" | "FOOD_AND_DINING" | "ENTERTAINMENT" | "SHOPPING" | "PETS" | "TRAVEL" | "INVESTMENTS";
         /** @enum {string} */
         FixedExpenseStatus: "ACTIVE" | "PAUSED" | "CANCELLED";
         CreateFixedExpenseRequest: {
@@ -857,6 +927,33 @@ export interface operations {
             500: components["responses"]["InternalServerError"];
         };
     };
+    listSentGuildInvitations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do guild. */
+                id: components["parameters"]["GuildIDPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista ordenada por data e identificador. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SentInvitationResponse"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
     inviteGuildMember: {
         parameters: {
             query?: never;
@@ -901,6 +998,69 @@ export interface operations {
                     "application/json": components["schemas"]["ErrorResponse"];
                 };
             };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    cancelGuildInvitation: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do guild. */
+                id: components["parameters"]["GuildIDPath"];
+                inviteID: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Convite cancelado; não pode mais ser aceito. Novo convite é permitido. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
+            /** @description Convite já respondido ou cancelado; code invitation_already_answered. */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    listGuildMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID do guild. */
+                id: components["parameters"]["GuildIDPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Lista ordenada por data e identificador. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemberResponse"][];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             500: components["responses"]["InternalServerError"];
         };
     };
@@ -1035,7 +1195,10 @@ export interface operations {
     };
     listActiveFixedExpenses: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description Inclui despesas pausadas; canceladas permanecem excluídas. O padrão preserva a listagem somente de ativas. */
+                include_paused?: boolean;
+            };
             header?: never;
             path: {
                 /** @description ID do guild. */
@@ -1088,6 +1251,32 @@ export interface operations {
             400: components["responses"]["BadRequest"];
             401: components["responses"]["Unauthorized"];
             403: components["responses"]["Forbidden"];
+            500: components["responses"]["InternalServerError"];
+        };
+    };
+    deleteFixedExpense: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description ID da despesa fixa. */
+                id: components["parameters"]["FixedExpenseIDPath"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Despesa excluída. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
             500: components["responses"]["InternalServerError"];
         };
     };

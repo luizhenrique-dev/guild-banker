@@ -1,0 +1,126 @@
+@font-face { font-family: Inter; font-style: normal; font-weight: 400; font-display: swap; src: url('../fonts/inter-latin-400-normal.woff2') format('woff2'); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 500; font-display: swap; src: url('../fonts/inter-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: Inter; font-style: normal; font-weight: 600; font-display: swap; src: url('../fonts/inter-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url('../fonts/jetbrains-mono-latin-500-normal.woff2') format('woff2'); }
+
+/* Only login and error pages use the product layout; other pages inherit Keycloak. */
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) {
+    --guild-primary: #0052ff;
+    --guild-primary-active: #003ecc;
+    --guild-canvas: #fff;
+    --guild-ink: #0a0b0d;
+    --guild-body: #5b616e;
+    --guild-border: #dee1e6;
+    --guild-soft: #eef0f3;
+    --guild-dark-card: #16181c;
+    --guild-on-dark: #a8acb3;
+    --guild-error: #b91c1c;
+    background: var(--guild-canvas);
+    color: var(--guild-ink);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 16px;
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) .login-pf-page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: 112px calc(50% + 64px) 64px 64px;
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) #kc-header {
+    position: absolute;
+    top: 40px;
+    left: 64px;
+    width: auto;
+    margin: 0;
+    padding: 0;
+    color: var(--guild-ink);
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) #kc-header-wrapper {
+    color: var(--guild-ink);
+    padding: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -.5px;
+    text-transform: none;
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) .card-pf {
+    width: 100%;
+    max-width: 420px;
+    margin: auto;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: var(--guild-canvas);
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) #kc-page-title {
+    font-size: clamp(32px, 3.6vw, 52px);
+    line-height: 1.1;
+    font-weight: 400;
+    letter-spacing: -1.5px;
+    text-align: left;
+    overflow-wrap: anywhere;
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) .login-pf-header { margin-bottom: 32px; }
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) #kc-content-wrapper { margin: 0; }
+body[data-page-id="login-login"] .form-group { margin-bottom: 24px; }
+body[data-page-id="login-login"] label { font-size: 14px; font-weight: 500; margin-bottom: 8px; }
+body[data-page-id="login-login"] .pf-c-form-control {
+    height: 52px;
+    border: 1px solid var(--guild-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font: inherit;
+    color: var(--guild-ink);
+    background: var(--guild-canvas);
+}
+body[data-page-id="login-login"] .pf-c-input-group { gap: 8px; }
+body[data-page-id="login-login"] [data-password-toggle] {
+    border: 1px solid var(--guild-border);
+    border-radius: 12px;
+    background: var(--guild-soft);
+    color: var(--guild-ink);
+}
+body[data-page-id="login-login"] #kc-login {
+    height: 52px;
+    padding: 12px 24px;
+    border: 0;
+    border-radius: 100px;
+    background: var(--guild-primary);
+    color: var(--guild-canvas);
+    font: 600 16px Inter, system-ui, sans-serif;
+}
+body[data-page-id="login-login"] #kc-login:hover { background: var(--guild-primary-active); }
+body[data-page-id="login-login"] #kc-login:disabled { opacity: .6; cursor: wait; }
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) :is(a, button, input):focus-visible {
+    outline: 3px solid var(--guild-primary);
+    outline-offset: 3px;
+}
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) a { color: var(--guild-primary); }
+body[data-page-id="login-login"] :is(#input-error, .alert-error) { color: var(--guild-error); }
+body[data-page-id="login-login"] [aria-invalid="true"] { border-color: var(--guild-error); }
+body[data-page-id="login-error"] #kc-error-message { overflow-wrap: anywhere; color: var(--guild-body); }
+.guild-hero {
+    position: absolute;
+    inset: 0 0 0 50%;
+    display: flex;
+    align-items: center;
+    padding: 64px;
+    background: var(--guild-ink);
+    color: var(--guild-canvas);
+}
+.guild-hero-content { width: 100%; max-width: 480px; margin: auto; }
+.guild-hero h2 { margin: 0 0 16px; font-size: 36px; line-height: 1.15; font-weight: 400; letter-spacing: -1px; }
+body:is([data-page-id="login-login"], [data-page-id="login-error"]) .guild-hero p { margin: 0; color: var(--guild-on-dark); line-height: 1.6; }
+.guild-preview { margin-top: 40px; padding: 32px; border-radius: 24px; background: var(--guild-dark-card); }
+.guild-preview > span { color: var(--guild-on-dark); font-size: 13px; }
+.guild-preview .guild-amount { display: block; margin: 8px 0 32px; font: 500 clamp(24px, 2.5vw, 40px) 'JetBrains Mono', monospace; }
+.guild-preview > div { display: flex; justify-content: space-between; gap: 16px; margin-top: 20px; font-size: 14px; }
+.guild-preview > div span:last-child { font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+@media (max-width: 900px) {
+    body:is([data-page-id="login-login"], [data-page-id="login-error"]) .login-pf-page { padding: 112px 24px 48px; }
+    body:is([data-page-id="login-login"], [data-page-id="login-error"]) #kc-header { top: 32px; left: 24px; }
+    .guild-hero { display: none; }
+}

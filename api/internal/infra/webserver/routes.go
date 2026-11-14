@@ -17,6 +17,9 @@ func (s *Server) registerRoutes() {
 		api.PATCH("/guilds/:guildID/disable", s.guild.Disable)
 		api.GET("/guilds", s.guild.ListByMember)
 		api.POST("/guilds/:guildID/invites", s.guild.InviteUser)
+		api.GET("/guilds/:guildID/invites", s.guild.ListSentInvitations)
+		api.DELETE("/guilds/:guildID/invites/:inviteID", s.guild.CancelInvitation)
+		api.GET("/guilds/:guildID/members", s.guild.ListMembers)
 		api.GET("/guild-invites", s.guild.ListInvitations)
 		api.POST("/guild-invites/:inviteID/accept", s.guild.AcceptInvitation)
 		api.POST("/guild-invites/:inviteID/decline", s.guild.DeclineInvitation)
@@ -25,6 +28,7 @@ func (s *Server) registerRoutes() {
 		api.POST("/guilds/:guildID/fixed-expenses", s.fixedExpense.Create)
 		api.GET("/guilds/:guildID/fixed-expenses", s.fixedExpense.ListActiveByGuild)
 		api.PATCH("/guilds/:guildID/fixed-expenses/:id", s.fixedExpense.Update)
+		api.DELETE("/guilds/:guildID/fixed-expenses/:id", s.fixedExpense.Delete)
 		api.PATCH("/guilds/:guildID/fixed-expenses/:id/deactivate", s.fixedExpense.Deactivate)
 
 		api.POST("/guilds/:guildID/transactions", s.transaction.Create)

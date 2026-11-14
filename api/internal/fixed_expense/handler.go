@@ -58,7 +58,20 @@ func (h *Handler) ListActiveByGuild(c *gin.Context) {
 		return
 	}
 
-	fixedExpenses, err := h.service.ListActiveByGuild(c.Request.Context(), guildID, actor)
+	var includePaused bool
+	if value, present := c.GetQuery("include_paused"); present {
+		includePaused, err = strconv.ParseBool(value)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid include_paused parameter"})
+			return
+		}
+	}
+	var fixedExpenses []*FixedExpense
+	if includePaused {
+		fixedExpenses, err = h.service.ListByGuild(c.Request.Context(), guildID, actor)
+	} else {
+		fixedExpenses, err = h.service.ListActiveByGuild(c.Request.Context(), guildID, actor)
+	}
 	if err != nil {
 		h.handleError(c, err)
 		return
@@ -134,6 +147,29 @@ func (h *Handler) Deactivate(c *gin.Context) {
 		return
 	}
 
+	c.Status(http.StatusNoContent)
+}
+
+func (h *Handler) Delete(c *gin.Context) {
+	guildID, err := parseIDParam(c, "guildID")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	id, err := parseIDParam(c, "id")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	actor, ok := getRequesterActor(c)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	if err := h.service.Delete(c.Request.Context(), guildID, id, actor); err != nil {
+		h.handleError(c, err)
+		return
+	}
 	c.Status(http.StatusNoContent)
 }
 

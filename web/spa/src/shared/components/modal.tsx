@@ -23,7 +23,7 @@ export function Modal({ open, onOpenChange, title, children, maxWidth = 'max-w-l
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 data-[state=open]:animate-fade-in" />
+        <Dialog.Overlay className="modal-fade fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content
           ref={content}
           aria-describedby={undefined}
@@ -33,7 +33,7 @@ export function Modal({ open, onOpenChange, title, children, maxWidth = 'max-w-l
             if (input) { event.preventDefault(); input.focus() }
           }}
           onCloseAutoFocus={(event) => { event.preventDefault(); returnFocus.current?.focus() }}
-          className={`fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto ${maxWidth} -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-card p-6 shadow-xl data-[state=open]:animate-fade-in`}
+          className={`modal-fade fixed left-1/2 top-1/2 z-50 w-[calc(100%-2rem)] max-h-[calc(100dvh-2rem)] overflow-y-auto ${maxWidth} -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-card p-6 shadow-xl`}
         >
           <div className="mb-4 flex items-center justify-between">
             <Dialog.Title className="text-lg font-semibold text-card-foreground">
