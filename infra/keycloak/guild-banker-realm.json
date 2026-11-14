@@ -1,6 +1,7 @@
 {
   "realm": "guild-banker",
   "displayName": "GuildBanker",
+  "loginTheme": "guild-banker",
   "enabled": true,
   "sslRequired": "external",
   "registrationAllowed": false,

@@ -49,7 +49,7 @@ redirects dentro dessas origens; adicione outras URLs explicitamente se precisar
 |---|---|
 | `make keycloak/validate` | Valida os JSONs e os IDs, sem gerar arquivo ou iniciar serviços |
 | `make keycloak/prepare` | Gera o arquivo combinado, sem Docker ou senha no host |
-| `make keycloak/up` | Prepara e inicia o compose com importação inicial |
+| `make keycloak/up` | Prepara, inicia e seleciona o tema Login no realm novo ou existente |
 | `make infra/down` | Para os serviços sem excluir volumes |
 | `make infra/logs` | Acompanha os logs dos serviços |
 
@@ -71,8 +71,67 @@ Na [importação de startup](https://www.keycloak.org/server/importExport), real
 já existentes são ignorados. Portanto, repetir `keycloak/up` não atualiza nem
 reseta clients, usuário ou senha. O arquivo de clients usa `ifResourceExists=SKIP`
 na [importação parcial](https://www.keycloak.org/docs/latest/server_admin/index.html#_partial_import).
-Para alterar configuração existente, edite o recurso no console ou planeje uma
-atualização explícita; os alvos não usam overwrite ou remoção de realm.
+O setup faz uma atualização administrativa explícita somente de `loginTheme`,
+descrita abaixo. Para alterar as demais configurações existentes, edite o recurso
+no console ou planeje uma atualização explícita; os alvos não usam overwrite ou
+remoção de realm.
+
+## Tema de login GuildBanker
+
+`themes/guild-banker/login` contém o tema `guild-banker`, montado somente para
+leitura pelo overlay. O JSON inicial já o seleciona. Após o healthcheck,
+`make keycloak/up` executa `apply-login-theme.sh` dentro do Keycloak para consultar
+e selecionar o mesmo tema também em realms existentes. `make setup` e `make dev`
+passam por esse alvo. `make infra/up` não executa o bootstrap do realm.
+
+A atualização envia somente `loginTheme=guild-banker`, sem mesclar um snapshot
+do realm, e confirma o valor por nova leitura. Se já estiver selecionado, não
+escreve novamente. Usuários, senhas, clients, roles e políticas não são importados
+novamente ou redefinidos. Não remova volumes nem recrie o realm para aplicar o tema.
+
+O script usa `kcadm.sh` da imagem e as variáveis `KC_BOOTSTRAP_ADMIN_USERNAME`
+e `KC_BOOTSTRAP_ADMIN_PASSWORD` do serviço, com os padrões locais já existentes.
+Se o administrador foi alterado num volume existente, configure essas variáveis
+em `infra/.env` ou no ambiente com uma identidade administrativa válida e permissão
+para consultar/alterar o realm. Essas variáveis não redefinem a senha de um admin
+já cadastrado. A senha é passada por ambiente ao CLI, sem argumento de processo;
+a sessão fica num diretório temporário com permissão restrita e é removida ao sair.
+
+Autenticação, consulta, atualização ou confirmação sem sucesso fazem o alvo
+falhar. A etapa administrativa inteira tem timeout de 60 segundos, com término
+forçado após mais 5 segundos; a espera de prontidão continua limitada a 180
+segundos. Diagnósticos administrativos são substituídos por mensagens sem tokens
+ou senhas. Depois de corrigir a causa, repetir o alvo consulta o estado atual.
+
+O design segue `web/prototype/DESIGN.md` e a composição de
+`web/prototype/screens/login.html`: formulário claro, ações azuis e painel escuro
+no desktop; mobile prioriza o formulário. Login e erros são personalizados, e
+as demais telas herdam o tema nativo `keycloak` da versão 26.8.2. Os templates de
+login/erro derivam dessa versão: revisar os overrides ao atualizar a imagem.
+Textos editoriais são pt-BR; mensagens nativas seguem o idioma do realm, cuja
+política não é alterada pelo setup. Cadastro, recuperação e MFA não são habilitados.
+Fontes Inter e JetBrains Mono são servidas localmente, com licenças OFL ao lado
+dos arquivos; não há CDN ou build React para o tema.
+
+Para testar a lógica sem Docker, na raiz:
+
+```sh
+python3 -B -m unittest discover -s infra/keycloak -p 'test_*.py' -v
+```
+
+A suíte real `npm --prefix web/spa run test:e2e:auth` também cobre layout
+375px/1440px, recursos locais, erros, callback com troca PKCE e tela herdada.
+Somente os casos do tema podem ser executados com o filtro `-- keycloak-theme.spec.ts`.
+O filtro requer Keycloak com o tema e senha de teste, mas não a API; a suíte completa
+mantém os pré-requisitos de API e banco de teste descritos abaixo.
+
+Reversão pontual: no console, selecione `guild-banker` → **Realm settings** →
+**Themes** → **Login theme**, escolha o tema anterior e salve. Isso não altera
+usuários ou clients. Enquanto esta versão do setup for usada, repetir
+`make keycloak/up`, `make setup` ou `make dev` selecionará `guild-banker` novamente.
+Para manter a reversão, reverta também a mudança de tema/setup no código antes
+de executar esses alvos. Fora de Compose, disponibilize o diretório do tema na
+distribuição do Keycloak antes de importar o JSON ou selecionar o tema.
 
 ## Tokens e API
 

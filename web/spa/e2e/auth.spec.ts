@@ -79,7 +79,7 @@ test('real API provisions and authorizes a verified identity', async ({ page }) 
   } else await completeHomeOnboarding(page)
 
   expect(guild && Number.isSafeInteger(guild.id) && guild.id > 0).toBe(true)
-  const api = page.waitForResponse((r) => r.url().endsWith('/api/v1/guilds/' + guild!.id + '/fixed-expenses'))
+  const api = page.waitForResponse((r) => new URL(r.url()).pathname === '/api/v1/guilds/' + guild!.id + '/fixed-expenses')
   await page.goto('/fixed-expenses?guild=' + guild!.id)
   await expect(page).toHaveURL(new RegExp('guild=' + guild!.id + '(?:&|$)'))
   expect((await api).status()).toBe(200)
