@@ -1,7 +1,7 @@
 # ISSUE-6 — Roteiro de QA
 
 Spec: [ISSUE-6-tema-login-keycloak.md](./ISSUE-6-tema-login-keycloak.md).
-Branch: `feat/ISSUE-6-tema-login-keycloak`. Snapshot: commit com `Task-ID: ISSUE-6/T1` e fechamento da ISSUE-6; registrar o SHA efetivamente avaliado abaixo.
+Branch: `feat/ISSUE-6-tema-login-keycloak`. Snapshot técnico: `0a3c4a0a8ab5d95e910d800c823133282c17c59c` (T1 + T2). O fechamento posterior altera somente documentação; registrar o SHA efetivamente avaliado abaixo.
 
 Ambiente: desenvolvimento local, Keycloak 26.8.2 com o tema `guild-banker`.
 Pré-requisitos: `make keycloak/up`, SPA disponível, usuário local de teste e senha configurada fora do Git. A suíte completa também requer API e banco preparados. Não gravar senha, código OIDC ou tokens em screenshots/relatórios.

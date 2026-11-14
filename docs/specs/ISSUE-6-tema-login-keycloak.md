@@ -149,3 +149,11 @@ Revisão de planejamento: requisitos, engenharia e qualidade conferidos pelo coo
 - DM3 — T1, 2026-11-13: matcher de resposta de despesas na suíte real passa a comparar `URL.pathname`, mantendo a asserção HTTP 200. A versão anterior falhou igualmente com tema nativo por ignorar a query preexistente `include_paused=true`; ajuste necessário para executar a validação prevista, sem mudança de produto.
 - DM4 — Validação formal impedida pela ausência de restrição efetiva de escrita nos subagentes revisores, apesar dos pareceres técnicos independentes favoráveis e correção de R1. [Roteiro de QA](./ISSUE-6-roteiro-qa.md) registra avaliação humana visual e revisão humana com SHA como pendentes. Aprovação de spec não equivale a esses resultados.
 - DM5 — Ambiente de integração: projeto Compose exclusivo `guildbanker-issue6`, cópia temporária da infra com somente nomes de contêineres e porta PostgreSQL adaptados para evitar colisões com contêineres parados preexistentes. Nenhum volume compartilhado foi limpo. API de teste usa banco desse projeto.
+
+
+## Fechamento técnico — 2026-11-14
+Implementação local: T1 em `c8be8623c56b908f79056251ea12e08cc6e1dc3e` e T2 em `0a3c4a0a8ab5d95e910d800c823133282c17c59c`, branch `feat/ISSUE-6-tema-login-keycloak`. Evidências por critério estão nos recibos desses commits e no recibo documental de fechamento; os checks finais observaram o mesmo conteúdo funcional do snapshot T1 + T2.
+
+Parecer técnico independente local favorável, inclusive re-review de R1 (diagnóstico sensível no preenchimento da senha) e dos ajustes finais de testes/CSS. Relatórios devolvidos na conversa, não gravados: o diretório de relatórios da skill está fora das raízes de escrita. Validação formal e prontidão para merge permanecem impedidas até revisão humana de risco alto; QA visual também pendente, ambos no roteiro. Não houve push, PR ou merge.
+
+O validador intermediário marcou T1 como `receipt_stale` após o commit de T2 porque considera qualquer código do repositório após um recibo. O recibo de fechamento reconfirma T1/T2 contra o snapshot integrado, sem modificar critérios nem repetir checks não invalidados. Medição continua indisponível por falha no início do tooling (`source_sha` inválido), sem journal válido ou estimativas.
