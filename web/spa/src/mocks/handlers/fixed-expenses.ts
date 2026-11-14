@@ -74,3 +74,9 @@ export function resetFixedExpensesMocks() {
   expensesByGuild.clear()
   nextId = 100
 }
+
+export function clearMockExpenseResponsible(guildID: number, userID: number) {
+  for (const expense of guildExpenses(guildID)) {
+    if (expense.responsible_user_id === userID) expense.responsible_user_id = null
+  }
+}

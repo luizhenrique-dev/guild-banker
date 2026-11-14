@@ -10,6 +10,7 @@ export const createFixedExpenseSchema = z.object({
   // The 100-character limit is a local UI policy.
   name: z.string().trim().min(1, 'validation.name').max(100, 'validation.nameLength'),
   amount,
+  responsible_user_id: z.number().int().positive().nullable().optional(),
   due_day: z.number({ invalid_type_error: 'validation.dueDay' })
     .int('validation.dueDay').min(1, 'validation.dueDay').max(31, 'validation.dueDay'),
   category: z.enum(FIXED_EXPENSE_CATEGORIES as [FixedExpenseCategory, ...FixedExpenseCategory[]], {

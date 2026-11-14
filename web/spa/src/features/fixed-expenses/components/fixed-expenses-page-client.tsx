@@ -1,4 +1,5 @@
 'use client'
+import { useGuildMembers } from '../../guilds/api/use-guilds'
 import { useActiveGuild } from '../../guilds/use-active-guild'
 import { AccessDeniedPage } from '@/src/shared/components/access-denied-page'
 import { APIError } from '@/src/shared/lib/api-client'
@@ -23,9 +24,13 @@ export function FixedExpensesPageClient() {
   const { t, i18n } = useTranslation()
   const { activeGuild } = useActiveGuild()
   const { data: expenses, isLoading, error, refetch, isFetching } = useFixedExpenses()
+  const members = useGuildMembers(activeGuild!.id)
   const deleteMutation = useDeleteFixedExpense()
   const [category, setCategory] = useState<FixedExpenseCategory | ''>('')
-  const filteredExpenses = (expenses ?? []).filter((expense) => !category || expense.category === category)
+  const [member, setMember] = useState('')
+  const filteredExpenses = (expenses ?? []).filter((expense) =>
+    (!category || expense.category === category) &&
+    (!member || (member === 'unassigned' ? expense.responsible_user_id == null : expense.responsible_user_id === Number(member))))
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingExpense, setEditingExpense] = useState<FixedExpenseResponse | null>(null)
@@ -51,7 +56,7 @@ export function FixedExpensesPageClient() {
     setEditingExpense(null)
   }
 
-  if (error instanceof APIError && error.status === 403) return <AccessDeniedPage />
+  if ([error, members.error].some((failure) => failure instanceof APIError && failure.status === 403)) return <AccessDeniedPage />
 
   return (
     <ErrorBoundary>
@@ -92,12 +97,25 @@ export function FixedExpensesPageClient() {
             <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
             <p className="mt-2 text-sm text-muted-foreground">{t('fx.totalHint')}</p>
           </div>
-          <div className="w-full sm:w-auto sm:max-w-sm">
-            <label htmlFor="fixed-expense-category-filter" className="mb-2 block text-sm font-medium">{t('fx.filterCategory')}</label>
-            <select id="fixed-expense-category-filter" value={category} onChange={(event) => setCategory(event.target.value as FixedExpenseCategory | '')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base">
-              <option value="">{t('fx.allCategories')}</option>
-              {FIXED_EXPENSE_CATEGORIES.map((value) => <option key={value} value={value} aria-label={t(`category.${value}`)}>{CATEGORY_ICONS[value]} {t(`category.${value}`)}</option>)}
-            </select>
+          <div className="flex w-full flex-col gap-4 lg:w-auto lg:flex-row">
+            <div className="min-w-0 lg:max-w-sm">
+              <label htmlFor="fixed-expense-category-filter" className="mb-2 block text-sm font-medium">{t('fx.filterCategory')}</label>
+              <select id="fixed-expense-category-filter" value={category} onChange={(event) => setCategory(event.target.value as FixedExpenseCategory | '')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base">
+                <option value="">{t('fx.allCategories')}</option>
+                {FIXED_EXPENSE_CATEGORIES.map((value) => <option key={value} value={value} aria-label={t(`category.${value}`)}>{CATEGORY_ICONS[value]} {t(`category.${value}`)}</option>)}
+              </select>
+            </div>
+            <div className="min-w-0 lg:max-w-sm">
+              <label htmlFor="fixed-expense-member-filter" className="mb-2 block text-sm font-medium">{t('fx.filterMember')}</label>
+              <select id="fixed-expense-member-filter" value={member} onChange={(event) => setMember(event.target.value)} disabled={members.isPending || !!members.error} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base">
+                <option value="">{t('fx.allMembers')}</option>
+                <option value="unassigned">{t('fx.unassigned')}</option>
+                {member && member !== 'unassigned' && !members.data?.some((value) => value.id === Number(member)) && <option value={member}>{t('fx.responsibleUnavailable')}</option>}
+                {members.data?.map((value) => <option key={value.id} value={value.id}>{value.name}</option>)}
+              </select>
+              {members.isPending && <p role="status">{t('fx.membersLoading')}</p>}
+              {members.error && <div role="alert"><p>{t('guild.membersError')}</p><button type="button" onClick={() => void members.refetch()}>{t('common.retry')}</button></div>}
+            </div>
           </div>
         </section>
 
@@ -112,7 +130,9 @@ export function FixedExpensesPageClient() {
         ) : (
           <FixedExpenseTable
             expenses={filteredExpenses}
-            filtered={!!category}
+            filtered={!!category || !!member}
+            memberFiltered={!!member}
+            members={members.error ? [] : members.data ?? []}
             onEdit={handleEdit}
             onDelete={handleDelete}
           />

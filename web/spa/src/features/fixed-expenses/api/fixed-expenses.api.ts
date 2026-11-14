@@ -16,7 +16,7 @@ export const fixedExpensesApi = {
     return apiClient<FixedExpenseResponse>(`/api/v1/guilds/${safeID(guildId)}/fixed-expenses`, { ...options, method: 'POST', body })
   },
   update: (id: number, input: UpdateFixedExpenseInput, options: RequestOptions, guildId: number) => {
-    const body: components['schemas']['UpdateFixedExpenseRequest'] = { amount: input.amount, due_day: input.due_day, category: input.category }
+    const body: components['schemas']['UpdateFixedExpenseRequest'] = { amount: input.amount, due_day: input.due_day, category: input.category, responsible_user_id: input.responsible_user_id }
     return apiClient<FixedExpenseResponse>(`/api/v1/guilds/${safeID(guildId)}/fixed-expenses/${safeID(id)}`, { ...options, method: 'PATCH', body })
   },
   deactivate: (id: number, status: 'PAUSED' | 'CANCELLED', options: RequestOptions, guildId: number) => {

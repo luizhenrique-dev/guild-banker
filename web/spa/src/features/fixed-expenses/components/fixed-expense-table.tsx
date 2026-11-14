@@ -6,17 +6,20 @@
 import { useTranslation } from 'react-i18next'
 import { FixedExpenseRow } from './fixed-expense-row'
 import type { FixedExpenseResponse } from '../types'
+import type { Member } from '../../guilds/api/use-guilds'
 import { Table } from '@/components/ui/table'
 import { Repeat } from 'lucide-react'
 
 interface Props {
   expenses: FixedExpenseResponse[]
   filtered?: boolean
+  memberFiltered?: boolean
+  members: Member[]
   onEdit: (expense: FixedExpenseResponse) => void
   onDelete: (expense: FixedExpenseResponse) => void
 }
 
-export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false }: Props) {
+export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false, memberFiltered = false, members }: Props) {
   const { t } = useTranslation()
 
   // Empty state
@@ -26,8 +29,8 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
           <Repeat size={28} className="text-muted-foreground" />
         </div>
-        <p className="text-[15px] font-medium text-secondary-foreground">{t(filtered ? 'fx.emptyFilter' : 'fx.empty')}</p>
-        <p className="text-[13px] text-muted-foreground">{t(filtered ? 'fx.emptyFilterHint' : 'fx.emptyHint')}</p>
+        <p className="text-[15px] font-medium text-secondary-foreground">{t(memberFiltered ? 'fx.emptyMemberFilter' : filtered ? 'fx.emptyFilter' : 'fx.empty')}</p>
+        <p className="text-[13px] text-muted-foreground">{t(memberFiltered ? 'fx.emptyMemberFilterHint' : filtered ? 'fx.emptyFilterHint' : 'fx.emptyHint')}</p>
       </div>
     )
   }
@@ -39,6 +42,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
           <tr>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.name')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.category')}</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{t('fx.responsible')}</th>
             <th scope="col" className="py-3 text-right font-semibold">{t('fx.col.amount')}</th>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.status')}</th>
@@ -50,6 +54,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
             <FixedExpenseRow
               key={expense.id}
               expense={expense}
+              responsibleName={members.find((member) => member.id === expense.responsible_user_id)?.name}
               onEdit={onEdit}
               onDelete={onDelete}
             />

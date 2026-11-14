@@ -32,6 +32,7 @@ import { APIError } from '@/src/shared/lib/api-client'
 
 interface Props {
   expense: FixedExpenseResponse
+  responsibleName?: string
   onEdit: (expense: FixedExpenseResponse) => void
   onDelete: (expense: FixedExpenseResponse) => void
 }
@@ -67,7 +68,7 @@ function formatBRL(amount: string): string {
   }).format(num)
 }
 
-export function FixedExpenseRow({ expense, onEdit, onDelete }: Props) {
+export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: Props) {
   const { t } = useTranslation()
   const statusMutation = useSetFixedExpenseStatus()
 
@@ -93,6 +94,10 @@ export function FixedExpenseRow({ expense, onEdit, onDelete }: Props) {
           <span aria-hidden="true">{CATEGORY_ICONS[expense.category]}</span>
           {categoryLabel}
         </span>
+      </td>
+
+      <td className="px-4 py-4 text-secondary-foreground">
+        {expense.responsible_user_id == null ? t('fx.unassigned') : responsibleName ?? t('fx.responsibleUnavailable')}
       </td>
 
       {/* Valor em JetBrains Mono */}

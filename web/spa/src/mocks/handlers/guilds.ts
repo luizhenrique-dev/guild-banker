@@ -1,3 +1,4 @@
+import { clearMockExpenseResponsible } from './fixed-expenses'
 import { http, HttpResponse, delay } from 'msw'
 import { mockUserID, mockGuildMember, addMockGuildMember, resetMockMemberships, mockGuildMemberByEmail } from '../request-context'
 import { guildsFixtures } from '../fixtures/guilds'
@@ -133,6 +134,7 @@ export const guildsHandlers = [
     await delay(400)
     const guildID = Number(params['id'])
     members[guildID] = (members[guildID] ?? []).filter((member) => member.id !== Number(params['userID']))
+    clearMockExpenseResponsible(guildID, Number(params['userID']))
     return new HttpResponse(null, { status: 204 })
   }),
 ]

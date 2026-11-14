@@ -86,7 +86,7 @@ Sintaxe Mermaid não validada. Não há dúvidas de negócio bloqueantes; D4–D
 | Task | Título | Status | Validação | Depende de | Risco | Repositório |
 |---|---|---|---|---|---|---|
 | T1 | Persistir e expor o responsável com integridade por guild | ✅ concluida | impedida | nenhuma | alto | `.` |
-| T2 | Selecionar, exibir e filtrar o responsável na SPA | ⬜ pendente | pendente | T1 | normal | `.` |
+| T2 | Selecionar, exibir e filtrar o responsável na SPA | ✅ concluida | aprovada | T1 | normal | `.` |
 
 ### T1 — Persistir e expor o responsável com integridade por guild
 - **Entrega:** atribuição opcional disponível na API, migration compatível com dados existentes e limpeza atômica na remoção do membro, sem alterar as permissões atuais.
@@ -136,3 +136,4 @@ Checklist de convenções: manter transport → aplicação → domínio e adapt
 - DM1 — T1 (2026-11-13): preservar a assinatura existente de `Service.Create` delegando para `CreateWithResponsible`; o HTTP usa a nova entrada explícita. Compatibilidade local sem alterar callers antigos.
 - DM2 — T1 (2026-11-13): FK composta com `ON DELETE SET NULL (responsible_user_id)` e índice parcial por guild/responsável materializam D7, sem mudar o serviço de remoção nem apagar a despesa. A migration 5 é incremental; as anteriores permanecem intactas.
 - DM3 — T1 (2026-11-13): validação independente permanece impedida até revisão humana do snapshot ou ambiente com revisor efetivamente sem ferramentas de escrita; revisão em contexto isolado com ferramentas não restritas não certifica esse requisito.
+- DM4 — T2 (2026-11-13): reutilizar o remount por guild existente e o cache por usuário/guild; erro 403 de membros substitui imediatamente tabela/modal por acesso negado, e erro técnico preserva o responsável salvo. Remoção invalida somente as despesas da guild afetada. Sem alteração de permissões.
