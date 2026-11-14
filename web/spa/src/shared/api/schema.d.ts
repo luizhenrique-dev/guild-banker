@@ -500,6 +500,11 @@ export interface components {
         /** @enum {string} */
         FixedExpenseStatus: "ACTIVE" | "PAUSED" | "CANCELLED";
         CreateFixedExpenseRequest: {
+            /**
+             * Format: int64
+             * @description ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
+             */
+            responsible_user_id?: number | null;
             name: string;
             /** @description Valor monetário decimal (serializado como string por shopspring/decimal). Deve ser maior que zero. */
             amount: string;
@@ -509,6 +514,11 @@ export interface components {
         };
         /** @description Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados. */
         UpdateFixedExpenseRequest: {
+            /**
+             * Format: int64
+             * @description ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
+             */
+            responsible_user_id?: number | null;
             amount?: string;
             due_day?: number;
             category?: components["schemas"]["FixedExpenseCategory"];
@@ -522,6 +532,11 @@ export interface components {
             status: "PAUSED" | "CANCELLED";
         };
         FixedExpenseResponse: {
+            /**
+             * Format: int64
+             * @description ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
+             */
+            responsible_user_id: number | null;
             /** Format: int64 */
             guild_id: number;
             /** Format: int64 */

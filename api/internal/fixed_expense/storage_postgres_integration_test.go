@@ -51,6 +51,10 @@ func postgresTestDB(t *testing.T) *sqlx.DB {
 	require.NoError(t, err)
 	_, err = db.Exec(string(migration))
 	require.NoError(t, err)
+	migration, err = os.ReadFile("../../migrations/000005_fixed_expense_responsible.up.sql")
+	require.NoError(t, err)
+	_, err = db.Exec(string(migration))
+	require.NoError(t, err)
 	var version int
 	require.NoError(t, db.Get(&version, "SELECT current_setting('server_version_num')::integer"))
 	require.GreaterOrEqual(t, version, 170000)

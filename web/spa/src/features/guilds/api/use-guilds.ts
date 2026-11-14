@@ -1,3 +1,4 @@
+import { fixedExpenseKeys } from '../../fixed-expenses/api/use-fixed-expenses'
 import { APIError } from '@/src/shared/lib/api-client'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { guildsApi } from './guilds.api'
@@ -77,6 +78,7 @@ export function useRemoveMember() {
       if (!session.active()) return
       qc.setQueryData<Member[]>(memberKey(session.user?.id, guildId), (members) => members?.filter((member) => member.id !== userId))
       void qc.invalidateQueries({ queryKey: memberKey(session.user?.id, guildId) })
+      void qc.invalidateQueries({ queryKey: fixedExpenseKeys.list(session.user?.id, guildId) })
       toast.success(i18n.t('guild.toast.removed'))
     },
     onError: (error) => { if (session.active()) toast.error(i18n.t(error instanceof APIError && error.status === 403 ? 'permission.denied' : 'fx.toast.error')) },

@@ -1278,6 +1278,12 @@ components:
       type: object
       required: [name, amount, due_day, category]
       properties:
+        responsible_user_id:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+          description: ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
         name:
           type: string
         amount:
@@ -1294,6 +1300,12 @@ components:
       type: object
       description: Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados.
       properties:
+        responsible_user_id:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+          description: ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
         amount:
           type: string
         due_day:
@@ -1314,8 +1326,14 @@ components:
           description: Deve ser PAUSED ou CANCELLED; qualquer outro valor resulta em 400.
     FixedExpenseResponse:
       type: object
-      required: [guild_id, id, name, amount, due_day, category, status]
+      required: [guild_id, id, name, amount, due_day, category, status, responsible_user_id]
       properties:
+        responsible_user_id:
+          type: integer
+          format: int64
+          minimum: 1
+          nullable: true
+          description: ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
         guild_id:
           type: integer
           format: int64

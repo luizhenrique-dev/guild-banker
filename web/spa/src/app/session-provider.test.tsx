@@ -66,7 +66,7 @@ it('late mutation after logout cannot recreate cache or show notifications', asy
   await waitFor(() => expect(finish).toBeTypeOf('function'))
   act(() => result.current.session.logout())
   await act(async () => {
-    finish({ guild_id: 1, id: 100, name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING', status: 'ACTIVE' })
+    finish({ guild_id: 1, id: 100, name: 'Rent', amount: '10', due_day: 1, category: 'HOUSING', responsible_user_id: null, status: 'ACTIVE' })
     await rejection
   })
   expect(qc.getQueryCache().getAll()).toHaveLength(0)
@@ -98,7 +98,7 @@ it('switching users clears cached data before querying the shared guild again', 
   rerender(<MemoryRouter initialEntries={['/fixed-expenses?guild=2']}><App initialUser={{ id: 2, name: 'Other', email: 'other@example.com' }} demo /></MemoryRouter>)
   expect(screen.queryByText('Internet da República')).not.toBeInTheDocument()
   await waitFor(() => expect(finish).toBeTypeOf('function'))
-  await act(async () => { finish([{ id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, category: 'OTHER', status: 'ACTIVE' }]) })
+  await act(async () => { finish([{ id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }]) })
   expect(await screen.findByText('Internet da República')).toBeVisible()
   expect(list).toHaveBeenCalledOnce()
 })

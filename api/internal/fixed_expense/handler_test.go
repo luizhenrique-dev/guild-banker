@@ -9,6 +9,7 @@ import (
 	"github.com/luizhenrique-dev/guild-banker/api/internal/audit"
 	"github.com/luizhenrique-dev/guild-banker/api/internal/auth"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http/httptest"
 	"strings"
 	"testing"
@@ -131,4 +132,19 @@ func TestHandlerGuildErrors(t *testing.T) {
 			assert.Equal(t, 400, response.Code)
 		})
 	}
+}
+
+func TestHandlerCreatesResponsibleExpense(t *testing.T) {
+	storage := &storageMock{}
+	storage.On("Create", mock.Anything, mock.Anything).Return(nil)
+	router := gin.New()
+	router.POST("/guilds/:guildID/fixed-expenses", NewHandler(NewService(storage)).Create)
+	req := httptest.NewRequest("POST", "/guilds/1/fixed-expenses", strings.NewReader(`{"name":"Rent","amount":"10","due_day":1,"category":"OTHER","responsible_user_id":2}`))
+	req.Header.Set("Content-Type", "application/json")
+	req = req.WithContext(auth.WithPrincipal(req.Context(), auth.Principal{Actor: validActor()}))
+	out := httptest.NewRecorder()
+	router.ServeHTTP(out, req)
+	assert.Equal(t, 201, out.Code, out.Body.String())
+	assert.Contains(t, out.Body.String(), `"responsible_user_id":2`)
+	storage.AssertExpectations(t)
 }

@@ -1,3 +1,4 @@
+import { useGuildMembers } from '../../guilds/api/use-guilds'
 import { useActiveGuild } from '../../guilds/use-active-guild'
 import { APIError } from '@/src/shared/lib/api-client'
 import { useEffect, useRef } from 'react'
@@ -23,6 +24,7 @@ type FormValues = UpdateFixedExpenseInput & { name?: string }
 export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Props) {
   const { t } = useTranslation()
   const { activeGuild } = useActiveGuild()
+  const members = useGuildMembers(activeGuild!.id)
   const mounted = useRef(true)
   useEffect(() => { mounted.current = true; return () => { mounted.current = false } }, [])
   const createMutation = useCreateFixedExpense()
@@ -30,15 +32,16 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
   const isEditing = !!editingExpense
   const isSubmitting = createMutation.isPending || updateMutation.isPending
   const sending = useRef(false)
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<FormValues>({
+  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(isEditing ? updateFixedExpenseSchema : createFixedExpenseSchema),
-    defaultValues: { name: '', amount: '', due_day: 1, category: 'OTHER' },
+    defaultValues: { name: '', amount: '', due_day: 1, category: 'OTHER', responsible_user_id: null },
   })
+  const responsibleUserID = watch('responsible_user_id')
   const resetCreate = createMutation.reset
   const resetUpdate = updateMutation.reset
   useEffect(() => {
     if (!open) return
-    reset(editingExpense ? { ...editingExpense, amount: editingExpense.amount.replace('.', ',') } : { name: '', amount: '', due_day: 1, category: 'OTHER' })
+    reset(editingExpense ? { ...editingExpense, amount: editingExpense.amount.replace('.', ',') } : { name: '', amount: '', due_day: 1, category: 'OTHER', responsible_user_id: null })
     resetCreate()
     resetUpdate()
   }, [open, editingExpense, reset, resetCreate, resetUpdate])
@@ -91,6 +94,17 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
             {FIXED_EXPENSE_CATEGORIES.map((cat) => <option key={cat} value={cat} aria-label={t(`category.${cat}`)}>{CATEGORY_ICONS[cat]} {t(`category.${cat}`)}</option>)}
           </select>
           {error('category')}
+        </div>
+        <div>
+          <Label htmlFor="expense-responsible_user_id" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.responsible')}</Label>
+          <select value={responsibleUserID ?? ''} {...field('responsible_user_id')} {...register('responsible_user_id', { setValueAs: (value) => value == null || value === '' ? null : Number(value) })} disabled={members.isPending || !!members.error} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <option value="">{t('fx.unassigned')}</option>
+            {responsibleUserID && !members.data?.some((member) => member.id === responsibleUserID) && <option value={responsibleUserID}>{t('fx.responsibleUnavailable')}</option>}
+            {members.data?.map((member) => <option key={member.id} value={member.id}>{member.name}</option>)}
+          </select>
+          {members.isPending && <p role="status">{t('fx.membersLoading')}</p>}
+          {members.error && <div role="alert"><p>{t('guild.membersError')}</p><button type="button" onClick={() => void members.refetch()}>{t('common.retry')}</button></div>}
+          {error('responsible_user_id')}
         </div>
       </fieldset>
       {mutationError && <p role="alert" className="text-base text-destructive">{t(permissionDenied ? 'permission.denied' : 'fx.toast.error')}</p>}

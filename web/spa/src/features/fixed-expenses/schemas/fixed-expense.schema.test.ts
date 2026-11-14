@@ -26,3 +26,11 @@ it.each([{ category: 'INVALID' }, { name: '' }, { name: '  ' }, { name: 'x'.repe
 it('edit schema strips name and only validates supported fields', () => {
   expect(updateFixedExpenseSchema.parse({ ...valid, name: '' })).toEqual({ amount: '123.45', due_day: 1, category: 'OTHER' })
 })
+it.each([undefined, null, 2])('accepts optional responsibility %s for creation and editing', (responsible_user_id) => {
+  expect(createFixedExpenseSchema.parse({ ...valid, responsible_user_id }).responsible_user_id).toBe(responsible_user_id)
+  expect(updateFixedExpenseSchema.parse({ ...valid, responsible_user_id }).responsible_user_id).toBe(responsible_user_id)
+})
+it.each([0, -1, 1.5, '2'])('rejects invalid responsibility %s', (responsible_user_id) => {
+  expect(createFixedExpenseSchema.safeParse({ ...valid, responsible_user_id }).success).toBe(false)
+  expect(updateFixedExpenseSchema.safeParse({ ...valid, responsible_user_id }).success).toBe(false)
+})

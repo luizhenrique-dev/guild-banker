@@ -9,6 +9,8 @@ import { server } from '@/src/mocks/server'
 import { App } from '@/src/app/app'
 import i18n from '@/src/shared/lib/i18n'
 import { fixedExpensesApi } from '../api/fixed-expenses.api'
+import { guildsApi } from '../../guilds/api/guilds.api'
+import type { Member } from '../../guilds/api/use-guilds'
 import { toast } from 'sonner'
 import type { FixedExpenseResponse } from '../types'
 import * as queryClients from '@/src/shared/lib/query-client'
@@ -26,6 +28,75 @@ async function fill() {
   await user.type(dialog.getByRole('textbox', { name: 'Valor (R$)' }), '123,45')
   return { user, dialog }
 }
+
+it('assigns, preserves through status changes and clears the responsible member', async () => {
+  page()
+  const { user, dialog } = await fill()
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Responsável' }), '2')
+  await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+  let row = await screen.findByRole('row', { name: /Internet/ }, { timeout: 3000 })
+  expect(within(row).getByText('Carlos Silva')).toBeVisible()
+  await user.click(within(row).getByRole('button', { name: 'Pausar Internet' }))
+  await waitFor(() => expect(within(screen.getByRole('row', { name: /Internet/ })).getByText('Pausada')).toBeVisible(), { timeout: 3000 })
+  row = screen.getByRole('row', { name: /Internet/ })
+  expect(within(row).getByText('Carlos Silva')).toBeVisible()
+  await user.click(within(row).getByRole('button', { name: 'Editar Internet' }))
+  const edit = within(screen.getByRole('dialog'))
+  expect(edit.getByRole('combobox', { name: 'Responsável' })).toHaveValue('2')
+  await user.selectOptions(edit.getByRole('combobox', { name: 'Responsável' }), '')
+  await user.click(edit.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() => expect(within(screen.getByRole('row', { name: /Internet/ })).getByText('Sem responsável')).toBeVisible(), { timeout: 3000 })
+}, 10000)
+
+it('combines member and category filters and sums only active results', async () => {
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([
+    { guild_id: 1, id: 1, name: 'Assigned active', amount: '100.01', due_day: 1, category: 'HOUSING', status: 'ACTIVE', responsible_user_id: 2 },
+    { guild_id: 1, id: 2, name: 'Assigned paused', amount: '90', due_day: 1, category: 'HEALTH', status: 'PAUSED', responsible_user_id: 2 },
+    { guild_id: 1, id: 3, name: 'Unassigned', amount: '50', due_day: 1, category: 'HOUSING', status: 'ACTIVE', responsible_user_id: null },
+  ])
+  page()
+  const total = await screen.findByRole('status', { name: 'Total previsto no mês' })
+  await waitFor(() => expect(total).toHaveTextContent('150,01'))
+  const member = screen.getByRole('combobox', { name: 'Filtrar por membro' })
+  await userEvent.selectOptions(member, '2')
+  expect(total).toHaveTextContent('100,01')
+  expect(screen.queryByRole('row', { name: /^Unassigned/ })).toBeNull()
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por categoria' }), 'HEALTH')
+  expect(total).toHaveTextContent('0,00')
+  expect(screen.getByRole('row', { name: /Assigned paused/ })).toBeVisible()
+  await userEvent.selectOptions(member, 'unassigned')
+  expect(await screen.findByText('Nenhuma despesa corresponde aos filtros.')).toBeVisible()
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por categoria' }), '')
+  expect(total).toHaveTextContent('50,00')
+  await userEvent.selectOptions(member, '')
+  expect(total).toHaveTextContent('150,01')
+})
+
+it.each([false, true])('keeps a saved responsibility on member failure; retry=%s', async (retry) => {
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([{ guild_id: 1, id: 1, name: 'Assigned rent', amount: '100', due_day: 1, category: 'HOUSING', status: 'ACTIVE', responsible_user_id: 2 }])
+  let failMembers = true
+  server.use(http.get('*/api/v1/guilds/:id/members', () => failMembers ? new HttpResponse(null, { status: 500 }) : HttpResponse.json([{ id: 2, name: 'Carlos Silva', email: 'carlos@familia.com', member_since: '2026-01-01T00:00:00Z', last_access_at: null }])))
+  page()
+  const row = await screen.findByRole('row', { name: /Assigned rent/ })
+  expect(within(row).getByText('Responsável indisponível')).toBeVisible()
+  await userEvent.click(within(row).getByRole('button', { name: 'Editar Assigned rent' }))
+  const dialog = within(screen.getByRole('dialog'))
+  const member = dialog.getByRole('combobox', { name: 'Responsável' })
+  expect(member).toBeDisabled()
+  expect(member).toHaveValue('2')
+  if (retry) {
+    const retryButton = await dialog.findByRole('button', { name: 'Tentar novamente' })
+    failMembers = false
+    await userEvent.click(retryButton)
+    await waitFor(() => expect(member).toBeEnabled())
+    expect(member).toHaveValue('2')
+  }
+  const update = vi.spyOn(fixedExpensesApi, 'update')
+  await userEvent.click(dialog.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() => expect(update).toHaveBeenCalled())
+  expect(update.mock.calls[0]?.[1]).toMatchObject({ responsible_user_id: 2 })
+  await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+})
 
 it('filters the monthly forecast and keeps paused expenses visible for manual resumption', async () => {
   page()
@@ -109,7 +180,7 @@ it('reports saved changes when refetch fails and retries only GET', async () => 
   await user.click(dialog.getByRole('button', { name: 'Salvar' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('A alteração foi salva, mas a lista não foi atualizada.')
   expect(screen.queryByRole('dialog')).toBeNull()
-  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([{ guild_id: 1, id: 100, name: 'Internet', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }])))
+  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([{ guild_id: 1, id: 100, name: 'Internet', amount: '123.45', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }])))
   await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
   expect(await screen.findByRole('row', { name: /Internet/ }, { timeout: 3000 })).toBeVisible()
   expect(writes).toBe(1)
@@ -138,6 +209,21 @@ it('replaces cached personal expenses with access denied after forbidden refetch
   expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
   expect(screen.queryByRole('table')).toBeNull()
   expect(calls).toBe(1)
+})
+
+it('hides cached member names and the open form when membership is forbidden', async () => {
+  const client = queryClients.makeQueryClient()
+  vi.spyOn(queryClients, 'makeQueryClient').mockReturnValue(client)
+  page()
+  await screen.findByRole('row', { name: /Aluguel/ })
+  await userEvent.click(screen.getByRole('button', { name: 'Editar Aluguel' }))
+  expect(within(screen.getByRole('dialog')).getByRole('option', { name: 'Carlos Silva' })).toBeInTheDocument()
+  server.use(http.get('*/api/v1/guilds/:id/members', () => new HttpResponse(null, { status: 403 })))
+  await act(async () => { await client.invalidateQueries({ queryKey: ['guild-members', 1, 1] }) })
+  expect(await screen.findByRole('heading', { name: 'Acesso negado' })).toBeVisible()
+  expect(screen.queryByRole('dialog')).toBeNull()
+  expect(screen.queryByText('Carlos Silva')).toBeNull()
+  expect(screen.queryByRole('table')).toBeNull()
 })
 
 
@@ -195,7 +281,7 @@ it('a late create from G1 leaves the new G2 draft intact and invalidates only G1
   act(() => navigate('/fixed-expenses?guild=2'))
   expect(screen.queryByRole('dialog')).toBeNull()
   const next = await fill()
-  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Old', amount: '123.45', due_day: 1, category: 'OTHER', status: 'ACTIVE' }) })
+  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Old', amount: '123.45', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }) })
   expect(screen.getByRole('dialog')).toBeVisible()
   expect(next.dialog.getByRole('textbox', { name: 'Nome' })).toHaveValue('Internet')
   expect(invalidate).toHaveBeenCalledExactlyOnceWith({ queryKey: ['fixed-expenses', 1, 1] })
@@ -210,4 +296,22 @@ it('changing guild closes the previous deletion confirmation', async () => {
   expect(screen.getByRole('alertdialog')).toBeVisible()
   act(() => navigate('/fixed-expenses?guild=2'))
   expect(screen.queryByRole('alertdialog')).toBeNull()
+})
+
+it('ignores a late member list from the previous guild', async () => {
+  let navigate!: ReturnType<typeof useNavigate>
+  function Navigation() { navigate = useNavigate(); return null }
+  let finish!: (members: Member[]) => void
+  const original = guildsApi.members
+  vi.spyOn(guildsApi, 'members').mockImplementation((guildID, options) => guildID === 1 ? new Promise((resolve) => { finish = resolve }) : original(guildID, options))
+  render(<MemoryRouter initialEntries={['/fixed-expenses?guild=1']}><Navigation /><App initialUser={{ id: 1, name: 'Ana', email: 'ana@example.test' }} demo /></MemoryRouter>)
+  await waitFor(() => expect(finish).toBeTypeOf('function'))
+  expect(screen.getByRole('combobox', { name: 'Filtrar por membro' })).toBeDisabled()
+  expect(screen.getByText('Carregando membros...')).toBeVisible()
+  act(() => navigate('/fixed-expenses?guild=2'))
+  await screen.findByRole('option', { name: 'Bruno Lima' })
+  await act(async () => finish([{ id: 2, name: 'Carlos Silva', email: 'carlos@familia.com', member_since: '2026-01-01T00:00:00Z', last_access_at: null }]))
+  expect(screen.queryByRole('option', { name: 'Carlos Silva' })).toBeNull()
+  expect(screen.getByRole('combobox', { name: 'Filtrar por membro' })).toHaveValue('')
+  expect(screen.getByRole('option', { name: 'Bruno Lima' })).toBeVisible()
 })
