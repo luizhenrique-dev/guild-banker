@@ -18,12 +18,12 @@ Pré-requisitos: `make keycloak/up`, SPA disponível, usuário local de teste e 
 - Resultado esperado: apresentação consistente com a referência, leitura confortável e erros compreensíveis/acessíveis nas duas larguras.
 - Resultado: ⬜ pendente — analista, data e SHA a registrar.
 
-## QA2 — Revisão humana do snapshot de risco alto · CA3, CA5, CA6 (T1-AC3, T2-AC2, T2-AC3)
+## QA2 — Revisão humana do snapshot de risco alto · CA3, CA4, CA5, CA6 (T1-AC3, T2-AC1, T2-AC2, T2-AC3)
 - Por que manual: os subagentes revisores desta sessão possuem ferramentas de escrita; o harness não impõe a restrição de somente leitura exigida pelo pacote dev-flow para validar formalmente tasks de risco alto. A revisão independente por agente continua sendo evidência parcial.
 - Passos:
   1. Registrar o SHA analisado e revisar o delta da ISSUE-6 contra `07228341b1f33a39f0f5aa144954a97ff3bd6454`.
   2. Conferir templates contra Keycloak 26.8.2: ações/URLs/scripts nativos preservados e overrides restritos a login/erros.
-  3. Conferir a seleção pontual de `loginTheme`, ausência de overwrite/reset/importação dos demais recursos e operação sem escrita quando o tema já está correto.
+  3. Conferir a seleção inicial no JSON e o encadeamento de `setup`/`dev` para `keycloak/up`. Conferir a seleção pontual de `loginTheme`, ausência de overwrite/reset/importação dos demais recursos e operação sem escrita quando o tema já está correto.
   4. Conferir credenciais por ambiente, sessão temporária restrita e removida, timeout e mensagens sem segredos. Conferir a proteção dos diagnósticos Playwright.
   5. Examinar evidências dos commits de T1/T2 e do fechamento; confirmar que correspondem ao snapshot revisado e registrar eventual achado.
 - Resultado esperado: revisão humana registrada com escopo e SHA, sem achados impeditivos abertos. Resultado positivo não substitui QA1.
