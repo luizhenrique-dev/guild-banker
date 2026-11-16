@@ -65,12 +65,17 @@ export function FixedExpensesPageClient() {
       <main className="grid-page px-8 py-8">
         <div className="grid-controls">
         {/* Header com título e botão */}
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <h1 className="text-[32px] font-normal tracking-[-0.8px]">
-              {t('fx.title')}
-            </h1>
-          </div>
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h1 className="text-[32px] font-normal tracking-[-0.8px]">
+            {t('fx.title')}
+          </h1>
+          <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-[12px] font-semibold text-secondary-foreground">
+            {t('fx.badge')}
+          </span>
+          <p className="flex min-w-0 flex-1 basis-48 items-start gap-1.5 text-[13px] leading-5 text-secondary-foreground">
+            <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
+            <span>{t('fx.info')}</span>
+          </p>
           <Button
             ref={newButton}
             type="button"
@@ -78,21 +83,11 @@ export function FixedExpensesPageClient() {
               setEditingExpense(null)
               setModalOpen(true)
             }}
-            className="flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary/90"
+            className="ml-auto flex shrink-0 items-center gap-2 rounded-full bg-primary px-5 py-3 text-[14px] font-semibold text-white transition-colors hover:bg-primary/90"
           >
             <Plus size={16} />
             {t('fx.newButton')}
           </Button>
-        </div>
-
-        <div className="mb-4 flex items-center gap-2">
-          <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-[12px] font-semibold text-secondary-foreground">
-            {t('fx.badge')}
-          </span>
-          <p className="flex min-w-0 items-start gap-1.5 text-[13px] leading-5 text-secondary-foreground">
-            <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
-            <span>{t('fx.info')}</span>
-          </p>
         </div>
 
         <section aria-label={t('fx.summary')} className="mb-6 flex flex-wrap items-end justify-between gap-5 rounded-3xl border border-border bg-card p-6">
