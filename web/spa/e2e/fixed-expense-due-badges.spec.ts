@@ -13,6 +13,8 @@ for (const width of [375, 1280]) {
     const soon = page.getByRole('row').filter({ hasText: 'Seguro auto' })
     await expect(today.getByRole('cell').first().getByText('Vence hoje', { exact: true })).toBeVisible()
     await expect(soon.getByRole('cell').first().getByText('Próximo do vencimento', { exact: true })).toBeVisible()
+    const titles = page.getByRole('table').locator('tbody tr td:first-child span[title]')
+    await expect(titles).toHaveText(['Netflix', 'Seguro auto', 'Academia', 'Plano de saúde', 'Aluguel'])
     await expect(page.getByRole('row').filter({ hasText: 'Academia' })).not.toContainText('Vence')
 
     await page.getByRole('button', { name: 'Nova despesa fixa', exact: true }).click()
@@ -25,6 +27,7 @@ for (const width of [375, 1280]) {
     await dialog.getByRole('button', { name: 'Salvar', exact: true }).click()
     const tomorrow = page.getByRole('row').filter({ hasText: name })
     await expect(tomorrow.getByRole('cell').first().getByText('Vence amanhã', { exact: true })).toBeVisible()
+    await expect(titles.nth(1)).toHaveText(name)
     await page.evaluate(() => document.fonts.ready)
     expect(await page.evaluate(() => document.fonts.check('600 14px Inter'))).toBe(true)
 

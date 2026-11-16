@@ -10,6 +10,7 @@ import type { FixedExpenseResponse } from '../types'
 import type { Member } from '../../guilds/api/use-guilds'
 import { Table } from '@/components/ui/table'
 import { Repeat } from 'lucide-react'
+import { sortedExpenses } from '../sorted-expenses'
 
 interface Props {
   expenses: FixedExpenseResponse[]
@@ -22,7 +23,7 @@ interface Props {
 }
 
 export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false, memberFiltered = false, paymentFiltered = false, members }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const [reference] = useState(() => new Date())
 
   // Empty state
@@ -54,7 +55,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
           </tr>
         </thead>
         <tbody className="divide-y divide-border/50">
-          {expenses.map((expense) => (
+          {sortedExpenses(expenses, reference, i18n.language).map((expense) => (
             <FixedExpenseRow
               key={expense.id}
               expense={expense}

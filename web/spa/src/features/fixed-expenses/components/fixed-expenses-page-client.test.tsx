@@ -54,6 +54,27 @@ it('shows one translated due notice in the title cell only for active expenses w
   expect(screen.getByText('Due soon')).toBeVisible()
 })
 
+it('orders filtered rows by next local due date and alphabetically for ties', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 10, 15, 23, 59))
+  const base: FixedExpenseResponse = { id: 1, guild_id: 1, name: 'Next month', amount: '100', due_day: 1, payment_method: 'PIX', category: 'OTHER', status: 'ACTIVE', responsible_user_id: null }
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([
+    base,
+    { ...base, id: 2, name: 'Zebra', due_day: 15 },
+    { ...base, id: 3, name: 'Água', due_day: 15, status: 'PAUSED' },
+    { ...base, id: 4, name: 'Energia', due_day: 15, category: 'UTILITIES' },
+    { ...base, id: 5, name: 'Tomorrow', due_day: 16 },
+  ])
+  page()
+  await screen.findByText('Next month')
+  const names = () => screen.getAllByRole('row').slice(1).map((row) => within(row).getAllByRole('cell')[0]!.querySelector('[title]')!.textContent)
+  expect(names()).toEqual(['Água', 'Energia', 'Zebra', 'Tomorrow', 'Next month'])
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por categoria' }), 'OTHER')
+  expect(names()).toEqual(['Água', 'Zebra', 'Tomorrow', 'Next month'])
+  await act(async () => { await i18n.changeLanguage('en') })
+  expect(names()).toEqual(['Água', 'Zebra', 'Tomorrow', 'Next month'])
+})
+
 it('enters amounts from cents and submits the displayed decimal value', async () => {
   const create = vi.spyOn(fixedExpensesApi, 'create')
   page()
