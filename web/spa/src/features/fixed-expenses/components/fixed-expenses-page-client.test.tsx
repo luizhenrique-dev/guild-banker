@@ -16,7 +16,7 @@ import type { FixedExpenseResponse } from '../types'
 import * as queryClients from '@/src/shared/lib/query-client'
 
 beforeEach(async () => { await i18n.changeLanguage('pt-BR') })
-afterEach(() => vi.restoreAllMocks())
+afterEach(() => { vi.useRealTimers(); vi.restoreAllMocks() })
 function page() {
   return render(<MemoryRouter initialEntries={['/fixed-expenses?guild=1']}><App initialUser={{ id: 1, name: 'Ana', email: 'ana@familia.com' }} demo /></MemoryRouter>)
 }
@@ -29,6 +29,30 @@ async function fill() {
   await user.selectOptions(dialog.getByRole('combobox', { name: 'Forma de pagamento' }), 'CREDIT_CARD')
   return { user, dialog }
 }
+
+it('shows one translated due notice in the title cell only for active expenses within five days', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] })
+  vi.setSystemTime(new Date(2026, 10, 30, 23, 59))
+  const base: FixedExpenseResponse = { id: 1, guild_id: 1, name: 'Hoje', amount: '100', due_day: 30, payment_method: 'CREDIT_CARD', category: 'OTHER', status: 'ACTIVE', responsible_user_id: null }
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([
+    base,
+    { ...base, id: 2, name: 'Amanhã', due_day: 1 },
+    { ...base, id: 3, name: 'Cinco dias', due_day: 5 },
+    { ...base, id: 4, name: 'Seis dias', due_day: 6 },
+    { ...base, id: 5, name: 'Pausada hoje', status: 'PAUSED' },
+    { ...base, id: 6, name: 'Cancelada hoje', status: 'CANCELLED' },
+  ])
+  page()
+  const today = within((await screen.findByRole('row', { name: /^Hoje / })).children[0] as HTMLElement)
+  expect(today.getByText('Vence hoje')).toBeVisible()
+  expect(within(screen.getByRole('row', { name: /^Amanhã / })).getByText('Vence amanhã')).toBeVisible()
+  expect(within(screen.getByRole('row', { name: /^Cinco dias / })).getByText('Próximo do vencimento')).toBeVisible()
+  expect(screen.getAllByText(/Vence hoje|Vence amanhã|Próximo do vencimento/)).toHaveLength(3)
+  await act(async () => { await i18n.changeLanguage('en') })
+  expect(today.getByText('Due today')).toBeVisible()
+  expect(screen.getByText('Due tomorrow')).toBeVisible()
+  expect(screen.getByText('Due soon')).toBeVisible()
+})
 
 it('enters amounts from cents and submits the displayed decimal value', async () => {
   const create = vi.spyOn(fixedExpensesApi, 'create')

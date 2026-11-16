@@ -4,6 +4,7 @@
 // Replica o design da seção fx-table do protótipo.
 // ============================================================
 import { useTranslation } from 'react-i18next'
+import { useState } from 'react'
 import { FixedExpenseRow } from './fixed-expense-row'
 import type { FixedExpenseResponse } from '../types'
 import type { Member } from '../../guilds/api/use-guilds'
@@ -22,6 +23,7 @@ interface Props {
 
 export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false, memberFiltered = false, paymentFiltered = false, members }: Props) {
   const { t } = useTranslation()
+  const [reference] = useState(() => new Date())
 
   // Empty state
   if (!expenses?.length) {
@@ -56,6 +58,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
             <FixedExpenseRow
               key={expense.id}
               expense={expense}
+              reference={reference}
               responsibleName={members.find((member) => member.id === expense.responsible_user_id)?.name}
               onEdit={onEdit}
               onDelete={onDelete}

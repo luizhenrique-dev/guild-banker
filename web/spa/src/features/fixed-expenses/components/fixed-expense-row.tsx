@@ -35,9 +35,11 @@ import {
 import { CATEGORY_ICONS, type FixedExpensePaymentMethod, type FixedExpenseResponse, type FixedExpenseCategory } from '../types'
 import { useSetFixedExpenseStatus } from '../api/use-fixed-expenses'
 import { APIError } from '@/src/shared/lib/api-client'
+import { dueNotice } from '../due-notice'
 
 interface Props {
   expense: FixedExpenseResponse
+  reference: Date
   responsibleName?: string
   onEdit: (expense: FixedExpenseResponse) => void
   onDelete: (expense: FixedExpenseResponse) => void
@@ -82,9 +84,15 @@ function formatBRL(amount: string): string {
   }).format(num)
 }
 
-export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: Props) {
+export function FixedExpenseRow({ expense, reference, responsibleName, onEdit, onDelete }: Props) {
   const { t } = useTranslation()
   const statusMutation = useSetFixedExpenseStatus()
+  const notice = dueNotice(expense, reference)
+  const noticeColor = notice === 'today'
+    ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+    : notice === 'tomorrow'
+      ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+      : 'bg-secondary text-secondary-foreground'
 
   const icon = categoryIconMap[expense.category] ?? <MoreHorizontal size={16} />
   const paymentBadge = paymentMethodBadges[expense.payment_method]
@@ -95,12 +103,15 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
   return (
     <tr className="transition-colors hover:bg-muted/50">
       {/* Nome com ícone */}
-      <td className="py-4 pl-6">
+      <td className="py-4 pl-6 pr-6">
         <div className="flex items-center gap-3">
-          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
+          <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary text-secondary-foreground">
             {icon}
           </span>
-          <span className="font-semibold">{expense.name}</span>
+          <span className="min-w-0 max-w-xs truncate font-semibold" title={expense.name}>{expense.name}</span>
+          {notice && <span className={`ml-auto shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${noticeColor}`}>
+            {t(`fx.dueNotice.${notice}`)}
+          </span>}
         </div>
       </td>
 
