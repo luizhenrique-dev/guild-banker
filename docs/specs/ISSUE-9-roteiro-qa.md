@@ -1,8 +1,8 @@
 # ISSUE-9 — Roteiro de QA
 
-Spec: [ISSUE-9-forma-pagamento-despesas-fixas.md](./ISSUE-9-forma-pagamento-despesas-fixas.md). Snapshot final será registrado no fechamento.
+Spec: [ISSUE-9-forma-pagamento-despesas-fixas.md](./ISSUE-9-forma-pagamento-despesas-fixas.md). Branch: `feature/issue-9-payment-method` · snapshot de implementação: `083766ca7908a24763225f647118614d085874b5`. O fechamento seguinte altera somente documentação.
 
-## QA1 — Revisão humana de contrato e integridade · cobre P4 (T1)
+## QA1 — Revisão humana de contrato e integridade · cobre P4 e CA1, CA2, CA6 (T1-AC1, T1-AC2, T1-AC3, T1-AC4)
 - Por que manual: o revisor independente disponível tem ferramentas de escrita não restritas; a integração Codex da skill exige revisão humana registrada ou ambiente que imponha somente leitura para esta task de risco alto.
 - Pré-condições: checkout do snapshot de implementação indicado no fechamento e comparação com `88a3c5bd27f99e4417a3f80bee8bc4a5eb358cc8`; acesso às evidências dos commits de T1/T2.
 - Passos:
@@ -24,7 +24,7 @@ Spec: [ISSUE-9-forma-pagamento-despesas-fixas.md](./ISSUE-9-forma-pagamento-desp
 - Resultado esperado: cada método é identificável por texto e ícone, novos controles legíveis nos dois temas e fluxo utilizável nas duas larguras. Testes automatizados dos quatro cenários responsivos passaram, incluindo cor do texto no tema escuro. Há contraste insuficiente preexistente em campos antigos (categoria/responsável/nome/valor no tema escuro); não atribuir isso à nova coluna/filtro nem ampliar o escopo sem decisão.
 - Resultado: ⬜ pendente — responsável: analista/usuário.
 
-## QA3 — Reexecutar integração de login Keycloak · cobre CA6 (gate final)
+## QA3 — Reexecutar integração de login Keycloak · cobre CA6 (T1-AC4, T2-AC3; gate final)
 - Por que pendente: a suíte E2E completa executou 51 cenários; 50 passaram e o callback real falhou ao preencher senha. E2E_PASSWORD/KC_TEST_USER_PASSWORD não estavam definidas no ambiente. Código e teste Keycloak não foram alterados pela issue.
 - Pré-condições: Keycloak local configurado e credenciais do usuário de teste fornecidas ao processo por mecanismo seguro, sem gravá-las no repositório ou no relatório.
 - Passos:
