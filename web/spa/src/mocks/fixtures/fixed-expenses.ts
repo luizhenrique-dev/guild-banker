@@ -11,7 +11,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     name: 'Aluguel',
     amount: '2500.00',
     due_day: 10,
-    category: 'HOUSING',
+    payment_method: 'CREDIT_CARD', category: 'HOUSING',
     responsible_user_id: null, status: 'ACTIVE',
   },
   {
@@ -20,7 +20,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     name: 'Netflix',
     amount: '55.90',
     due_day: 15,
-    category: 'SUBSCRIPTIONS',
+    payment_method: 'CREDIT_CARD', category: 'SUBSCRIPTIONS',
     responsible_user_id: null, status: 'ACTIVE',
   },
   {
@@ -29,7 +29,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     name: 'Plano de saúde',
     amount: '320.00',
     due_day: 5,
-    category: 'INSURANCE',
+    payment_method: 'CREDIT_CARD', category: 'INSURANCE',
     responsible_user_id: null, status: 'ACTIVE',
   },
   {
@@ -38,7 +38,7 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     name: 'Academia',
     amount: '89.90',
     due_day: 1,
-    category: 'HEALTH',
+    payment_method: 'CREDIT_CARD', category: 'HEALTH',
     responsible_user_id: null, status: 'PAUSED',
   },
   {
@@ -47,11 +47,11 @@ export const fixedExpensesFixtures: FixedExpenseResponse[] = [
     name: 'Seguro auto',
     amount: '180.00',
     due_day: 20,
-    category: 'INSURANCE',
+    payment_method: 'CREDIT_CARD', category: 'INSURANCE',
     responsible_user_id: null, status: 'ACTIVE',
   },
 ]
 
 export const sharedFixedExpensesFixtures: FixedExpenseResponse[] = [
- { id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' },
+ { id: 20, guild_id: 2, name: 'Internet da República', amount: '150.00', due_day: 12, payment_method: 'CREDIT_CARD', category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' },
 ]

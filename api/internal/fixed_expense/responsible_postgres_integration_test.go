@@ -46,7 +46,7 @@ func TestResponsibleExpensePostgres(t *testing.T) {
 	create := func(guildID int, responsible string) fixedExpenseResponse {
 		t.Helper()
 		var expense fixedExpenseResponse
-		payload := `{"name":"Rent","amount":"123.45","due_day":10,"category":"HOUSING"` + responsible + `}`
+		payload := `{"name":"Rent","amount":"123.45","due_day":10,"payment_method":"CREDIT_CARD","category":"HOUSING"` + responsible + `}`
 		response := request("POST", fmt.Sprintf("/guilds/%d/expenses", guildID), payload, 201)
 		require.NoError(t, json.Unmarshal(response.Body.Bytes(), &expense))
 		return expense
@@ -65,7 +65,7 @@ func TestResponsibleExpensePostgres(t *testing.T) {
 	before := *persisted
 	for _, responsible := range []string{"0", "-1", "3", "999", `"2"`, "1.5", "true", "9223372036854775808"} {
 		request("PATCH", path, `{"amount":"999","responsible_user_id":`+responsible+`}`, 400)
-		request("POST", "/guilds/1/expenses", `{"name":"Invalid","amount":"999","due_day":1,"category":"OTHER","responsible_user_id":`+responsible+`}`, 400)
+		request("POST", "/guilds/1/expenses", `{"name":"Invalid","amount":"999","due_day":1,"payment_method":"CREDIT_CARD","category":"OTHER","responsible_user_id":`+responsible+`}`, 400)
 		unchanged, err := storage.GetByIDAndGuild(ctx, expense.ID, 1)
 		require.NoError(t, err)
 		require.Equal(t, &before, unchanged)
@@ -105,7 +105,7 @@ func TestResponsibleMigrationPreservesExistingExpenses(t *testing.T) {
 	_, err = db.Exec(string(down))
 	require.NoError(t, err)
 	_, err = db.Exec(`INSERT INTO guild(id,name,display_name,created_by) VALUES (1,'legacy','Legacy','fixture');
- INSERT INTO fixed_expense(guild_id,name,amount,due_day,category,created_by) VALUES (1,'Legacy rent',123.45,10,'HOUSING','fixture')`)
+ INSERT INTO fixed_expense(guild_id,name,amount,due_day,category,created_by,payment_method) VALUES (1,'Legacy rent',123.45,10,'HOUSING','fixture','CREDIT_CARD')`)
 	require.NoError(t, err)
 	up, err := os.ReadFile("../../migrations/000005_fixed_expense_responsible.up.sql")
 	require.NoError(t, err)
@@ -132,7 +132,7 @@ func TestResponsibleAssignmentConcurrentRemoval(t *testing.T) {
 		for round := range 10 {
 			_, err := db.Exec(`INSERT INTO guild_member(guild_id,user_id,invited_by) VALUES (1,2,1)`)
 			require.NoError(t, err)
-			expense, err := New(1, fmt.Sprintf("%s-%d", operation, round), decimal.NewFromInt(10), 1, CategoryOther, "fixture")
+			expense, err := New(1, fmt.Sprintf("%s-%d", operation, round), decimal.NewFromInt(10), 1, CategoryOther, PaymentMethodCreditCard, "fixture")
 			require.NoError(t, err)
 			if operation == "update" {
 				require.NoError(t, storage.Create(ctx, expense))

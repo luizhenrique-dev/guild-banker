@@ -61,7 +61,7 @@ func TestHandlerUsesTrustedActor(t *testing.T) {
 	handler := NewHandler(NewService(storage))
 	router := gin.New()
 	router.POST("/api/guilds/:guildID/fixed-expenses", handler.Create)
-	testIdentityRequest(t, router, "POST", "/api/guilds/1/fixed-expenses", `{"name":"fixture","amount":"10","due_day":1,"category":"OTHER"}`, 201)
+	testIdentityRequest(t, router, "POST", "/api/guilds/1/fixed-expenses", `{"name":"fixture","amount":"10","due_day":1,"payment_method":"CREDIT_CARD","category":"OTHER"}`, 201)
 	assert.True(t, storage.called)
 }
 
@@ -110,7 +110,7 @@ func TestHandlerGuildErrors(t *testing.T) {
 			handler := NewHandler(NewService(storage))
 			router := gin.New()
 			router.POST("/guilds/:guildID/fixed-expenses", handler.Create)
-			req := httptest.NewRequest("POST", "/guilds/1/fixed-expenses", strings.NewReader(`{"name":"","amount":"1","due_day":1,"category":"OTHER"}`))
+			req := httptest.NewRequest("POST", "/guilds/1/fixed-expenses", strings.NewReader(`{"name":"","amount":"1","due_day":1,"payment_method":"CREDIT_CARD","category":"OTHER"}`))
 			req.Header.Set("Content-Type", "application/json")
 			req = req.WithContext(auth.WithPrincipal(req.Context(), auth.Principal{Actor: validActor()}))
 			response := httptest.NewRecorder()
@@ -139,7 +139,7 @@ func TestHandlerCreatesResponsibleExpense(t *testing.T) {
 	storage.On("Create", mock.Anything, mock.Anything).Return(nil)
 	router := gin.New()
 	router.POST("/guilds/:guildID/fixed-expenses", NewHandler(NewService(storage)).Create)
-	req := httptest.NewRequest("POST", "/guilds/1/fixed-expenses", strings.NewReader(`{"name":"Rent","amount":"10","due_day":1,"category":"OTHER","responsible_user_id":2}`))
+	req := httptest.NewRequest("POST", "/guilds/1/fixed-expenses", strings.NewReader(`{"name":"Rent","amount":"10","due_day":1,"payment_method":"CREDIT_CARD","category":"OTHER","responsible_user_id":2}`))
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(auth.WithPrincipal(req.Context(), auth.Principal{Actor: validActor()}))
 	out := httptest.NewRecorder()

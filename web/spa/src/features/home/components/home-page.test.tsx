@@ -11,8 +11,8 @@ import type { FixedExpenseResponse } from '../../fixed-expenses/types'
 
 const user = { id: 1, name: 'Ana', email: 'ana@example.test' }
 const rows: FixedExpenseResponse[] = [
-  { id: 1, guild_id: 1, name: 'Internet', amount: '123.45', due_day: 15, status: 'ACTIVE', responsible_user_id: null, category: 'OTHER' },
-  { id: 2, guild_id: 1, name: 'Aluguel', amount: '2500.00', due_day: 16, status: 'ACTIVE', responsible_user_id: null, category: 'HOUSING' },
+  { id: 1, guild_id: 1, name: 'Internet', amount: '123.45', due_day: 15, status: 'ACTIVE', responsible_user_id: null, payment_method: 'CREDIT_CARD', category: 'OTHER' },
+  { id: 2, guild_id: 1, name: 'Aluguel', amount: '2500.00', due_day: 16, status: 'ACTIVE', responsible_user_id: null, payment_method: 'CREDIT_CARD', category: 'HOUSING' },
 ]
 function open(path = '/home?guild=1') {
   return render(<MemoryRouter initialEntries={[path]}><App initialUser={user} demo /></MemoryRouter>)
@@ -50,7 +50,7 @@ it('shows category totals for the whole guild month rather than only upcoming ex
   server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([
     ...rows,
     { ...rows[0], id: 3, amount: '200', due_day: 1 },
-    { ...rows[0], id: 4, amount: '9999', category: 'HEALTH', status: 'PAUSED' },
+    { ...rows[0], id: 4, amount: '9999', payment_method: 'CREDIT_CARD', category: 'HEALTH', status: 'PAUSED' },
   ])))
   open()
   const categories = within(await screen.findByRole('region', { name: 'Despesas fixas - Por categoria' }))

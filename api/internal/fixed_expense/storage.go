@@ -13,6 +13,7 @@ import (
 )
 
 type fixedExpenseEntity struct {
+	PaymentMethod     string          `db:"payment_method"`
 	ResponsibleUserID *int64          `db:"responsible_user_id"`
 	ID                int64           `db:"id"`
 	GuildID           int64           `db:"guild_id"`
@@ -37,12 +38,13 @@ func NewStorage(db *sqlx.DB) Storage {
 
 func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense) error {
 	const query = `
-		INSERT INTO fixed_expense (guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id)
-		VALUES (:guild_id, :name, :amount, :due_day, :category, :status, :created_at, :created_by, :updated_at, :updated_by, :responsible_user_id)
+		INSERT INTO fixed_expense (guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id, payment_method)
+		VALUES (:guild_id, :name, :amount, :due_day, :category, :status, :created_at, :created_by, :updated_at, :updated_by, :responsible_user_id, :payment_method)
 		RETURNING id
 	`
 
 	params := map[string]any{
+		"payment_method":      string(fixedExpense.PaymentMethod),
 		"responsible_user_id": fixedExpense.ResponsibleUserID,
 		"guild_id":            fixedExpense.GuildID,
 		"name":                fixedExpense.Name,
@@ -76,7 +78,7 @@ func (s *postgresStorage) Create(ctx context.Context, fixedExpense *FixedExpense
 
 func (s *postgresStorage) GetByIDAndGuild(ctx context.Context, id, guildID int64) (*FixedExpense, error) {
 	const query = `
-		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id
+		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id, payment_method
 		FROM fixed_expense
 		WHERE id = $1 AND guild_id = $2
 	`
@@ -105,7 +107,7 @@ func (s *postgresStorage) listByGuild(ctx context.Context, guildID int64, includ
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 	const query = `
-		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id
+		SELECT id, guild_id, name, amount, due_day, category, status, created_at, created_by, updated_at, updated_by, responsible_user_id, payment_method
 		FROM fixed_expense
 		WHERE guild_id = $1 AND (status = $2 OR ($3 AND status = $4))
 		ORDER BY due_day ASC, name ASC
@@ -133,7 +135,8 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 			status = $4,
 			updated_at = $5,
 			updated_by = $6,
- responsible_user_id = $9
+			responsible_user_id = $9,
+			payment_method = $10
 		WHERE id = $7 AND guild_id = $8
 	`
 
@@ -149,6 +152,7 @@ func (s *postgresStorage) Update(ctx context.Context, fixedExpense *FixedExpense
 		fixedExpense.ID,
 		fixedExpense.GuildID,
 		fixedExpense.ResponsibleUserID,
+		string(fixedExpense.PaymentMethod),
 	)
 	if err != nil {
 		return fmt.Errorf("update fixed expense: %w", responsibleStorageError(err))
@@ -184,6 +188,7 @@ func (s *postgresStorage) Delete(ctx context.Context, id, guildID int64) error {
 
 func toDomain(entity fixedExpenseEntity) *FixedExpense {
 	return &FixedExpense{
+		PaymentMethod:     PaymentMethod(entity.PaymentMethod),
 		ResponsibleUserID: entity.ResponsibleUserID,
 		ID:                entity.ID,
 		GuildID:           entity.GuildID,

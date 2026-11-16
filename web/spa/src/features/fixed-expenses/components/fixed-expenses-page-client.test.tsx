@@ -26,6 +26,7 @@ async function fill() {
   const dialog = within(screen.getByRole('dialog'))
   await user.type(dialog.getByRole('textbox', { name: 'Nome' }), 'Internet')
   await user.type(dialog.getByRole('textbox', { name: 'Valor (R$)' }), '123,45')
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Forma de pagamento' }), 'CREDIT_CARD')
   return { user, dialog }
 }
 
@@ -52,6 +53,7 @@ it('enters amounts from cents and submits the displayed decimal value', async ()
   await user.clear(amount)
   await user.type(amount, '1500')
   await user.type(dialog.getByRole('textbox', { name: 'Nome' }), 'Cents input expense')
+  await user.selectOptions(dialog.getByRole('combobox', { name: 'Forma de pagamento' }), 'CREDIT_CARD')
   await user.click(dialog.getByRole('button', { name: 'Salvar' }))
   await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({ amount: '15.00' }), expect.anything(), 1))
 })
@@ -77,9 +79,9 @@ it('assigns, preserves through status changes and clears the responsible member'
 
 it('combines member and category filters and sums only active results', async () => {
   vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([
-    { guild_id: 1, id: 1, name: 'Assigned active', amount: '100.01', due_day: 1, category: 'HOUSING', status: 'ACTIVE', responsible_user_id: 2 },
-    { guild_id: 1, id: 2, name: 'Assigned paused', amount: '90', due_day: 1, category: 'HEALTH', status: 'PAUSED', responsible_user_id: 2 },
-    { guild_id: 1, id: 3, name: 'Unassigned', amount: '50', due_day: 1, category: 'HOUSING', status: 'ACTIVE', responsible_user_id: null },
+    { guild_id: 1, id: 1, name: 'Assigned active', amount: '100.01', due_day: 1, payment_method: 'CREDIT_CARD', category: 'HOUSING', status: 'ACTIVE', responsible_user_id: 2 },
+    { guild_id: 1, id: 2, name: 'Assigned paused', amount: '90', due_day: 1, payment_method: 'CREDIT_CARD', category: 'HEALTH', status: 'PAUSED', responsible_user_id: 2 },
+    { guild_id: 1, id: 3, name: 'Unassigned', amount: '50', due_day: 1, payment_method: 'CREDIT_CARD', category: 'HOUSING', status: 'ACTIVE', responsible_user_id: null },
   ])
   page()
   const total = await screen.findByRole('status', { name: 'Total previsto no mês' })
@@ -100,7 +102,7 @@ it('combines member and category filters and sums only active results', async ()
 })
 
 it.each([false, true])('keeps a saved responsibility on member failure; retry=%s', async (retry) => {
-  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([{ guild_id: 1, id: 1, name: 'Assigned rent', amount: '100', due_day: 1, category: 'HOUSING', status: 'ACTIVE', responsible_user_id: 2 }])
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([{ guild_id: 1, id: 1, name: 'Assigned rent', amount: '100', due_day: 1, payment_method: 'CREDIT_CARD', category: 'HOUSING', status: 'ACTIVE', responsible_user_id: 2 }])
   let failMembers = true
   server.use(http.get('*/api/v1/guilds/:id/members', () => failMembers ? new HttpResponse(null, { status: 500 }) : HttpResponse.json([{ id: 2, name: 'Carlos Silva', email: 'carlos@familia.com', member_since: '2026-01-01T00:00:00Z', last_access_at: null }])))
   page()
@@ -207,7 +209,7 @@ it('reports saved changes when refetch fails and retries only GET', async () => 
   await user.click(dialog.getByRole('button', { name: 'Salvar' }))
   expect(await screen.findByRole('alert')).toHaveTextContent('A alteração foi salva, mas a lista não foi atualizada.')
   expect(screen.queryByRole('dialog')).toBeNull()
-  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([{ guild_id: 1, id: 100, name: 'Internet', amount: '123.45', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }])))
+  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([{ guild_id: 1, id: 100, name: 'Internet', amount: '123.45', due_day: 1, payment_method: 'CREDIT_CARD', category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }])))
   await user.click(screen.getByRole('button', { name: 'Tentar novamente' }))
   expect(await screen.findByRole('row', { name: /Internet/ }, { timeout: 3000 })).toBeVisible()
   expect(writes).toBe(1)
@@ -308,7 +310,7 @@ it('a late create from G1 leaves the new G2 draft intact and invalidates only G1
   act(() => navigate('/fixed-expenses?guild=2'))
   expect(screen.queryByRole('dialog')).toBeNull()
   const next = await fill()
-  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Old', amount: '123.45', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }) })
+  await act(async () => { finish({ guild_id: 1, id: 100, name: 'Old', amount: '123.45', due_day: 1, payment_method: 'CREDIT_CARD', category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }) })
   expect(screen.getByRole('dialog')).toBeVisible()
   expect(next.dialog.getByRole('textbox', { name: 'Nome' })).toHaveValue('Internet')
   expect(invalidate).toHaveBeenCalledExactlyOnceWith({ queryKey: ['fixed-expenses', 1, 1] })
@@ -341,4 +343,29 @@ it('ignores a late member list from the previous guild', async () => {
   expect(screen.queryByRole('option', { name: 'Carlos Silva' })).toBeNull()
   expect(screen.getByRole('combobox', { name: 'Filtrar por membro' })).toHaveValue('')
   expect(screen.getByRole('option', { name: 'Bruno Lima' })).toBeVisible()
+})
+
+it('requires an explicit payment choice, associates its error and saves the chosen method', async () => {
+  const create = vi.spyOn(fixedExpensesApi, 'create')
+  page()
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Nova despesa fixa' }))
+  const dialog = within(screen.getByRole('dialog'))
+  const method = dialog.getByRole('combobox', { name: 'Forma de pagamento' })
+  expect(method).toHaveValue('')
+  await user.type(dialog.getByRole('textbox', { name: 'Nome' }), 'Payment choice')
+  await user.type(dialog.getByRole('textbox', { name: 'Valor (R$)' }), '12345')
+  await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+  expect(method).toHaveAttribute('aria-invalid', 'true')
+  expect(method).toHaveAccessibleDescription('Selecione uma forma de pagamento.')
+  expect(create).not.toHaveBeenCalled()
+  await act(async () => { await i18n.changeLanguage('en') })
+  expect(method).toHaveAccessibleDescription('Select a payment method.')
+  await act(async () => { await i18n.changeLanguage('pt-BR') })
+  await user.selectOptions(method, 'VOUCHER')
+  await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({ payment_method: 'VOUCHER' }), expect.anything(), 1))
+  await screen.findByRole('row', { name: /Payment choice/ }, { timeout: 3000 })
+  await user.click(screen.getByRole('button', { name: 'Editar Payment choice' }))
+  expect(within(screen.getByRole('dialog')).getByRole('combobox', { name: 'Forma de pagamento' })).toHaveValue('VOUCHER')
 })

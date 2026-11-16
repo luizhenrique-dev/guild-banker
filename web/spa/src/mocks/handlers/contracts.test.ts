@@ -19,7 +19,7 @@ it('fixed-expense mock preserves name on PATCH and rejects ACTIVE deactivation',
 it('members share one guild record while the other guild stays isolated', async () => {
   const root = '/api/v1/guilds/2/fixed-expenses'
   const memberB = { 'X-User-ID': '2', 'X-User-Email': 'b@example.test' }
-  const created = await apiClient<components['schemas']['FixedExpenseResponse']>(root, { method: 'POST', headers, body: { name: 'Shared test', amount: '12.34', due_day: 3, category: 'OTHER', guild_id: 1 } })
+  const created = await apiClient<components['schemas']['FixedExpenseResponse']>(root, { method: 'POST', headers, body: { name: 'Shared test', amount: '12.34', due_day: 3, payment_method: 'CREDIT_CARD', category: 'OTHER', guild_id: 1 } })
   expect(created.guild_id).toBe(2)
   const list = await apiClient<components['schemas']['FixedExpenseResponse'][]>(root, { headers: memberB })
   expect(list.find((expense) => expense.id === created.id)).toEqual(created)
@@ -80,4 +80,14 @@ it('invitation mock authorizes the recipient and grants access only after accept
   await apiClient('/api/v1/guild-invites/' + again[0]!.id + '/accept', { method: 'POST', headers: recipient })
   expect(await apiClient('/api/v1/guilds', { headers: recipient })).toEqual([expect.objectContaining({ id: 1 })])
   expect(await apiClient('/api/v1/guild-invites', { headers: recipient })).toEqual([])
+})
+
+it.each([undefined, null, '', 'CASH'])('fixed-expense mock rejects invalid payment %s without changing the expense', async (payment_method) => {
+  const root = '/api/v1/guilds/1/fixed-expenses'
+  await expect(apiClient(root, { method: 'POST', headers, body: { name: 'Invalid', amount: '1', due_day: 1, category: 'OTHER', payment_method } })).rejects.toMatchObject({ status: 400 })
+  if (payment_method !== undefined) {
+    await expect(apiClient(root + '/1', { method: 'PATCH', headers, body: { amount: '999', payment_method } })).rejects.toMatchObject({ status: 400 })
+  }
+  const list = await apiClient<components['schemas']['FixedExpenseResponse'][]>(root, { headers })
+  expect(list.find((expense) => expense.id === 1)).toMatchObject({ amount: '2500.00', payment_method: 'CREDIT_CARD' })
 })

@@ -498,8 +498,11 @@ export interface components {
          */
         FixedExpenseCategory: "GROCERY" | "HOUSING" | "UTILITIES" | "SUBSCRIPTIONS" | "INSURANCE" | "EDUCATION" | "TRANSPORTATION" | "HEALTH" | "PERSONAL" | "TAXES" | "OTHER" | "FOOD_AND_DINING" | "ENTERTAINMENT" | "SHOPPING" | "PETS" | "TRAVEL" | "INVESTMENTS";
         /** @enum {string} */
+        FixedExpensePaymentMethod: "CREDIT_CARD" | "DEBIT_CARD" | "PIX" | "AUTOMATIC_DEBIT" | "VOUCHER";
+        /** @enum {string} */
         FixedExpenseStatus: "ACTIVE" | "PAUSED" | "CANCELLED";
         CreateFixedExpenseRequest: {
+            payment_method: components["schemas"]["FixedExpensePaymentMethod"];
             /**
              * Format: int64
              * @description ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
@@ -512,8 +515,9 @@ export interface components {
             due_day: number;
             category: components["schemas"]["FixedExpenseCategory"];
         };
-        /** @description Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados. */
+        /** @description Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados. Omitir payment_method preserva o valor atual; null, vazio e valores desconhecidos são rejeitados. */
         UpdateFixedExpenseRequest: {
+            payment_method?: components["schemas"]["FixedExpensePaymentMethod"];
             /**
              * Format: int64
              * @description ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
@@ -532,6 +536,7 @@ export interface components {
             status: "PAUSED" | "CANCELLED";
         };
         FixedExpenseResponse: {
+            payment_method: components["schemas"]["FixedExpensePaymentMethod"];
             /**
              * Format: int64
              * @description ID de um membro da mesma guild; null significa sem responsável. No PATCH, omitir preserva a atribuição atual.
