@@ -94,7 +94,7 @@ export function FixedExpensesPageClient() {
         <section aria-label={t('fx.summary')} className="mb-6 flex flex-wrap items-end justify-between gap-5 rounded-3xl border border-border bg-card p-6">
           <div>
             <h2 className="text-sm text-secondary-foreground">{t('fx.expectedMonth', { month: new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(new Date()) })}</h2>
-            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
+            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold text-orange-600 dark:text-orange-400">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
             <p className="mt-2 text-sm text-muted-foreground">{t('fx.totalHint')}</p>
           </div>
           <div className="flex w-full flex-col gap-4 lg:w-auto lg:flex-row">

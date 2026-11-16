@@ -96,10 +96,6 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
         </span>
       </td>
 
-      <td className="px-4 py-4 text-secondary-foreground">
-        {expense.responsible_user_id == null ? t('fx.unassigned') : responsibleName ?? t('fx.responsibleUnavailable')}
-      </td>
-
       {/* Valor em JetBrains Mono */}
       <td className="py-4 text-right font-mono font-medium">
         {formatBRL(expense.amount)}
@@ -122,6 +118,10 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
           />
           {t(`fx.status.${expense.status}`)}
         </span>
+      </td>
+
+      <td className="px-4 py-4 text-secondary-foreground">
+        {expense.responsible_user_id == null ? t('fx.unassigned') : responsibleName ?? t('fx.responsibleUnavailable')}
       </td>
 
       {/* Ações */}
