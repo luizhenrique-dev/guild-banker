@@ -21,6 +21,8 @@ export function HomePage() {
   const forbidden = error instanceof APIError && error.status === 403
   const dates = new Intl.DateTimeFormat(i18n.language, { dateStyle: 'short' })
   const month = new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(reference)
+  const [expensesTitlePrefix, expensesTitle] = t('home.expensesTitle').split(' - ')
+  const [categoriesTitlePrefix, categoriesTitle] = t('home.categoriesTitle').split(' - ')
   const expenseStatus = isLoading ? <p role="status" className="text-muted-foreground">{t('common.loading')}</p>
     : error ? <div role="alert">
       <p className="text-destructive">{t(forbidden ? 'accessDenied.title' : 'home.expensesError')}</p>
@@ -35,7 +37,7 @@ export function HomePage() {
         <div className="mb-2 flex items-center gap-3">
           <CalendarClock aria-hidden="true" className="shrink-0 text-primary" size={24} />
           <div className="min-w-0">
-            <h2 id="home-expenses-title" className="text-lg font-semibold">{t('home.expensesTitle')}</h2>
+            <h2 id="home-expenses-title" aria-label={t('home.expensesTitle')} className="text-lg font-semibold"><span className="text-primary">{expensesTitlePrefix}</span><span aria-hidden="true" className="mx-2 inline-block h-4 border-l border-border align-middle" />{expensesTitle}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{month}</p>
           </div>
         </div>
@@ -67,7 +69,7 @@ export function HomePage() {
         <div className="mb-2 flex items-center gap-3">
           <ChartPie aria-hidden="true" className="shrink-0 text-primary" size={24} />
           <div className="min-w-0">
-            <h2 id="home-categories-title" className="text-lg font-semibold">{t('home.categoriesTitle')}</h2>
+            <h2 id="home-categories-title" aria-label={t('home.categoriesTitle')} className="text-lg font-semibold"><span className="text-primary">{categoriesTitlePrefix}</span><span aria-hidden="true" className="mx-2 inline-block h-4 border-l border-border align-middle" />{categoriesTitle}</h2>
             <p className="mt-1 text-sm text-muted-foreground">{month}</p>
           </div>
         </div>
@@ -78,7 +80,7 @@ export function HomePage() {
                 <span aria-hidden="true">{CATEGORY_ICONS[category]}</span>
                 <span className="line-clamp-2 break-words" title={t(`category.${category}`)}>{t(`category.${category}`)}</span>
               </p>
-              <p className="shrink-0 font-mono font-semibold text-orange-600 dark:text-orange-400">{monthlyTotal(expenses, i18n.language)}</p>
+              <p className="shrink-0 font-mono font-semibold">{monthlyTotal(expenses, i18n.language)}</p>
             </li>)}
           </ol>)}
       </section>
