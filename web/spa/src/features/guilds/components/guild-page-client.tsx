@@ -56,6 +56,7 @@ export function GuildPageClient() {
             )}
           </span>
         </div>
+        {activeGuild?.description && <p className="mt-4 whitespace-pre-wrap break-words text-sm text-[#5b616e]">{activeGuild.description}</p>}
       </div>
 
       {/* Convite */}

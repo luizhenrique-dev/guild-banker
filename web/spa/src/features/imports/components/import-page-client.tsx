@@ -66,7 +66,7 @@ export function ImportPageClient() {
           <FileUp size={40} className="text-[#7c828a]" />
           <p className="text-[15px] text-[#5b616e]">{t('import.dropzone')}</p>
           <p className="text-[12px] text-[#7c828a]">{t('import.maxSize')}</p>
-          <label className="cursor-pointer rounded-full bg-[#eef0f3] px-5 py-2 text-[14px] font-semibold text-[#5b616e] transition-colors hover:bg-[#dee1e6]">
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-primary px-5 py-2 text-[14px] font-semibold text-white shadow-sm transition-colors hover:bg-primary/90 hover:shadow-md focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2">
             <input
               type="file"
               accept=".csv"
@@ -77,6 +77,7 @@ export function ImportPageClient() {
                 if (f) setValue('file', f, { shouldValidate: true })
               }}
             />
+            <Upload size={16} aria-hidden="true" />
             {t('import.selectFile')}
           </label>
           {errors.file && <p role="alert">{t(errors.file.message ?? 'validation.csv')}</p>}

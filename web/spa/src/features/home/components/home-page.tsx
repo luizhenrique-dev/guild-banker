@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { Link, useLocation } from 'react-router-dom'
 import { useSession } from '@/src/app/session-provider'
 import { useState } from 'react'
 import { CalendarClock, ChartPie } from 'lucide-react'
@@ -13,6 +14,7 @@ import { CATEGORY_ICONS } from '../../fixed-expenses/types'
 
 export function HomePage() {
   const { user } = useSession()
+  const { search } = useLocation()
   const { t, i18n } = useTranslation()
   const [reference] = useState(() => new Date())
   const { data, isLoading, error, refetch, isFetching } = useFixedExpenses()
@@ -33,11 +35,11 @@ export function HomePage() {
   return <main className="p-6 sm:p-8">
     <h1 className="text-[32px]">{user?.name ? t('home.welcome', { name: user.name }) : t('home.welcomeAnonymous')}</h1>
     <div className="mt-8 grid max-w-[904px] auto-rows-fr items-stretch gap-6 lg:grid-cols-2">
-      <section aria-labelledby="home-expenses-title" className="w-full max-w-[440px] rounded-3xl border border-border bg-card p-5 sm:p-6">
+      <section aria-labelledby="home-expenses-title" className="flex w-full max-w-[440px] flex-col rounded-3xl border border-border bg-card p-5 sm:p-6">
         <div className="mb-2 flex items-center gap-3">
           <CalendarClock aria-hidden="true" className="shrink-0 text-primary" size={24} />
           <div className="min-w-0">
-            <h2 id="home-expenses-title" aria-label={t('home.expensesTitle')} className="text-lg font-semibold"><span className="text-primary">{expensesTitlePrefix}</span><span aria-hidden="true" className="mx-2 inline-block h-4 border-l border-border align-middle" />{expensesTitle}</h2>
+            <h2 id="home-expenses-title" aria-label={t('home.expensesTitle')} className="text-lg font-semibold"><span className="text-primary">{expensesTitlePrefix}</span><span aria-hidden="true" className="mx-2 inline-block h-4 border-l border-border align-middle" /><span className="text-sm font-normal text-muted-foreground">{expensesTitle}</span></h2>
             <p className="mt-1 text-sm text-muted-foreground">{month}</p>
           </div>
         </div>
@@ -64,12 +66,15 @@ export function HomePage() {
                 </li>
               })}
             </ol>)}
+        <footer className="mt-auto pt-4">
+          <Link to={'/fixed-expenses' + search} className="block rounded-sm border-t border-border pt-3 text-right text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t('home.moreDetails')}</Link>
+        </footer>
       </section>
-      <section aria-labelledby="home-categories-title" className="w-full max-w-[440px] rounded-3xl border border-border bg-card p-5 sm:p-6">
+      <section aria-labelledby="home-categories-title" className="flex w-full max-w-[440px] flex-col rounded-3xl border border-border bg-card p-5 sm:p-6">
         <div className="mb-2 flex items-center gap-3">
           <ChartPie aria-hidden="true" className="shrink-0 text-primary" size={24} />
           <div className="min-w-0">
-            <h2 id="home-categories-title" aria-label={t('home.categoriesTitle')} className="text-lg font-semibold"><span className="text-primary">{categoriesTitlePrefix}</span><span aria-hidden="true" className="mx-2 inline-block h-4 border-l border-border align-middle" />{categoriesTitle}</h2>
+            <h2 id="home-categories-title" aria-label={t('home.categoriesTitle')} className="text-lg font-semibold"><span className="text-primary">{categoriesTitlePrefix}</span><span aria-hidden="true" className="mx-2 inline-block h-4 border-l border-border align-middle" /><span className="text-sm font-normal text-muted-foreground">{categoriesTitle}</span></h2>
             <p className="mt-1 text-sm text-muted-foreground">{month}</p>
           </div>
         </div>
@@ -83,6 +88,9 @@ export function HomePage() {
               <p className="shrink-0 font-mono font-semibold">{monthlyTotal(expenses, i18n.language)}</p>
             </li>)}
           </ol>)}
+        <footer className="mt-auto pt-4">
+          <Link to={'/fixed-expenses' + search} className="block rounded-sm border-t border-border pt-3 text-right text-xs font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{t('home.moreDetails')}</Link>
+        </footer>
       </section>
     </div>
   </main>
