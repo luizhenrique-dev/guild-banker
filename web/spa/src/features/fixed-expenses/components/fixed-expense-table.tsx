@@ -14,12 +14,13 @@ interface Props {
   expenses: FixedExpenseResponse[]
   filtered?: boolean
   memberFiltered?: boolean
+  paymentFiltered?: boolean
   members: Member[]
   onEdit: (expense: FixedExpenseResponse) => void
   onDelete: (expense: FixedExpenseResponse) => void
 }
 
-export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false, memberFiltered = false, members }: Props) {
+export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false, memberFiltered = false, paymentFiltered = false, members }: Props) {
   const { t } = useTranslation()
 
   // Empty state
@@ -29,8 +30,8 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
         <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-secondary">
           <Repeat size={28} className="text-muted-foreground" />
         </div>
-        <p className="text-[15px] font-medium text-secondary-foreground">{t(memberFiltered ? 'fx.emptyMemberFilter' : filtered ? 'fx.emptyFilter' : 'fx.empty')}</p>
-        <p className="text-[13px] text-muted-foreground">{t(memberFiltered ? 'fx.emptyMemberFilterHint' : filtered ? 'fx.emptyFilterHint' : 'fx.emptyHint')}</p>
+        <p className="text-[15px] font-medium text-secondary-foreground">{t(paymentFiltered ? 'fx.emptyPaymentFilter' : memberFiltered ? 'fx.emptyMemberFilter' : filtered ? 'fx.emptyFilter' : 'fx.empty')}</p>
+        <p className="text-[13px] text-muted-foreground">{t(paymentFiltered ? 'fx.emptyPaymentFilterHint' : memberFiltered ? 'fx.emptyMemberFilterHint' : filtered ? 'fx.emptyFilterHint' : 'fx.emptyHint')}</p>
       </div>
     )
   }
@@ -42,6 +43,7 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
           <tr>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.name')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.category')}</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{t('fx.paymentMethod')}</th>
             <th scope="col" className="py-3 text-right font-semibold">{t('fx.col.amount')}</th>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.status')}</th>

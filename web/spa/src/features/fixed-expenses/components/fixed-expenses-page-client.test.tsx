@@ -369,3 +369,47 @@ it('requires an explicit payment choice, associates its error and saves the chos
   await user.click(screen.getByRole('button', { name: 'Editar Payment choice' }))
   expect(within(screen.getByRole('dialog')).getByRole('combobox', { name: 'Forma de pagamento' })).toHaveValue('VOUCHER')
 })
+
+it('renders all five payment badges with icons and translates their labels', async () => {
+  const methods = ['CREDIT_CARD', 'DEBIT_CARD', 'PIX', 'AUTOMATIC_DEBIT', 'VOUCHER'] as const
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue(methods.map((payment_method, id) => ({ id, guild_id: 1, name: `Payment ${id}`, amount: '10', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE', payment_method })))
+  page()
+  await screen.findByRole('columnheader', { name: 'Forma de pagamento' })
+  const labels = ['Cartão de crédito', 'Cartão de débito', 'PIX', 'Débito automático', 'Vale/Ticket']
+  for (const label of labels) {
+    const badge = screen.getByRole('cell', { name: label })
+    expect(badge).toBeVisible()
+    expect(badge.querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
+  }
+  await act(async () => { await i18n.changeLanguage('en') })
+  for (const label of ['Credit card', 'Debit card', 'PIX', 'Automatic debit', 'Voucher/Ticket']) expect(screen.getByRole('cell', { name: label })).toBeVisible()
+  expect(screen.getByRole('combobox', { name: 'Filter by payment method' })).toBeVisible()
+})
+
+it('intersects payment, member and category filters, including paused expenses and empty results', async () => {
+  vi.spyOn(fixedExpensesApi, 'list').mockResolvedValue([
+    { id: 1, guild_id: 1, name: 'Active PIX', amount: '100.01', due_day: 1, category: 'HOUSING', responsible_user_id: 2, status: 'ACTIVE', payment_method: 'PIX' },
+    { id: 2, guild_id: 1, name: 'Paused PIX', amount: '900', due_day: 1, category: 'HOUSING', responsible_user_id: 2, status: 'PAUSED', payment_method: 'PIX' },
+    { id: 3, guild_id: 1, name: 'Unassigned PIX', amount: '50', due_day: 1, category: 'HOUSING', responsible_user_id: null, status: 'ACTIVE', payment_method: 'PIX' },
+    { id: 4, guild_id: 1, name: 'Assigned credit', amount: '20', due_day: 1, category: 'HOUSING', responsible_user_id: 2, status: 'ACTIVE', payment_method: 'CREDIT_CARD' },
+  ])
+  page()
+  const total = await screen.findByRole('status', { name: 'Total previsto no mês' })
+  await waitFor(() => expect(total).toHaveTextContent('170,01'))
+  const payment = screen.getByRole('combobox', { name: 'Filtrar por forma de pagamento' })
+  await userEvent.selectOptions(payment, 'PIX')
+  expect(total).toHaveTextContent('150,01')
+  expect(screen.queryByRole('row', { name: /Assigned credit/ })).toBeNull()
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por membro' }), '2')
+  expect(total).toHaveTextContent('100,01')
+  expect(screen.getByRole('row', { name: /Paused PIX/ })).toBeVisible()
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por categoria' }), 'HEALTH')
+  expect(total).toHaveTextContent('0,00')
+  expect(screen.getByText('Nenhuma despesa corresponde aos filtros.')).toBeVisible()
+  expect(screen.queryByText('Nenhuma despesa nesta categoria.')).toBeNull()
+  await userEvent.selectOptions(screen.getByRole('combobox', { name: 'Filtrar por categoria' }), '')
+  await userEvent.selectOptions(payment, 'CREDIT_CARD')
+  expect(total).toHaveTextContent('20,00')
+  await userEvent.selectOptions(payment, '')
+  expect(total).toHaveTextContent('120,01')
+})

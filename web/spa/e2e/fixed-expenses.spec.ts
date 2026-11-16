@@ -307,3 +307,61 @@ test('switching guild clears the selected member and member options', async ({ p
   await expect(member.getByRole('option', { name: 'Bruno Lima' })).toHaveCount(1)
   await expect(member.getByRole('option', { name: 'Carlos Silva' })).toHaveCount(0)
 })
+
+for (const width of [375, 1280]) {
+  for (const theme of ['light', 'dark']) {
+    test(`payment badge, combined filters and guild reset at ${width}px in ${theme}`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 })
+      await page.addInitScript((value) => localStorage.setItem('theme', value), theme)
+      await page.goto('/fixed-expenses?guild=1')
+      await expect(page.locator('html')).toHaveClass(theme === 'dark' ? /dark/ : /^(?!.*dark).*$/)
+      await expect(page.getByRole('columnheader', { name: 'Forma de pagamento' })).toBeVisible()
+      const row = page.getByRole('row').filter({ hasText: 'Aluguel' })
+      await expect(row.getByRole('cell', { name: 'Cartão de crédito', exact: true })).toBeVisible()
+      await row.getByRole('button', { name: 'Editar Aluguel' }).click()
+      const dialog = page.getByRole('dialog')
+      const method = dialog.getByRole('combobox', { name: 'Forma de pagamento', exact: true })
+      await expect(method).toHaveValue('CREDIT_CARD')
+      if (theme === 'dark') await expect(method).toHaveCSS('color', 'rgb(250, 250, 250)')
+      const methods = [
+        ['CREDIT_CARD', 'Cartão de crédito'], ['DEBIT_CARD', 'Cartão de débito'],
+        ['PIX', 'PIX'], ['AUTOMATIC_DEBIT', 'Débito automático'], ['VOUCHER', 'Vale/Ticket'],
+      ] as const
+      for (const [value, label] of methods) {
+        await expect(method.getByRole('option', { name: label, exact: true })).toHaveAttribute('value', value)
+      }
+      await method.selectOption('VOUCHER')
+      await dialog.getByRole('button', { name: 'Salvar', exact: true }).click()
+      const badge = row.getByRole('cell', { name: 'Vale/Ticket', exact: true })
+      await expect(badge).toBeVisible()
+      await expect(badge.locator('svg')).toHaveAttribute('aria-hidden', 'true')
+      const filter = page.getByRole('combobox', { name: 'Filtrar por forma de pagamento' })
+      if (theme === 'dark') {
+        await expect(filter).toHaveCSS('color', 'rgb(250, 250, 250)')
+        await expect(page.locator('label[for="fixed-expense-payment-filter"]')).toHaveCSS('color', 'rgb(250, 250, 250)')
+      }
+      await filter.focus()
+      await expect(filter).toBeFocused()
+      await filter.selectOption('VOUCHER')
+      const total = page.getByRole('status', { name: 'Total previsto no mês' })
+      await expect(total).toContainText('2.500,00')
+      await page.getByRole('combobox', { name: 'Filtrar por categoria' }).selectOption('HOUSING')
+      await page.getByRole('combobox', { name: 'Filtrar por membro' }).selectOption('unassigned')
+      await expect(row).toBeVisible()
+      await page.getByRole('combobox', { name: 'Filtrar por categoria' }).selectOption('HEALTH')
+      await expect(page.getByText('Nenhuma despesa corresponde aos filtros.', { exact: true })).toBeVisible()
+      await expect(total).toContainText('0,00')
+      await page.getByRole('combobox', { name: 'Filtrar por categoria' }).selectOption('HOUSING')
+      await page.screenshot({ path: `test-results/fixed-expense-payment-${width}-${theme}.png`, fullPage: true })
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+      await page.getByRole('button', { name: 'EN', exact: true }).click()
+      await expect(row.getByRole('cell', { name: 'Voucher/Ticket', exact: true })).toBeVisible()
+      await expect(page.getByRole('combobox', { name: 'Filter by payment method' })).toHaveValue('VOUCHER')
+      await page.getByRole('button', { name: 'Família Silva', exact: true }).click()
+      await page.getByRole('button', { name: 'República dos Amigos', exact: true }).click()
+      await expect(page.getByRole('combobox', { name: 'Filter by payment method' })).toHaveValue('')
+      await expect(page.getByRole('row').filter({ hasText: 'Internet da República' })).toBeVisible()
+      await expect(row).toHaveCount(0)
+    })
+  }
+}

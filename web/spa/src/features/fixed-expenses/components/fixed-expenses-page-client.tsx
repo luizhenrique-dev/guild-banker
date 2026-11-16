@@ -17,7 +17,7 @@ import { FixedExpenseTable } from './fixed-expense-table'
 import { FixedExpenseModal } from './fixed-expense-modal'
 import { TableSkeleton } from '@/src/shared/components/loading-skeleton'
 import { ErrorBoundary } from '@/src/shared/components/error-boundary'
-import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, type FixedExpenseCategory, type FixedExpenseResponse } from '../types'
+import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, FIXED_EXPENSE_PAYMENT_METHODS, type FixedExpensePaymentMethod, type FixedExpenseCategory, type FixedExpenseResponse } from '../types'
 import { monthlyTotal } from '../monthly-total'
 
 export function FixedExpensesPageClient() {
@@ -27,9 +27,11 @@ export function FixedExpensesPageClient() {
   const members = useGuildMembers(activeGuild!.id)
   const deleteMutation = useDeleteFixedExpense()
   const [category, setCategory] = useState<FixedExpenseCategory | ''>('')
+  const [paymentMethod, setPaymentMethod] = useState<FixedExpensePaymentMethod | ''>('')
   const [member, setMember] = useState('')
   const filteredExpenses = (expenses ?? []).filter((expense) =>
     (!category || expense.category === category) &&
+    (!paymentMethod || expense.payment_method === paymentMethod) &&
     (!member || (member === 'unassigned' ? expense.responsible_user_id == null : expense.responsible_user_id === Number(member))))
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -107,6 +109,13 @@ export function FixedExpensesPageClient() {
               </select>
             </div>
             <div className="min-w-0 lg:max-w-sm">
+              <label htmlFor="fixed-expense-payment-filter" className="mb-2 block text-sm font-medium text-foreground">{t('fx.filterPaymentMethod')}</label>
+              <select id="fixed-expense-payment-filter" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as FixedExpensePaymentMethod | '')} className="w-full rounded-xl border border-input bg-background text-foreground px-4 py-2.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <option value="">{t('fx.allPaymentMethods')}</option>
+                {FIXED_EXPENSE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{t(`paymentMethod.${method}`)}</option>)}
+              </select>
+            </div>
+            <div className="min-w-0 lg:max-w-sm">
               <label htmlFor="fixed-expense-member-filter" className="mb-2 block text-sm font-medium">{t('fx.filterMember')}</label>
               <select id="fixed-expense-member-filter" value={member} onChange={(event) => setMember(event.target.value)} disabled={members.isPending || !!members.error} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base">
                 <option value="">{t('fx.allMembers')}</option>
@@ -132,7 +141,8 @@ export function FixedExpensesPageClient() {
         ) : (
           <FixedExpenseTable
             expenses={filteredExpenses}
-            filtered={!!category || !!member}
+            filtered={!!category || !!member || !!paymentMethod}
+            paymentFiltered={!!paymentMethod}
             memberFiltered={!!member}
             members={members.error ? [] : members.data ?? []}
             onEdit={handleEdit}

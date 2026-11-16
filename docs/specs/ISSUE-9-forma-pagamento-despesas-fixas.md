@@ -13,7 +13,7 @@ Registrar a forma de pagamento de cada despesa fixa e permitir sua identificaç�
 - Decisões confirmadas:
   - D1 — Q1: forma de pagamento obrigatória nas novas despesas; preencher **todas** as existentes como **Cartão de crédito**, inclusive pausadas e canceladas e em todas as guilds.
   - D2 — Q2, atualizada por solicitação posterior do usuário: usar exatamente o rótulo **Vale/Ticket** na UI em português, mantendo `VOUCHER` como valor do contrato.
-- Propostas técnicas para aprovação nesta revisão:
+- Decisões técnicas aprovadas nesta revisão:
   - D3 — Acrescentar `payment_method` ao contrato e à coluna de `fixed_expense`, com valores estáveis abaixo. Não criar tabela de cadastro nem nova dependência.
   - D4 — POST exige uma opção válida, sem escolha automática na UI nem fallback na API. PATCH permite omissão para preservar o valor atual, inclusive nas ações de status; se enviado, exige opção válida e rejeita `null`, vazio ou desconhecido com 400. Respostas sempre incluem valor válido não nulo. A obrigatoriedade altera o contrato de criação dos clientes antigos que omitem o campo; atualizar os consumidores do monorepo na mesma entrega.
   - D5 — Migration incremental preenche registros existentes e impõe `NOT NULL` e restrição aos cinco valores. Cartão de crédito é preenchimento de migração, não default permanente para novas gravações. Não modificar migrations anteriores. Aplicar schema antes da API e publicar API/SPA em conjunto, sem escrita pela versão anterior após a migration.
@@ -78,13 +78,13 @@ flowchart LR
   Store -->|SQL parametrizado| DB
 ```
 
-Sintaxe Mermaid não validada. Não há decisões de negócio bloqueantes; contratos propostos serão aprovados com a spec. Jornada permanece síncrona: selecionar no formulário, salvar, recarregar e filtrar o resultado.
+Sintaxe Mermaid não validada. Não há decisões de negócio bloqueantes; contratos aprovados pelo usuário com a revisão 2. Jornada permanece síncrona: selecionar no formulário, salvar, recarregar e filtrar o resultado.
 
 ## Tasks
 | Task | Título | Status | Validação | Depende de | Risco | Repositório |
 |---|---|---|---|---|---|---|
 | T1 | Persistir forma de pagamento obrigatória e integrar o formulário | ✅ concluida | impedida | nenhuma | alto | `.` |
-| T2 | Exibir badges e filtrar despesas por forma de pagamento | ⬜ pendente | pendente | T1 | normal | `.` |
+| T2 | Exibir badges e filtrar despesas por forma de pagamento | ✅ concluida | impedida | T1 | normal | `.` |
 
 ### T1 — Persistir forma de pagamento obrigatória e integrar o formulário
 - **Entrega:** forma de pagamento obrigatória disponível de ponta a ponta na criação/edição, com backfill das despesas existentes e contrato consistente com os consumidores. API e SPA compilam e seus testes permanecem passando ao fim do incremento.
@@ -132,3 +132,6 @@ Checklist: fronteiras transport → aplicação → domínio; adapters implement
 - DM1 — T1 (2026-11-15): criação Go recebe PaymentMethod explicitamente após Category em New, Service.Create e CreateWithResponsible; todos os callers internos foram atualizados. Não adicionar wrappers ou default silencioso, conforme D4/D5.
 - DM2 — T1 (2026-11-15): PostgreSQL 17 temporário em /tmp permite testar migration e persistência sem tocar o banco da aplicação. Sockets exigiram execução fora do sandbox. Medição continua indisponível conforme P5.
 - DM3 — T1 (2026-11-15): revisão delegada em contexto independente com ferramentas de escrita não restritas. A validação permanece impedida por P4 até revisão humana registrada do snapshot ou ambiente que imponha somente leitura. Relatório do revisor não gravado: destino padrão fora das raízes permitidas. Lacuna R1 de teste corrigida com leitura do banco após POST e após cada opção de PATCH.
+
+- DM4 — T2 (2026-11-15): badges usam Lucide e cores por método; novo filtro e seletor do formulário definem text-foreground explicitamente para garantir contraste no tema escuro. Capturas e assertivas CSS verificam os novos controles; contraste de campos antigos fora da issue continua uma limitação preexistente, sem refatoração adjacente.
+- DM5 — Fechamento (2026-11-15): gates técnicos dos componentes passaram. E2E completa registrou 50/51 cenários aprovados; teste real de callback Keycloak impedido por E2E_PASSWORD/KC_TEST_USER_PASSWORD ausentes, sem mudança no código correspondente. Validação T2 impedida por esse gate externo e QA visual obrigatório ainda pendente. Roteiro ISSUE-9-roteiro-qa.md reúne QA1–QA3; nenhuma publicação ou liberação de merge.

@@ -109,7 +109,7 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
         </div>
         <div>
           <Label htmlFor="expense-payment_method" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.paymentMethod')}</Label>
-          <select {...field('payment_method')} {...register('payment_method')} required className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <select {...field('payment_method')} {...register('payment_method')} required className="w-full rounded-xl border border-input bg-background text-foreground px-4 py-2.5 text-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <option value="">{t('fx.selectPaymentMethod')}</option>
             {FIXED_EXPENSE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{t(`paymentMethod.${method}`)}</option>)}
           </select>
