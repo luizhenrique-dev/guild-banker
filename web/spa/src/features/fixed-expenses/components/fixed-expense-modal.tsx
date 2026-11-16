@@ -2,7 +2,7 @@ import { useGuildMembers } from '../../guilds/api/use-guilds'
 import { useActiveGuild } from '../../guilds/use-active-guild'
 import { APIError } from '@/src/shared/lib/api-client'
 import { useEffect, useRef } from 'react'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { Button } from '@/components/ui/button'
@@ -21,6 +21,11 @@ interface Props {
 }
 type FormValues = UpdateFixedExpenseInput & { name?: string }
 
+function formatAmountInput(value: string): string {
+  const digits = value.replace(/\D/g, '').replace(/^0+/, '').padStart(3, '0')
+  return `${digits.slice(0, -2)},${digits.slice(-2)}`
+}
+
 export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Props) {
   const { t } = useTranslation()
   const { activeGuild } = useActiveGuild()
@@ -32,16 +37,21 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
   const isEditing = !!editingExpense
   const isSubmitting = createMutation.isPending || updateMutation.isPending
   const sending = useRef(false)
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
+  const { register, control, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(isEditing ? updateFixedExpenseSchema : createFixedExpenseSchema),
-    defaultValues: { name: '', amount: '', due_day: 1, category: 'OTHER', responsible_user_id: null },
+    defaultValues: { name: '', amount: '0,00', due_day: 1, category: 'OTHER', responsible_user_id: null },
   })
   const responsibleUserID = watch('responsible_user_id')
   const resetCreate = createMutation.reset
   const resetUpdate = updateMutation.reset
   useEffect(() => {
     if (!open) return
-    reset(editingExpense ? { ...editingExpense, amount: editingExpense.amount.replace('.', ',') } : { name: '', amount: '', due_day: 1, category: 'OTHER', responsible_user_id: null })
+    if (editingExpense) {
+      const [units, fraction = ''] = editingExpense.amount.split('.')
+      reset({ ...editingExpense, amount: formatAmountInput(`${units}${fraction.padEnd(2, '0')}`) })
+    } else {
+      reset({ name: '', amount: '0,00', due_day: 1, category: 'OTHER', responsible_user_id: null })
+    }
     resetCreate()
     resetUpdate()
   }, [open, editingExpense, reset, resetCreate, resetUpdate])
@@ -80,7 +90,9 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
         </div>
         <div>
           <Label htmlFor="expense-amount" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.modal.amount')}</Label>
-          <Input {...field('amount')} inputMode="decimal" {...register('amount')} placeholder={t('fx.modal.amountPlaceholder')} className={`${inputClass} font-mono`} />
+          <Controller name="amount" control={control} render={({ field: amountField }) => (
+            <Input {...field('amount')} {...amountField} inputMode="numeric" onChange={(event) => amountField.onChange(formatAmountInput(event.target.value))} className={`${inputClass} font-mono`} />
+          )} />
           {error('amount')}
         </div>
         <div>
