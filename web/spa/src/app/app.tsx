@@ -24,7 +24,7 @@ function AppRoutes() {
   const { search } = useLocation()
   const { t } = useTranslation()
   const protectedPage = (page: React.ReactNode) => user ? page : <main className="p-8"><h1>{t('session.missing')}</h1></main>
-  const guildPage = (page: React.ReactNode) => protectedPage(isForbidden ? <AccessDeniedPage /> : activeGuild ? <div key={activeGuild.id}>{page}</div> : <GuildSelectionState />)
+  const guildPage = (page: React.ReactNode) => protectedPage(isForbidden ? <AccessDeniedPage /> : activeGuild ? <div key={activeGuild.id} className="h-full min-h-0">{page}</div> : <GuildSelectionState />)
   return <Routes>
     <Route path="/" element={<Navigate to={'/home' + search} replace />} />
     <Route path="/home" element={protectedPage(<HomePage />)} />
@@ -42,12 +42,12 @@ function AuthenticatedApp() {
   const { t } = useTranslation()
   if (phase !== 'ready') return <main role={phase.endsWith('error') ? 'alert' : 'status'} className="p-8"><h1>{t(`session.${phase}`)}</h1>{phase.endsWith('error') && <button onClick={retry}>{t('common.retry')}</button>}</main>
   if (!user) return <main className="p-8"><h1>{t('session.missing')}</h1></main>
-  return <div className="flex min-h-[100dvh] flex-col">
+  return <div className="flex h-[100dvh] flex-col overflow-hidden">
     <Header showGuildSwitcher={!!activeGuild && !isForbidden} />
-    {activeGuild && !isForbidden ? <div className="flex flex-col md:flex-row">
+    {activeGuild && !isForbidden ? <div className="flex min-h-0 flex-1 flex-col md:flex-row">
       <Sidebar />
-      <div className="min-w-0 flex-1 min-h-[calc(100vh-64px)]"><AppRoutes /></div>
-    </div> : <GuildOnboarding showHomeLink={false} />}
+      <div className="min-h-0 min-w-0 flex-1 overflow-auto"><AppRoutes /></div>
+    </div> : <div className="flex min-h-0 flex-1 overflow-auto"><GuildOnboarding showHomeLink={false} /></div>}
     <Toaster />
   </div>
 }

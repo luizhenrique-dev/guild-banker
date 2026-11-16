@@ -163,6 +163,12 @@
 }
 
 :root { --font-sans: 'Inter'; --font-mono: 'JetBrains Mono'; }
+.grid-page { display: flex; flex-direction: column; height: 100%; min-height: 0; overflow: hidden; }
+.grid-page > * { flex-shrink: 0; }
+.grid-controls { max-height: 65%; overflow: auto; overscroll-behavior: contain; }
+.grid-page > .grid-scroll, .grid-page > .grid-table { flex: 1; min-height: 0; }
+.grid-scroll { overflow: auto; overscroll-behavior: contain; }
+.grid-table thead { position: sticky; top: 0; z-index: 1; }
 @media (max-width: 767px) {
   main { padding: 1rem !important; }
   main > div { flex-wrap: wrap; gap: 0.75rem; }

@@ -60,7 +60,8 @@ export function FixedExpensesPageClient() {
 
   return (
     <ErrorBoundary>
-      <main className="flex-1 px-8 py-8">
+      <main className="grid-page px-8 py-8">
+        <div className="grid-controls">
         {/* Header com título e botão */}
         <div className="mb-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -119,6 +120,7 @@ export function FixedExpensesPageClient() {
           </div>
         </section>
 
+        </div>
         {/* Tabela */}
         {isLoading ? (
           <div role="status" aria-label={t('common.loading')}><TableSkeleton rows={3} /></div>

@@ -53,7 +53,8 @@ export function TransactionsPageClient() {
   if (error instanceof APIError && error.status === 403) return <AccessDeniedPage />
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className="grid-page px-8 py-8">
+      <div className="grid-controls">
       <div className="mb-2 flex items-center justify-between">
         <div>
           <h1 className="text-[32px] font-normal tracking-[-0.8px]">{t('tx.title')}</h1>
@@ -88,6 +89,7 @@ export function TransactionsPageClient() {
         </select>
       </div>
 
+      </div>
       {/* Tabela */}
       {isLoading ? (
         <TableSkeleton rows={5} />
@@ -101,7 +103,7 @@ export function TransactionsPageClient() {
           <p className="text-[15px] text-[#5b616e]">{t('tx.empty')}</p>
         </div>
       ) : (
-        <section className="overflow-hidden rounded-[24px] border border-[#dee1e6] bg-white">
+        <section tabIndex={0} aria-label={t('tx.title')} className="grid-scroll grid-table rounded-[24px] border border-[#dee1e6] bg-white">
           <table className="w-full text-left text-[14px]">
             <thead className="border-b border-[#dee1e6] bg-[#f7f7f7] text-[12px] uppercase tracking-wide text-[#7c828a]">
               <tr>
