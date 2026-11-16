@@ -17,7 +17,7 @@ const rows: FixedExpenseResponse[] = [
 function open(path = '/home?guild=1') {
   return render(<MemoryRouter initialEntries={[path]}><App initialUser={user} demo /></MemoryRouter>)
 }
-function section() { return screen.getByRole('region', { name: 'Gastos fixos do mês' }) }
+function section() { return screen.getByRole('region', { name: 'Despesas fixas - Próximos vencimentos' }) }
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ['Date'] })
@@ -40,10 +40,27 @@ it('shows the current month, money, dates, today and tomorrow below the welcome'
   expect(content.getByText('16/11/2026')).toBeVisible()
   expect(content.getAllByRole('listitem')).toHaveLength(2)
   await act(async () => { await i18n.changeLanguage('en') })
-  const english = within(screen.getByRole('region', { name: 'Fixed expenses this month' }))
+  const english = within(screen.getByRole('region', { name: 'Fixed expenses - Upcoming due dates' }))
   expect(english.getByText('Today')).toBeVisible()
   expect(english.getByText('Tomorrow')).toBeVisible()
   expect(english.getByText('November 2026')).toBeVisible()
+})
+
+it('shows category totals for the whole guild month rather than only upcoming expenses', async () => {
+  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([
+    ...rows,
+    { ...rows[0], id: 3, amount: '200', due_day: 1 },
+    { ...rows[0], id: 4, amount: '9999', category: 'HEALTH', status: 'PAUSED' },
+  ])))
+  open()
+  const categories = within(await screen.findByRole('region', { name: 'Despesas fixas - Por categoria' }))
+  const groups = await categories.findAllByRole('listitem')
+  expect(groups).toHaveLength(2)
+  expect(groups[0]).toHaveTextContent('Moradia')
+  expect(groups[0]).toHaveTextContent('2.500,00')
+  expect(groups[1]).toHaveTextContent('Outros')
+  expect(groups[1]).toHaveTextContent('323,45')
+  expect(within(section()).getAllByRole('listitem')).toHaveLength(2)
 })
 
 it('distinguishes loading, technical failure, retry and an empty month', async () => {
@@ -54,11 +71,12 @@ it('distinguishes loading, technical failure, retry and an empty month', async (
   expect(within(section()).getByRole('status')).toHaveTextContent('Carregando')
   server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => new HttpResponse(null, { status: 500 })))
   await act(async () => { finish(new HttpResponse(null, { status: 500 })) })
-  expect(await screen.findByRole('alert')).toHaveTextContent('Não foi possível carregar os gastos fixos.')
+  expect(await within(section()).findByRole('alert')).toHaveTextContent('Não foi possível carregar os gastos fixos.')
   expect(screen.queryByText('Nenhum próximo gasto fixo neste mês.')).toBeNull()
   server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([])))
-  fireEvent.click(screen.getByRole('button', { name: 'Tentar novamente' }))
+  fireEvent.click(within(section()).getByRole('button', { name: 'Tentar novamente' }))
   expect(await screen.findByText('Nenhum próximo gasto fixo neste mês.')).toBeVisible()
+  expect(screen.getByText('Nenhuma despesa fixa ativa na guild.')).toBeVisible()
 })
 
 it('hides cached expenses on a forbidden refetch while keeping identity controls', async () => {
@@ -68,7 +86,8 @@ it('hides cached expenses on a forbidden refetch while keeping identity controls
   await screen.findByText('Internet')
   server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => new HttpResponse(null, { status: 403 })))
   await act(async () => { await client.invalidateQueries({ queryKey: ['fixed-expenses'] }) })
-  expect(await screen.findByText('Acesso negado')).toBeVisible()
+  expect(await within(section()).findByText('Acesso negado')).toBeVisible()
+  expect(within(screen.getByRole('region', { name: 'Despesas fixas - Por categoria' })).queryByRole('list')).toBeNull()
   expect(screen.queryByText('Internet')).toBeNull()
   expect(screen.getByRole('button', { name: 'Sair' })).toBeEnabled()
 })
