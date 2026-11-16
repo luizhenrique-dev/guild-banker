@@ -3,6 +3,7 @@ package fixedexpense
 import "errors"
 
 var (
+	ErrInvalidPaymentMethod      = errors.New("invalid payment method")
 	ErrInvalidInput              = errors.New("invalid fixed expense input")
 	ErrRequesterIsNotMember      = errors.New("requester is not a member of this guild")
 	ErrFixedExpenseNotFound      = errors.New("fixed expense not found")

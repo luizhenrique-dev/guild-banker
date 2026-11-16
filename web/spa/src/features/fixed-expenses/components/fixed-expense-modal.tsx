@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Modal } from '@/src/shared/components/modal'
 import { createFixedExpenseSchema, updateFixedExpenseSchema, type UpdateFixedExpenseInput } from '../schemas/fixed-expense.schema'
-import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, type FixedExpenseResponse } from '../types'
+import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, FIXED_EXPENSE_PAYMENT_METHODS, type FixedExpenseResponse } from '../types'
 import { useCreateFixedExpense, useUpdateFixedExpense } from '../api/use-fixed-expenses'
 
 interface Props {
@@ -39,7 +39,7 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
   const sending = useRef(false)
   const { register, control, handleSubmit, reset, watch, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(isEditing ? updateFixedExpenseSchema : createFixedExpenseSchema),
-    defaultValues: { name: '', amount: '0,00', due_day: 1, category: 'OTHER', responsible_user_id: null },
+    defaultValues: { name: '', amount: '0,00', due_day: 1, category: 'OTHER', payment_method: undefined, responsible_user_id: null },
   })
   const responsibleUserID = watch('responsible_user_id')
   const resetCreate = createMutation.reset
@@ -50,7 +50,7 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
       const [units, fraction = ''] = editingExpense.amount.split('.')
       reset({ ...editingExpense, amount: formatAmountInput(`${units}${fraction.padEnd(2, '0')}`) })
     } else {
-      reset({ name: '', amount: '0,00', due_day: 1, category: 'OTHER', responsible_user_id: null })
+      reset({ name: '', amount: '0,00', due_day: 1, category: 'OTHER', payment_method: undefined, responsible_user_id: null })
     }
     resetCreate()
     resetUpdate()
@@ -106,6 +106,14 @@ export function FixedExpenseModal({ open, onClose, onSaved, editingExpense }: Pr
             {FIXED_EXPENSE_CATEGORIES.map((cat) => <option key={cat} value={cat} aria-label={t(`category.${cat}`)}>{CATEGORY_ICONS[cat]} {t(`category.${cat}`)}</option>)}
           </select>
           {error('category')}
+        </div>
+        <div>
+          <Label htmlFor="expense-payment_method" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.paymentMethod')}</Label>
+          <select {...field('payment_method')} {...register('payment_method')} required className="w-full rounded-xl border border-input bg-background text-foreground px-4 py-2.5 text-[16px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <option value="">{t('fx.selectPaymentMethod')}</option>
+            {FIXED_EXPENSE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{t(`paymentMethod.${method}`)}</option>)}
+          </select>
+          {error('payment_method')}
         </div>
         <div>
           <Label htmlFor="expense-responsible_user_id" className="mb-1 block text-[15px] text-secondary-foreground">{t('fx.responsible')}</Label>

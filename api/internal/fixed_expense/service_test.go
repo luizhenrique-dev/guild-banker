@@ -61,7 +61,7 @@ func validActor() audit.Actor {
 }
 
 func stubFixedExpense() *FixedExpense {
-	fe, _ := New(1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, "admin@example.com")
+	fe, _ := New(1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, PaymentMethodCreditCard, "admin@example.com")
 	fe.ID = 1
 	return fe
 }
@@ -72,7 +72,7 @@ func TestService_Create(t *testing.T) {
 		actor := validActor()
 		storage.On("Create", mock.Anything, mock.AnythingOfType("*fixedexpense.FixedExpense")).Return(nil)
 
-		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
+		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, PaymentMethodCreditCard, actor)
 
 		assert.NoError(t, err)
 		assert.NotNil(t, fe)
@@ -87,7 +87,7 @@ func TestService_Create(t *testing.T) {
 	t.Run("error when actor is invalid", func(t *testing.T) {
 		svc, storage := newService(t)
 
-		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, audit.Actor{})
+		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, PaymentMethodCreditCard, audit.Actor{})
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -98,7 +98,7 @@ func TestService_Create(t *testing.T) {
 		svc, storage := newService(t)
 		actor := validActor()
 
-		fe, err := svc.Create(context.Background(), 1, "", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
+		fe, err := svc.Create(context.Background(), 1, "", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, PaymentMethodCreditCard, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -110,7 +110,7 @@ func TestService_Create(t *testing.T) {
 		actor := validActor()
 		storage.On("Create", mock.Anything, mock.AnythingOfType("*fixedexpense.FixedExpense")).Return(errors.New("db error"))
 
-		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, actor)
+		fe, err := svc.Create(context.Background(), 1, "Netflix", decimal.NewFromFloat(99.90), 10, CategorySubscriptions, PaymentMethodCreditCard, actor)
 
 		assert.Error(t, err)
 		assert.Nil(t, fe)
@@ -401,7 +401,7 @@ func TestServiceGuildAuthorization(t *testing.T) {
 				var err error
 				switch operation {
 				case "create":
-					_, err = svc.Create(ctx, guildID, "Expense", decimal.NewFromInt(10), 1, CategoryOther, actor)
+					_, err = svc.Create(ctx, guildID, "Expense", decimal.NewFromInt(10), 1, CategoryOther, PaymentMethodCreditCard, actor)
 				case "list":
 					_, err = svc.ListActiveByGuild(ctx, guildID, actor)
 				case "update":
@@ -464,7 +464,7 @@ func TestResponsibleAssignmentValidation(t *testing.T) {
 				}
 				var err error
 				if operation == "create" {
-					_, err = service.CreateWithResponsible(context.Background(), 1, "Rent", decimal.NewFromInt(10), 1, CategoryOther, &tt.id, validActor())
+					_, err = service.CreateWithResponsible(context.Background(), 1, "Rent", decimal.NewFromInt(10), 1, CategoryOther, PaymentMethodCreditCard, &tt.id, validActor())
 				} else {
 					_, err = service.Update(context.Background(), 1, 1, UpdateInput{ResponsibleUserID: &tt.id, SetResponsible: true}, validActor())
 				}

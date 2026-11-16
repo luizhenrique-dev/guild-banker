@@ -7,6 +7,9 @@
 import type { components } from '@/src/shared/api/schema'
 
 export type FixedExpenseCategory = components['schemas']['FixedExpenseCategory']
+export type FixedExpensePaymentMethod = components['schemas']['FixedExpensePaymentMethod']
+export const FIXED_EXPENSE_PAYMENT_METHODS = ['CREDIT_CARD', 'DEBIT_CARD', 'PIX', 'AUTOMATIC_DEBIT', 'VOUCHER'] as const satisfies readonly FixedExpensePaymentMethod[]
+
 export type FixedExpenseStatus = components['schemas']['FixedExpenseStatus']
 export type FixedExpenseResponse = components['schemas']['FixedExpenseResponse']
 

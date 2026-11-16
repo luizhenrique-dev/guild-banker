@@ -48,6 +48,7 @@ for (const width of [375, 1280]) {
       await page.getByRole('button', { name: 'Nova despesa fixa', exact: true }).click()
       const dialog = page.getByRole('dialog')
       await dialog.getByRole('textbox', { name: 'Nome', exact: true }).fill(name)
+  await page.getByRole('dialog').getByRole('combobox', { name: 'Forma de pagamento', exact: true }).selectOption('CREDIT_CARD')
       await dialog.getByRole('textbox', { name: 'Valor (R$)' }).fill('123,45')
       await dialog.getByRole('spinbutton', { name: 'Dia de vencimento' }).fill(String(day))
       await dialog.getByRole('button', { name: 'Salvar', exact: true }).click()

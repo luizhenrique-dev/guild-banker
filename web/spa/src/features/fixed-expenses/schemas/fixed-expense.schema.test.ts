@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { createFixedExpenseSchema, updateFixedExpenseSchema } from './fixed-expense.schema'
 
-const valid = { name: ' Internet ', amount: '123,45', due_day: 1, category: 'OTHER' }
+const valid = { name: ' Internet ', amount: '123,45', due_day: 1, payment_method: 'CREDIT_CARD', category: 'OTHER' }
 it.each(['GROCERY', 'UTILITIES', 'FOOD_AND_DINING', 'ENTERTAINMENT', 'SHOPPING', 'PETS', 'TRAVEL', 'INVESTMENTS', 'PERSONAL'])('accepts category %s for both creation and editing', (category) => {
   expect(createFixedExpenseSchema.parse({ ...valid, category }).category).toBe(category)
   expect(updateFixedExpenseSchema.parse({ ...valid, category }).category).toBe(category)
@@ -20,11 +20,11 @@ it.each([0, 32, 1.5, NaN])('rejects invalid due day %s', (due_day) => {
 it.each([1, 31])('accepts boundary day %s', (due_day) => {
   expect(createFixedExpenseSchema.safeParse({ ...valid, due_day }).success).toBe(true)
 })
-it.each([{ category: 'INVALID' }, { name: '' }, { name: '  ' }, { name: 'x'.repeat(101) }])('rejects invalid category/name %j', (input) => {
+it.each([{ payment_method: 'CREDIT_CARD', category: 'INVALID' }, { name: '' }, { name: '  ' }, { name: 'x'.repeat(101) }])('rejects invalid category/name %j', (input) => {
   expect(createFixedExpenseSchema.safeParse({ ...valid, ...input }).success).toBe(false)
 })
 it('edit schema strips name and only validates supported fields', () => {
-  expect(updateFixedExpenseSchema.parse({ ...valid, name: '' })).toEqual({ amount: '123.45', due_day: 1, category: 'OTHER' })
+  expect(updateFixedExpenseSchema.parse({ ...valid, name: '' })).toEqual({ amount: '123.45', due_day: 1, payment_method: 'CREDIT_CARD', category: 'OTHER' })
 })
 it.each([undefined, null, 2])('accepts optional responsibility %s for creation and editing', (responsible_user_id) => {
   expect(createFixedExpenseSchema.parse({ ...valid, responsible_user_id }).responsible_user_id).toBe(responsible_user_id)
@@ -33,4 +33,13 @@ it.each([undefined, null, 2])('accepts optional responsibility %s for creation a
 it.each([0, -1, 1.5, '2'])('rejects invalid responsibility %s', (responsible_user_id) => {
   expect(createFixedExpenseSchema.safeParse({ ...valid, responsible_user_id }).success).toBe(false)
   expect(updateFixedExpenseSchema.safeParse({ ...valid, responsible_user_id }).success).toBe(false)
+})
+
+it.each(['CREDIT_CARD', 'DEBIT_CARD', 'PIX', 'AUTOMATIC_DEBIT', 'VOUCHER'])('accepts payment method %s for creation and editing', (payment_method) => {
+  expect(createFixedExpenseSchema.parse({ ...valid, payment_method }).payment_method).toBe(payment_method)
+  expect(updateFixedExpenseSchema.parse({ ...valid, payment_method }).payment_method).toBe(payment_method)
+})
+it.each([undefined, null, '', 'CASH'])('rejects missing or invalid payment method %s in the form', (payment_method) => {
+  expect(createFixedExpenseSchema.safeParse({ ...valid, payment_method }).success).toBe(false)
+  expect(updateFixedExpenseSchema.safeParse({ ...valid, payment_method }).success).toBe(false)
 })

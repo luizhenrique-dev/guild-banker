@@ -24,6 +24,7 @@ type Service struct {
 }
 
 type UpdateInput struct {
+	PaymentMethod     *PaymentMethod
 	ResponsibleUserID *int64
 	SetResponsible    bool
 	Amount            *decimal.Decimal
@@ -43,14 +44,15 @@ func (s *Service) Create(
 	amount decimal.Decimal,
 	dueDay int,
 	category Category,
+	paymentMethod PaymentMethod,
 	actor audit.Actor,
 ) (*FixedExpense, error) {
-	return s.CreateWithResponsible(ctx, guildID, name, amount, dueDay, category, nil, actor)
+	return s.CreateWithResponsible(ctx, guildID, name, amount, dueDay, category, paymentMethod, nil, actor)
 }
 
 func (s *Service) CreateWithResponsible(
 	ctx context.Context, guildID int64, name string, amount decimal.Decimal,
-	dueDay int, category Category, responsibleUserID *int64, actor audit.Actor,
+	dueDay int, category Category, paymentMethod PaymentMethod, responsibleUserID *int64, actor audit.Actor,
 ) (*FixedExpense, error) {
 	if err := s.authorizeGuildMember(ctx, guildID, actor); err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", err)
@@ -59,7 +61,7 @@ func (s *Service) CreateWithResponsible(
 	if err := s.validateResponsible(ctx, guildID, responsibleUserID); err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", err)
 	}
-	fixedExpense, err := New(guildID, name, amount, dueDay, category, actor.Email)
+	fixedExpense, err := New(guildID, name, amount, dueDay, category, paymentMethod, actor.Email)
 	if err != nil {
 		return nil, fmt.Errorf("create fixed expense: %w", invalidInput(err))
 	}
@@ -107,6 +109,13 @@ func (s *Service) Update(ctx context.Context, guildID, id int64, input UpdateInp
 	fixedExpense, err := s.storage.GetByIDAndGuild(ctx, id, guildID)
 	if err != nil {
 		return nil, fmt.Errorf("update fixed expense: get by id: %w", err)
+	}
+
+	if input.PaymentMethod != nil && !input.PaymentMethod.IsValid() {
+		return nil, fmt.Errorf("update fixed expense: %w", invalidInput(ErrInvalidPaymentMethod))
+	}
+	if input.PaymentMethod != nil {
+		fixedExpense.PaymentMethod = *input.PaymentMethod
 	}
 
 	if input.SetResponsible {

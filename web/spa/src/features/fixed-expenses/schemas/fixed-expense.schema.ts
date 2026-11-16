@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { FIXED_EXPENSE_CATEGORIES, type FixedExpenseCategory } from '../types'
+import { FIXED_EXPENSE_PAYMENT_METHODS, FIXED_EXPENSE_CATEGORIES, type FixedExpenseCategory } from '../types'
 
 const amount = z.string()
   .regex(/^\d+([.,]\d{1,2})?$/, 'validation.amount')
@@ -10,6 +10,9 @@ export const createFixedExpenseSchema = z.object({
   // The 100-character limit is a local UI policy.
   name: z.string().trim().min(1, 'validation.name').max(100, 'validation.nameLength'),
   amount,
+  payment_method: z.enum(FIXED_EXPENSE_PAYMENT_METHODS, {
+    errorMap: () => ({ message: 'validation.paymentMethod' }),
+  }),
   responsible_user_id: z.number().int().positive().nullable().optional(),
   due_day: z.number({ invalid_type_error: 'validation.dueDay' })
     .int('validation.dueDay').min(1, 'validation.dueDay').max(31, 'validation.dueDay'),

@@ -55,6 +55,10 @@ func postgresTestDB(t *testing.T) *sqlx.DB {
 	require.NoError(t, err)
 	_, err = db.Exec(string(migration))
 	require.NoError(t, err)
+	migration, err = os.ReadFile("../../migrations/000006_fixed_expense_payment_method.up.sql")
+	require.NoError(t, err)
+	_, err = db.Exec(string(migration))
+	require.NoError(t, err)
 	var version int
 	require.NoError(t, db.Get(&version, "SELECT current_setting('server_version_num')::integer"))
 	require.GreaterOrEqual(t, version, 170000)
@@ -65,10 +69,10 @@ func TestFixedExpenseGuildSchema(t *testing.T) {
 	db := postgresTestDB(t)
 	_, err := db.Exec(`INSERT INTO guild(id,name,display_name,created_by) VALUES (1,'test','Test','fixture')`)
 	require.NoError(t, err)
-	_, err = db.Exec(`INSERT INTO fixed_expense(guild_id,name,amount,due_day,category,status,created_by) VALUES (1,'Expense',10,1,'OTHER','ACTIVE','fixture')`)
+	_, err = db.Exec(`INSERT INTO fixed_expense(guild_id,name,amount,due_day,category,status,created_by,payment_method) VALUES (1,'Expense',10,1,'OTHER','ACTIVE','fixture','CREDIT_CARD')`)
 	require.NoError(t, err)
 	for _, guild := range []any{nil, int64(999)} {
-		_, err := db.Exec(`INSERT INTO fixed_expense(guild_id,name,amount,due_day,category,created_by) VALUES ($1,'Invalid',10,1,'OTHER','fixture')`, guild)
+		_, err := db.Exec(`INSERT INTO fixed_expense(guild_id,name,amount,due_day,category,created_by,payment_method) VALUES ($1,'Invalid',10,1,'OTHER','fixture','CREDIT_CARD')`, guild)
 		require.Error(t, err)
 		var databaseError *pq.Error
 		require.ErrorAs(t, err, &databaseError)
@@ -85,11 +89,11 @@ func TestFixedExpensePauseResumeAndDeletePostgres(t *testing.T) {
 	_, err := db.Exec(`INSERT INTO user_account(id,external_id,name,email,created_by) VALUES (1,'owner','Owner','owner@example.test','fixture'),(2,'other','Other','other@example.test','fixture');
 	 INSERT INTO guild(id,name,display_name,created_by) VALUES (1,'g1','G1','fixture'),(2,'g2','G2','fixture');
 	 INSERT INTO guild_member(guild_id,user_id,invited_by) VALUES (1,1,1),(2,1,1),(2,2,2);
-	 INSERT INTO fixed_expense(id,guild_id,name,amount,due_day,category,status,created_by) VALUES
-	 (1,1,'Grocery',10.10,1,'GROCERY','ACTIVE','fixture'),
-	 (2,1,'Internet',20.20,2,'UTILITIES','PAUSED','fixture'),
-	 (3,1,'Old',30,3,'OTHER','CANCELLED','fixture'),
-	 (4,2,'Other guild',99,1,'OTHER','ACTIVE','fixture')`)
+	 INSERT INTO fixed_expense(id,guild_id,name,amount,due_day,category,status,created_by,payment_method) VALUES
+	 (1,1,'Grocery',10.10,1,'GROCERY','ACTIVE','fixture','CREDIT_CARD'),
+	 (2,1,'Internet',20.20,2,'UTILITIES','PAUSED','fixture','CREDIT_CARD'),
+	 (3,1,'Old',30,3,'OTHER','CANCELLED','fixture','CREDIT_CARD'),
+	 (4,2,'Other guild',99,1,'OTHER','ACTIVE','fixture','CREDIT_CARD')`)
 	require.NoError(t, err)
 	handler := NewHandler(NewService(NewStorage(db)))
 	router := gin.New()
@@ -172,7 +176,7 @@ func TestFixedExpenseSharingPostgres(t *testing.T) {
 		require.Equal(t, status, response.Code, response.Body.String())
 		return response
 	}
-	const payload = `{"name":"Rent","amount":"123.45","due_day":10,"category":"HOUSING","guild_id":2,"user_id":999}`
+	const payload = `{"name":"Rent","amount":"123.45","due_day":10,"payment_method":"CREDIT_CARD","category":"HOUSING","guild_id":2,"user_id":999}`
 	created := request(a, "POST", "/guilds/1/fixed-expenses", payload, 201)
 	var response fixedExpenseResponse
 	require.NoError(t, json.Unmarshal(created.Body.Bytes(), &response))
@@ -230,7 +234,7 @@ func TestFixedExpenseSharingPostgres(t *testing.T) {
 		name string
 		day  int
 	}{{"Zulu", 5}, {"Alpha", 5}, {"Late", 20}} {
-		_, err := service.Create(ctx, 1, expense.name, decimal.NewFromInt(1), expense.day, CategoryOther, b)
+		_, err := service.Create(ctx, 1, expense.name, decimal.NewFromInt(1), expense.day, CategoryOther, PaymentMethodCreditCard, b)
 		require.NoError(t, err)
 	}
 	list, err := service.ListActiveByGuild(ctx, 1, b)

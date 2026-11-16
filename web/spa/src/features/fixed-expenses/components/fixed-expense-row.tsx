@@ -5,6 +5,12 @@
 // ============================================================
 import { useTranslation } from 'react-i18next'
 import {
+  CreditCard,
+  Nfc,
+  QrCode,
+  Repeat2,
+  Ticket,
+  type LucideIcon,
   Home,
   Monitor,
   HeartPulse,
@@ -26,7 +32,7 @@ import {
   Plane,
   TrendingUp,
 } from 'lucide-react'
-import { CATEGORY_ICONS, type FixedExpenseResponse, type FixedExpenseCategory } from '../types'
+import { CATEGORY_ICONS, type FixedExpensePaymentMethod, type FixedExpenseResponse, type FixedExpenseCategory } from '../types'
 import { useSetFixedExpenseStatus } from '../api/use-fixed-expenses'
 import { APIError } from '@/src/shared/lib/api-client'
 
@@ -58,6 +64,14 @@ const categoryIconMap: Record<FixedExpenseCategory, React.ReactNode> = {
   INVESTMENTS: <TrendingUp size={16} />,
 }
 
+const paymentMethodBadges: Record<FixedExpensePaymentMethod, { icon: LucideIcon; className: string }> = {
+  CREDIT_CARD: { icon: CreditCard, className: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200' },
+  DEBIT_CARD: { icon: Nfc, className: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200' },
+  PIX: { icon: QrCode, className: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200' },
+  AUTOMATIC_DEBIT: { icon: Repeat2, className: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200' },
+  VOUCHER: { icon: Ticket, className: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200' },
+}
+
 // 📌 PADRÃO: Formatação monetária BRL com Intl.NumberFormat
 function formatBRL(amount: string): string {
   const num = parseFloat(amount)
@@ -73,6 +87,8 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
   const statusMutation = useSetFixedExpenseStatus()
 
   const icon = categoryIconMap[expense.category] ?? <MoreHorizontal size={16} />
+  const paymentBadge = paymentMethodBadges[expense.payment_method]
+  const PaymentIcon = paymentBadge.icon
   const categoryLabel = t(`category.${expense.category}`)
   const statusColor = expense.status === 'ACTIVE' ? '#05b169' : expense.status === 'PAUSED' ? '#a16207' : '#7c828a'
 
@@ -88,6 +104,16 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
         </div>
       </td>
 
+      {/* Vencimento */}
+      <td className="py-4 pl-6 font-mono text-secondary-foreground">
+        {t('fx.dueDay', { day: expense.due_day })}
+      </td>
+
+      {/* Valor em JetBrains Mono */}
+      <td className="py-4 pr-6 text-right font-mono font-medium">
+        {formatBRL(expense.amount)}
+      </td>
+
       {/* Categoria badge */}
       <td className="py-4">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold text-secondary-foreground">
@@ -96,14 +122,11 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
         </span>
       </td>
 
-      {/* Valor em JetBrains Mono */}
-      <td className="py-4 text-right font-mono font-medium">
-        {formatBRL(expense.amount)}
-      </td>
-
-      {/* Vencimento */}
-      <td className="py-4 pl-6 font-mono text-secondary-foreground">
-        {t('fx.dueDay', { day: expense.due_day })}
+      <td className="px-4 py-4">
+        <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-2.5 py-1 text-[12px] font-semibold ${paymentBadge.className}`}>
+          <PaymentIcon size={14} aria-hidden="true" className="shrink-0" />
+          {t(`paymentMethod.${expense.payment_method}`)}
+        </span>
       </td>
 
       {/* Status badge */}

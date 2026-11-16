@@ -3,7 +3,7 @@ import type { FixedExpenseResponse } from '../fixed-expenses/types'
 import { monthlyTotal } from '../fixed-expenses/monthly-total'
 import { expensesByCategory } from './expenses-by-category'
 
-const expense: FixedExpenseResponse = { id: 1, guild_id: 1, name: 'Expense', amount: '0.10', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }
+const expense: FixedExpenseResponse = { id: 1, guild_id: 1, name: 'Expense', payment_method: 'CREDIT_CARD', amount: '0.10', due_day: 1, category: 'OTHER', responsible_user_id: null, status: 'ACTIVE' }
 
 it('sums every active expense in each category, ordered by descending total with exact cents', () => {
   const groups = expensesByCategory([

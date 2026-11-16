@@ -31,6 +31,25 @@ const (
 	CategoryInvestments    Category = "INVESTMENTS"
 )
 
+type PaymentMethod string
+
+const (
+	PaymentMethodCreditCard     PaymentMethod = "CREDIT_CARD"
+	PaymentMethodDebitCard      PaymentMethod = "DEBIT_CARD"
+	PaymentMethodPIX            PaymentMethod = "PIX"
+	PaymentMethodAutomaticDebit PaymentMethod = "AUTOMATIC_DEBIT"
+	PaymentMethodVoucher        PaymentMethod = "VOUCHER"
+)
+
+func (m PaymentMethod) IsValid() bool {
+	switch m {
+	case PaymentMethodCreditCard, PaymentMethodDebitCard, PaymentMethodPIX, PaymentMethodAutomaticDebit, PaymentMethodVoucher:
+		return true
+	default:
+		return false
+	}
+}
+
 type Status string
 
 const (
@@ -47,20 +66,30 @@ type FixedExpense struct {
 	Amount            decimal.Decimal
 	DueDay            int
 	Category          Category
+	PaymentMethod     PaymentMethod
 	Status            Status
 	audit.Entry
 }
 
-func New(guildID int64, name string, amount decimal.Decimal, dueDay int, category Category, createdBy string) (*FixedExpense, error) {
+func New(
+	guildID int64,
+	name string,
+	amount decimal.Decimal,
+	dueDay int,
+	category Category,
+	paymentMethod PaymentMethod,
+	createdBy string,
+) (*FixedExpense, error) {
 	fe := &FixedExpense{
-		GuildID:   guildID,
-		Name:      name,
-		Amount:    amount,
-		DueDay:    dueDay,
-		Category:  category,
-		Status:    StatusActive,
-		CreatedAt: time.Now(),
-		CreatedBy: createdBy,
+		GuildID:       guildID,
+		Name:          name,
+		Amount:        amount,
+		DueDay:        dueDay,
+		Category:      category,
+		PaymentMethod: paymentMethod,
+		Status:        StatusActive,
+		CreatedAt:     time.Now(),
+		CreatedBy:     createdBy,
 	}
 
 	if err := fe.Validate(); err != nil {
@@ -120,6 +149,9 @@ func (f *FixedExpense) Validate() error {
 	}
 	if !f.Category.IsValid() {
 		return errors.New("invalid category")
+	}
+	if !f.PaymentMethod.IsValid() {
+		return ErrInvalidPaymentMethod
 	}
 	if !f.Status.IsValid() {
 		return ErrInvalidFixedExpenseStatus

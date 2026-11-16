@@ -3,7 +3,7 @@ import type { FixedExpenseResponse } from '../fixed-expenses/types'
 import { upcomingExpenses } from './upcoming-expenses'
 
 function expense(id: number, day: number, status: FixedExpenseResponse['status'] = 'ACTIVE'): FixedExpenseResponse {
-  return { id, guild_id: 1, name: `Expense ${id}`, amount: '123.45', due_day: day, category: 'OTHER', responsible_user_id: null, status }
+  return { id, guild_id: 1, name: `Expense ${id}`, amount: '123.45', due_day: day, payment_method: 'CREDIT_CARD', category: 'OTHER', responsible_user_id: null, status }
 }
 
 describe('upcomingExpenses', () => {

@@ -1268,6 +1268,9 @@ components:
         - PETS
         - TRAVEL
         - INVESTMENTS
+    FixedExpensePaymentMethod:
+      type: string
+      enum: [CREDIT_CARD, DEBIT_CARD, PIX, AUTOMATIC_DEBIT, VOUCHER]
     FixedExpenseStatus:
       type: string
       enum:
@@ -1276,8 +1279,10 @@ components:
         - CANCELLED
     CreateFixedExpenseRequest:
       type: object
-      required: [name, amount, due_day, category]
+      required: [name, amount, due_day, category, payment_method]
       properties:
+        payment_method:
+          $ref: "#/components/schemas/FixedExpensePaymentMethod"
         responsible_user_id:
           type: integer
           format: int64
@@ -1298,8 +1303,10 @@ components:
           $ref: "#/components/schemas/FixedExpenseCategory"
     UpdateFixedExpenseRequest:
       type: object
-      description: Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados.
+      description: Todos os campos são opcionais; quando enviados, são aplicados junto aos valores atuais e revalidados. Omitir payment_method preserva o valor atual; null, vazio e valores desconhecidos são rejeitados.
       properties:
+        payment_method:
+          $ref: "#/components/schemas/FixedExpensePaymentMethod"
         responsible_user_id:
           type: integer
           format: int64
@@ -1326,8 +1333,10 @@ components:
           description: Deve ser PAUSED ou CANCELLED; qualquer outro valor resulta em 400.
     FixedExpenseResponse:
       type: object
-      required: [guild_id, id, name, amount, due_day, category, status, responsible_user_id]
+      required: [guild_id, id, name, amount, due_day, category, status, responsible_user_id, payment_method]
       properties:
+        payment_method:
+          $ref: "#/components/schemas/FixedExpensePaymentMethod"
         responsible_user_id:
           type: integer
           format: int64

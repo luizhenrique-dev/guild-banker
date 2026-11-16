@@ -17,7 +17,7 @@ import { FixedExpenseTable } from './fixed-expense-table'
 import { FixedExpenseModal } from './fixed-expense-modal'
 import { TableSkeleton } from '@/src/shared/components/loading-skeleton'
 import { ErrorBoundary } from '@/src/shared/components/error-boundary'
-import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, type FixedExpenseCategory, type FixedExpenseResponse } from '../types'
+import { CATEGORY_ICONS, FIXED_EXPENSE_CATEGORIES, FIXED_EXPENSE_PAYMENT_METHODS, type FixedExpensePaymentMethod, type FixedExpenseCategory, type FixedExpenseResponse } from '../types'
 import { monthlyTotal } from '../monthly-total'
 
 export function FixedExpensesPageClient() {
@@ -27,9 +27,11 @@ export function FixedExpensesPageClient() {
   const members = useGuildMembers(activeGuild!.id)
   const deleteMutation = useDeleteFixedExpense()
   const [category, setCategory] = useState<FixedExpenseCategory | ''>('')
+  const [paymentMethod, setPaymentMethod] = useState<FixedExpensePaymentMethod | ''>('')
   const [member, setMember] = useState('')
   const filteredExpenses = (expenses ?? []).filter((expense) =>
     (!category || expense.category === category) &&
+    (!paymentMethod || expense.payment_method === paymentMethod) &&
     (!member || (member === 'unassigned' ? expense.responsible_user_id == null : expense.responsible_user_id === Number(member))))
 
   const [modalOpen, setModalOpen] = useState(false)
@@ -68,9 +70,6 @@ export function FixedExpensesPageClient() {
             <h1 className="text-[32px] font-normal tracking-[-0.8px]">
               {t('fx.title')}
             </h1>
-            <span className="rounded-full bg-secondary px-3 py-1 text-[12px] font-semibold text-secondary-foreground">
-              {t('fx.badge')}
-            </span>
           </div>
           <Button
             ref={newButton}
@@ -86,16 +85,20 @@ export function FixedExpensesPageClient() {
           </Button>
         </div>
 
-        {/* Info banner */}
-        <div className="mb-6 flex items-center gap-2 rounded-[12px] bg-secondary px-4 py-3 text-[13px] text-secondary-foreground">
-          <Info size={16} className="shrink-0 text-muted-foreground" />
-          {t('fx.info')}
+        <div className="mb-4 flex items-center gap-2">
+          <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-[12px] font-semibold text-secondary-foreground">
+            {t('fx.badge')}
+          </span>
+          <p className="flex min-w-0 items-start gap-1.5 text-[13px] leading-5 text-secondary-foreground">
+            <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
+            <span>{t('fx.info')}</span>
+          </p>
         </div>
 
         <section aria-label={t('fx.summary')} className="mb-6 flex flex-wrap items-end justify-between gap-5 rounded-3xl border border-border bg-card p-6">
           <div>
             <h2 className="text-sm text-secondary-foreground">{t('fx.expectedMonth', { month: new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(new Date()) })}</h2>
-            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold text-orange-600 dark:text-orange-400">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
+            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold text-primary">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
             <p className="mt-2 text-sm text-muted-foreground">{t('fx.totalHint')}</p>
           </div>
           <div className="flex w-full flex-col gap-4 lg:w-auto lg:flex-row">
@@ -104,6 +107,13 @@ export function FixedExpensesPageClient() {
               <select id="fixed-expense-category-filter" value={category} onChange={(event) => setCategory(event.target.value as FixedExpenseCategory | '')} className="w-full rounded-xl border border-input bg-background px-4 py-2.5 text-base">
                 <option value="">{t('fx.allCategories')}</option>
                 {FIXED_EXPENSE_CATEGORIES.map((value) => <option key={value} value={value} aria-label={t(`category.${value}`)}>{CATEGORY_ICONS[value]} {t(`category.${value}`)}</option>)}
+              </select>
+            </div>
+            <div className="min-w-0 lg:max-w-sm">
+              <label htmlFor="fixed-expense-payment-filter" className="mb-2 block text-sm font-medium text-foreground">{t('fx.filterPaymentMethod')}</label>
+              <select id="fixed-expense-payment-filter" value={paymentMethod} onChange={(event) => setPaymentMethod(event.target.value as FixedExpensePaymentMethod | '')} className="w-full rounded-xl border border-input bg-background text-foreground px-4 py-2.5 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                <option value="">{t('fx.allPaymentMethods')}</option>
+                {FIXED_EXPENSE_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{t(`paymentMethod.${method}`)}</option>)}
               </select>
             </div>
             <div className="min-w-0 lg:max-w-sm">
@@ -132,7 +142,8 @@ export function FixedExpensesPageClient() {
         ) : (
           <FixedExpenseTable
             expenses={filteredExpenses}
-            filtered={!!category || !!member}
+            filtered={!!category || !!member || !!paymentMethod}
+            paymentFiltered={!!paymentMethod}
             memberFiltered={!!member}
             members={members.error ? [] : members.data ?? []}
             onEdit={handleEdit}
