@@ -115,14 +115,14 @@ export function FixedExpenseRow({ expense, reference, responsibleName, onEdit, o
         </div>
       </td>
 
-      {/* Vencimento */}
-      <td className="py-4 pl-6 font-mono text-secondary-foreground">
-        {t('fx.dueDay', { day: expense.due_day })}
-      </td>
-
       {/* Valor em JetBrains Mono */}
       <td className="py-4 pr-6 text-right font-mono font-medium">
         {formatBRL(expense.amount)}
+      </td>
+
+      {/* Vencimento */}
+      <td className="py-4 pl-6 font-mono text-secondary-foreground">
+        {t('fx.dueDay', { day: expense.due_day })}
       </td>
 
       {/* Categoria badge */}

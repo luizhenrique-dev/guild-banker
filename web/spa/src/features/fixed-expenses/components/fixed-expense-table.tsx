@@ -45,8 +45,8 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
         <thead className="border-b border-border bg-muted text-[12px] uppercase tracking-wide text-muted-foreground">
           <tr>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.name')}</th>
-            <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
             <th scope="col" className="py-3 pr-6 text-right font-semibold">{t('fx.col.amount')}</th>
+            <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.category')}</th>
             <th scope="col" className="px-4 py-3 font-semibold">{t('fx.paymentMethod')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.status')}</th>
