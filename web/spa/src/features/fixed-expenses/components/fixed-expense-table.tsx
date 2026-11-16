@@ -36,16 +36,16 @@ export function FixedExpenseTable({ expenses, onEdit, onDelete, filtered = false
   }
 
   return (
-    <section aria-label={t('fx.title')} className="overflow-x-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-[24px] border border-border bg-card">
+    <section aria-label={t('fx.title')} className="grid-table min-h-0 flex-1 overflow-hidden rounded-[24px] border border-border bg-card">
       <Table aria-label={t('fx.title')} className="w-full text-left text-[14px]">
         <thead className="border-b border-border bg-muted text-[12px] uppercase tracking-wide text-muted-foreground">
           <tr>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.name')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.category')}</th>
-            <th scope="col" className="px-4 py-3 font-semibold">{t('fx.responsible')}</th>
             <th scope="col" className="py-3 text-right font-semibold">{t('fx.col.amount')}</th>
             <th scope="col" className="py-3 pl-6 font-semibold">{t('fx.col.dueDay')}</th>
             <th scope="col" className="py-3 font-semibold">{t('fx.col.status')}</th>
+            <th scope="col" className="px-4 py-3 font-semibold">{t('fx.responsible')}</th>
             <th scope="col" className="py-3 pr-6 text-right font-semibold">{t('fx.col.actions')}</th>
           </tr>
         </thead>

@@ -29,6 +29,33 @@ async function fill() {
   return { user, dialog }
 }
 
+it('enters amounts from cents and submits the displayed decimal value', async () => {
+  const create = vi.spyOn(fixedExpensesApi, 'create')
+  page()
+  const user = userEvent.setup()
+  await user.click(await screen.findByRole('button', { name: 'Nova despesa fixa' }))
+  const dialog = within(screen.getByRole('dialog'))
+  const amount = dialog.getByRole('textbox', { name: 'Valor (R$)' })
+  expect(amount).toHaveValue('0,00')
+  await user.type(amount, '1')
+  expect(amount).toHaveValue('0,01')
+  await user.type(amount, '5')
+  expect(amount).toHaveValue('0,15')
+  await user.type(amount, '00')
+  expect(amount).toHaveValue('15,00')
+  await user.keyboard('{Backspace}')
+  expect(amount).toHaveValue('1,50')
+  await user.clear(amount)
+  expect(amount).toHaveValue('0,00')
+  await user.paste('R$ 1.234,56')
+  expect(amount).toHaveValue('1234,56')
+  await user.clear(amount)
+  await user.type(amount, '1500')
+  await user.type(dialog.getByRole('textbox', { name: 'Nome' }), 'Cents input expense')
+  await user.click(dialog.getByRole('button', { name: 'Salvar' }))
+  await waitFor(() => expect(create).toHaveBeenCalledWith(expect.objectContaining({ amount: '15.00' }), expect.anything(), 1))
+})
+
 it('assigns, preserves through status changes and clears the responsible member', async () => {
   page()
   const { user, dialog } = await fill()

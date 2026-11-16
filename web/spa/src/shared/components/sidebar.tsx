@@ -29,7 +29,7 @@ export function Sidebar() {
   ]
 
   return (
-    <aside className="sticky top-16 h-auto md:h-[calc(100vh-64px)] w-full md:w-60 shrink-0 border-r border-[#dee1e6] bg-white px-3 py-6">
+    <aside className="max-h-[25%] w-full shrink-0 overflow-y-auto border-r border-[#dee1e6] bg-white px-3 py-6 md:max-h-full md:w-60">
       <nav aria-label="Navegação" className="flex flex-wrap md:block space-y-1">
         {navItems.map((item) => {
           const isActive =

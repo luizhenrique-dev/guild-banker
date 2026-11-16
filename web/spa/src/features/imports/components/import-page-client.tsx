@@ -47,7 +47,7 @@ export function ImportPageClient() {
   }
 
   return (
-    <main className="flex-1 px-8 py-8">
+    <main className={`${importResult ? 'grid-page' : 'h-full overflow-auto'} px-8 py-8`}>
       <div className="mb-6">
         <h1 className="text-[32px] font-normal tracking-[-0.8px]">{t('import.title')}</h1>
         <p className="text-[13px] text-[#5b616e]">{t('import.subtitle')}</p>
@@ -108,7 +108,7 @@ export function ImportPageClient() {
               <span>{importResult.summary?.duplicates ?? 0} duplicatas</span>
             </div>
           </div>
-          <section className="mb-6 overflow-hidden rounded-[24px] border border-[#dee1e6] bg-white">
+          <section tabIndex={0} aria-label={t('import.review')} className="grid-scroll grid-table mb-6 rounded-[24px] border border-[#dee1e6] bg-white">
             <table className="w-full text-left text-[14px]">
               <thead className="border-b border-[#dee1e6] bg-[#f7f7f7] text-[12px] uppercase tracking-wide text-[#7c828a]">
                 <tr>

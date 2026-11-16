@@ -34,7 +34,7 @@ export function Header({ showGuildSwitcher = true }: { showGuildSwitcher?: boole
     ?.slice(0, 2) ?? '??'
 
   return (
-    <header className="sticky top-0 z-20 flex min-h-16 flex-wrap gap-2 items-center justify-between border-b border-[#dee1e6] bg-white px-3 py-2 md:px-6">
+    <header className="sticky top-0 z-20 flex min-h-16 shrink-0 flex-wrap gap-2 items-center justify-between border-b border-[#dee1e6] bg-white px-3 py-2 md:px-6">
       {/* Left: Logo + Guild switcher */}
       <div className="flex items-center gap-2 md:gap-6">
         <div className="flex items-center gap-2">
