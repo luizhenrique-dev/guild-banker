@@ -70,9 +70,6 @@ export function FixedExpensesPageClient() {
             <h1 className="text-[32px] font-normal tracking-[-0.8px]">
               {t('fx.title')}
             </h1>
-            <span className="rounded-full bg-secondary px-3 py-1 text-[12px] font-semibold text-secondary-foreground">
-              {t('fx.badge')}
-            </span>
           </div>
           <Button
             ref={newButton}
@@ -88,16 +85,20 @@ export function FixedExpensesPageClient() {
           </Button>
         </div>
 
-        {/* Info banner */}
-        <div className="mb-6 flex items-center gap-2 rounded-[12px] bg-secondary px-4 py-3 text-[13px] text-secondary-foreground">
-          <Info size={16} className="shrink-0 text-muted-foreground" />
-          {t('fx.info')}
+        <div className="mb-4 flex items-center gap-2">
+          <span className="shrink-0 rounded-full bg-secondary px-3 py-1 text-[12px] font-semibold text-secondary-foreground">
+            {t('fx.badge')}
+          </span>
+          <p className="flex min-w-0 items-start gap-1.5 text-[13px] leading-5 text-secondary-foreground">
+            <Info size={14} aria-hidden="true" className="mt-0.5 shrink-0 text-muted-foreground" />
+            <span>{t('fx.info')}</span>
+          </p>
         </div>
 
         <section aria-label={t('fx.summary')} className="mb-6 flex flex-wrap items-end justify-between gap-5 rounded-3xl border border-border bg-card p-6">
           <div>
             <h2 className="text-sm text-secondary-foreground">{t('fx.expectedMonth', { month: new Intl.DateTimeFormat(i18n.language, { month: 'long', year: 'numeric' }).format(new Date()) })}</h2>
-            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold text-orange-600 dark:text-orange-400">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
+            <p role="status" aria-label={t('fx.total')} className="mt-2 font-mono text-3xl font-semibold text-primary">{isLoading || error ? '—' : monthlyTotal(filteredExpenses, i18n.language)}</p>
             <p className="mt-2 text-sm text-muted-foreground">{t('fx.totalHint')}</p>
           </div>
           <div className="flex w-full flex-col gap-4 lg:w-auto lg:flex-row">

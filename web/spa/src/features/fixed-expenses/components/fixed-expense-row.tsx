@@ -6,7 +6,7 @@
 import { useTranslation } from 'react-i18next'
 import {
   CreditCard,
-  WalletCards,
+  Nfc,
   QrCode,
   Repeat2,
   Ticket,
@@ -66,7 +66,7 @@ const categoryIconMap: Record<FixedExpenseCategory, React.ReactNode> = {
 
 const paymentMethodBadges: Record<FixedExpensePaymentMethod, { icon: LucideIcon; className: string }> = {
   CREDIT_CARD: { icon: CreditCard, className: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200' },
-  DEBIT_CARD: { icon: WalletCards, className: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200' },
+  DEBIT_CARD: { icon: Nfc, className: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200' },
   PIX: { icon: QrCode, className: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200' },
   AUTOMATIC_DEBIT: { icon: Repeat2, className: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200' },
   VOUCHER: { icon: Ticket, className: 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200' },
@@ -104,6 +104,16 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
         </div>
       </td>
 
+      {/* Vencimento */}
+      <td className="py-4 pl-6 font-mono text-secondary-foreground">
+        {t('fx.dueDay', { day: expense.due_day })}
+      </td>
+
+      {/* Valor em JetBrains Mono */}
+      <td className="py-4 pr-6 text-right font-mono font-medium">
+        {formatBRL(expense.amount)}
+      </td>
+
       {/* Categoria badge */}
       <td className="py-4">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-[12px] font-semibold text-secondary-foreground">
@@ -117,16 +127,6 @@ export function FixedExpenseRow({ expense, responsibleName, onEdit, onDelete }: 
           <PaymentIcon size={14} aria-hidden="true" className="shrink-0" />
           {t(`paymentMethod.${expense.payment_method}`)}
         </span>
-      </td>
-
-      {/* Valor em JetBrains Mono */}
-      <td className="py-4 text-right font-mono font-medium">
-        {formatBRL(expense.amount)}
-      </td>
-
-      {/* Vencimento */}
-      <td className="py-4 pl-6 font-mono text-secondary-foreground">
-        {t('fx.dueDay', { day: expense.due_day })}
       </td>
 
       {/* Status badge */}
