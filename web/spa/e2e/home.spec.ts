@@ -60,6 +60,7 @@ for (const width of [375, 1280]) {
     await expect(section.getByRole('listitem').locator('> p')).toHaveText(['Telefone', 'Netflix', 'Condomínio', 'Energia', 'Água'])
     await expect(section.getByText('Hoje', { exact: true })).toHaveCount(1)
     await expect(section.getByText('Amanhã', { exact: true })).toHaveCount(2)
+    await expect(section.getByText('Em breve', { exact: true })).toHaveCount(2)
     await expect(section.getByText('14/11/2026')).toBeVisible()
     await expect(section.getByRole('listitem').first()).toContainText('123,45')
     const categories = page.getByRole('region', { name: 'Despesas fixas - Por categoria' })

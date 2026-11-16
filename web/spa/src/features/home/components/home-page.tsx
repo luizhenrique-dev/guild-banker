@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { APIError } from '@/src/shared/lib/api-client'
 import { useFixedExpenses } from '../../fixed-expenses/api/use-fixed-expenses'
 import { monthlyTotal } from '../../fixed-expenses/monthly-total'
+import { dueNotice } from '../../fixed-expenses/due-notice'
 import { upcomingExpenses } from '../upcoming-expenses'
 import { expensesByCategory } from '../expenses-by-category'
 import { CATEGORY_ICONS } from '../../fixed-expenses/types'
@@ -41,13 +42,20 @@ export function HomePage() {
         {expenseStatus ?? (items.length === 0 ? <p className="text-muted-foreground">{t('home.expensesEmpty')}</p>
             : <ol className="divide-y divide-border">
               {items.map(({ expense, dueDate }) => {
-                const dayDifference = dueDate.getDate() - reference.getDate()
+                const notice = dueNotice(expense, reference)
+                const noticeColor = notice === 'today'
+                  ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-300'
+                  : notice === 'tomorrow'
+                    ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                    : 'bg-secondary text-secondary-foreground'
                 return <li key={expense.id} className="flex h-14 items-center justify-between gap-4 py-2">
                   <p className="min-w-0 line-clamp-2 break-words text-sm font-medium" title={expense.name}>{expense.name}</p>
                   <div className="flex shrink-0 flex-col items-end">
                     <p className="font-mono font-semibold">{monthlyTotal([expense], i18n.language)}</p>
                     <p className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {dayDifference <= 1 && <span className="rounded-full bg-secondary px-2 font-medium text-secondary-foreground">{t(dayDifference === 0 ? 'home.today' : 'home.tomorrow')}</span>}
+                      {notice && <span className={`relative -left-5 shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-semibold ${noticeColor}`}>
+                        {t(`home.dueNotice.${notice}`)}
+                      </span>}
                       <time dateTime={`${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`}>{dates.format(dueDate)}</time>
                     </p>
                   </div>

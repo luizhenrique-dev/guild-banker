@@ -46,6 +46,28 @@ it('shows the current month, money, dates, today and tomorrow below the welcome'
   expect(english.getByText('November 2026')).toBeVisible()
 })
 
+it('shows the grid due notices through five days and hides them after that', async () => {
+  server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([
+    ...rows,
+    { ...rows[0], id: 3, name: 'Energia', due_day: 17 },
+    { ...rows[0], id: 4, name: 'Água', due_day: 20 },
+    { ...rows[0], id: 5, name: 'Seguro', due_day: 21 },
+  ])))
+  open()
+  await screen.findByText('Internet')
+  const content = within(section())
+  expect(await content.findAllByText('Em breve')).toHaveLength(2)
+  expect(content.getByText('Hoje')).toHaveClass('bg-red-100', 'text-red-800', 'dark:bg-red-950', 'dark:text-red-300')
+  expect(content.getByText('Amanhã')).toHaveClass('bg-amber-100', 'text-amber-800', 'dark:bg-amber-950', 'dark:text-amber-300')
+  for (const badge of content.getAllByText('Em breve')) {
+    expect(badge).toHaveClass('bg-secondary', 'text-secondary-foreground')
+  }
+  expect(content.getAllByRole('listitem')[4]).toHaveTextContent('Seguro')
+  expect(content.getAllByRole('listitem')[4]).not.toHaveTextContent('Em breve')
+  await act(async () => { await i18n.changeLanguage('en') })
+  expect(screen.getAllByText('Soon')).toHaveLength(2)
+})
+
 it('shows category totals for the whole guild month rather than only upcoming expenses', async () => {
   server.use(http.get('*/api/v1/guilds/:guildID/fixed-expenses', () => HttpResponse.json([
     ...rows,
